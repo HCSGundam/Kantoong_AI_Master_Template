@@ -1,0 +1,20 @@
+[
+  {
+    "id": "prod_1",
+    "name": "Cincin Emas Berlian Klasik",
+    "category": "Perhiasan",
+    "price": 4500000,
+    "stock": 12,
+    "description": "Cincin emas 18K berhiaskan berlian pilihan dengan desain elegan.",
+    "image": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500"
+  },
+  {
+    "id": "prod_2",
+    "name": "Gelang Emas Serut Modern",
+    "category": "Perhiasan",
+    "price": 3200000,
+    "stock": 8,
+    "description": "Gelang emas fleksibel yang nyaman dipakai sehari-hari.",
+    "image": "https://images.unsplash.com/photo-1611591475271-e6e4093f4439?w=500"
+  }
+]

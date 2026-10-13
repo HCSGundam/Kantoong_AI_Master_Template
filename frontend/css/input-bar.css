@@ -1,0 +1,131 @@
+/* ========================================= */
+/* BAB 5: BAR KETIK PESAN (GAYA YANTI GOLD)  */
+/* ========================================= */
+
+.input-bar-container {
+    margin-top: auto; 
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    padding-top: 6px;
+    flex-shrink: 0;
+}
+
+/* Kotak Oval Tempat Mengetik Utama */
+.input-box {
+    flex: 1; 
+    display: flex;
+    align-items: center;
+    background: #ffffff;                    /* Warna latar dalam kotak: Putih bersih */
+    border: 1.5px solid #111111;            /* <--- INI DIA GARIS PINGGIR (BORDER) HITAM TEGAS NYA! */
+    border-radius: 30px; 
+    padding: 8px 14px;
+    gap: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);  /* Bayangan tipis biar ada efek 3D */
+}
+
+.input-box textarea {
+    flex: 1;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: #1d1d1f !important;
+    font-family: inherit;
+    font-size: 14px;
+    resize: none;
+    overflow-y: hidden;
+    height: 20px;
+    max-height: 90px;
+    padding: 0;
+    margin: 0;
+    line-height: 20px;
+}
+
+.input-box textarea::placeholder {
+    color: #8e8e93 !important;
+    opacity: 1;
+}
+
+.icon-input {
+    cursor: pointer;
+    opacity: 0.8;
+    stroke: #555;
+    flex-shrink: 0;
+}
+
+/* Tombol Kirim Bulat di Kanan Luar */
+.send-btn {
+    background: #c5a059;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    flex-shrink: 0;
+}
+
+.send-btn svg {
+    margin-right: 2px;
+    margin-top: 2px;
+    stroke: #ffffff !important;
+}
+
+/* --- FLOATING INPUT BAR --- */
+#floatingInputBar {
+    display: none; 
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 420px;
+    z-index: 30;
+    align-items: center;
+    gap: 12px;
+}
+
+.floating-input-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1.5px solid #111111;            /* <--- INI JUGA GARIS PINGGIR HITAMNYA */
+    border-radius: 30px;
+    padding: 10px 16px;
+    gap: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+#kolomKetikFloating {
+    flex: 1;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: #1d1d1f !important;
+    font-size: 14px;
+    resize: none;
+    max-height: 90px;
+    font-family: inherit;
+    line-height: 20px;
+}
+
+#tombolKirimFloating {
+    background: #c5a059;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
