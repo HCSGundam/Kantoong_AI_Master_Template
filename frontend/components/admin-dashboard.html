@@ -12,7 +12,7 @@
         <div id="g_id_signin" style="margin-top: 10px;"></div>
     </div>
 
-    <!-- TAMPILAN 2: DASHBOARD UTAMA (SETELAH LOLOS WHITELIST SERVER.JS) -->
+    <!-- TAMPILAN 2: DASHBOARD UTAMA (SETELAH LOLOS WHITELIST) -->
     <div id="adminDashboardView" style="display: none; flex-direction: column; gap: 12px;">
         <div style="background: #e8f5e9; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
             <div>
@@ -40,72 +40,72 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <script>
+    // Daftar Whitelist Email Admin Resmi (Pastikan sama dengan di engine.js)
+    const ADMIN_WHITELIST = [
+        "micken.jobmail@gmail.com"
+    ];
+
     const savedEmail = localStorage.getItem('kantong_admin_email');
     const loginView = document.getElementById('adminLoginView');
     const dashboardView = document.getElementById('adminDashboardView');
     const loggedInEmailText = document.getElementById('loggedInEmailText');
     const modalTitle = document.getElementById('adminModalTitle');
 
-    // Jika browser sudah pernah nyimpen sesi, langsung verifikasi ke backend
-    if (savedEmail) {
-        verifyAndOpen(savedEmail);
+    // Cek apakah sudah tersimpan sesi admin di browser
+    if (savedEmail && ADMIN_WHITELIST.includes(savedEmail)) {
+        openDashboard(savedEmail);
     } else {
-        // Panggil inisialisasi tombol Google Sign-In setelah skrip siap
         setTimeout(initGoogleSignIn, 400);
     }
 
-    async function verifyAndOpen(email) {
-        try {
-            const response = await fetch('http://localhost:5000/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-            const result = await response.json();
+    function openDashboard(email) {
+        localStorage.setItem('kantong_admin_email', email);
+        if (loginView) loginView.style.display = 'none';
+        if (dashboardView) dashboardView.style.display = 'flex';
+        if (modalTitle) modalTitle.textContent = '✨ Dashboard Admin Toko';
+        if (loggedInEmailText) loggedInEmailText.textContent = email;
 
-            if (result.success) {
-                localStorage.setItem('kantong_admin_email', email);
-                loginView.style.display = 'none';
-                dashboardView.style.display = 'flex';
-                modalTitle.textContent = '✨ Dashboard Admin Toko';
-                loggedInEmailText.textContent = email;
-
-                const drawerAdminBtn = window.parent.document.getElementById('drawerAdminBtn');
-                if (drawerAdminBtn) drawerAdminBtn.style.display = 'block';
-            } else {
-                alert(result.message);
-                localStorage.removeItem('kantong_admin_email');
-                loginView.style.display = 'flex';
-                dashboardView.style.display = 'none';
-                initGoogleSignIn();
-            }
-        } catch (err) {
-            alert('Gagal terhubung ke server backend lokal.');
-        }
+        // Munculkan tombol admin di laci menu utama secara otomatis
+        const drawerAdminBtn = window.parent.document.getElementById('drawerAdminBtn');
+        if (drawerAdminBtn) drawerAdminBtn.style.display = 'block';
     }
 
     // Inisialisasi Tombol Google Sign-In Resmi
     function initGoogleSignIn() {
-        if (typeof google !== 'undefined') {
+        if (typeof google !== 'undefined' && google.accounts) {
+            const googleClientId = (typeof KantoongConfig !== 'undefined' && KantoongConfig.google_client_id) 
+                ? KantoongConfig.google_client_id 
+                : "153262298610-rrhi1e6mlqlg553vri7ig7k9po2buulm.apps.googleusercontent.com"; // Sesuaikan Client ID
+
             google.accounts.id.initialize({
-                // 👇 TEMPEL CLIENT ID GOOGLE CLOUD KAMU DI SINI 👇
-                client_id: "153262298610-rrhi1e6mlqlg553vri7ig7k9po2buulm.apps.googleusercontent.com",
+                client_id: googleClientId,
                 callback: handleCredentialResponse
             });
-            google.accounts.id.renderButton(
-                document.getElementById("g_id_signin"),
-                { theme: "outline", size: "large", width: "250", text: "signin_with" }
-            );
+            
+            const signinDiv = document.getElementById("g_id_signin");
+            if (signinDiv) {
+                google.accounts.id.renderButton(
+                    signinDiv,
+                    { theme: "outline", size: "large", width: "250", text: "signin_with" }
+                );
+            }
         } else {
             setTimeout(initGoogleSignIn, 500);
         }
     }
 
-    // Tangkap Respon Token dari Pop-up Google
-    async function handleCredentialResponse(response) {
+    // Tangkap Respon Token dari Pop-up Google OAuth
+    function handleCredentialResponse(response) {
         const responsePayload = decodeJwtResponse(response.credential);
         const email = responsePayload.email;
-        await verifyAndOpen(email);
+
+        if (ADMIN_WHITELIST.includes(email)) {
+            alert("Login Admin Berhasil! Selamat datang, " + responsePayload.name);
+            openDashboard(email);
+        } else {
+            alert("Akses Ditolak: Akun Google (" + email + ") bukan admin resmi toko ini!");
+            localStorage.removeItem('kantong_admin_email');
+        }
     }
 
     // Decoder Token JWT dari Google
@@ -119,23 +119,29 @@
     }
 
     // Tombol Logout
-    document.getElementById('adminLogoutBtn').addEventListener('click', () => {
-        localStorage.removeItem('kantong_admin_email');
-        alert('Sesi admin diakhiri.');
-        const drawerAdminBtn = window.parent.document.getElementById('drawerAdminBtn');
-        if (drawerAdminBtn) drawerAdminBtn.style.display = 'none';
-        document.getElementById('dynamicComponentContainer').innerHTML = '';
-    });
+    const logoutBtn = document.getElementById('adminLogoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('kantong_admin_email');
+            alert('Sesi admin diakhiri.');
+            const drawerAdminBtn = window.parent.document.getElementById('drawerAdminBtn');
+            if (drawerAdminBtn) drawerAdminBtn.style.display = 'none';
+            document.getElementById('dynamicComponentContainer').innerHTML = '';
+        });
+    }
 
     // Tombol Tutup Modal
-    document.getElementById('closeAdminModal').addEventListener('click', () => {
-        document.getElementById('dynamicComponentContainer').innerHTML = '';
-    });
+    const closeModalBtn = document.getElementById('closeAdminModal');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
+            document.getElementById('dynamicComponentContainer').innerHTML = '';
+        });
+    }
 
-    // Tombol Simpan Produk
+    // Tombol Simpan Produk (Client-Side Storage / Siap Diperluas)
     const saveBtn = document.getElementById('adminSaveBtn');
     if (saveBtn) {
-        saveBtn.addEventListener('click', async () => {
+        saveBtn.addEventListener('click', () => {
             const product = {
                 name: document.getElementById('adminProdName').value,
                 category: document.getElementById('adminProdCategory').value,
@@ -149,30 +155,18 @@
                 return alert('Nama produk dan harga wajib diisi!');
             }
 
-            const email = localStorage.getItem('kantong_admin_email');
+            // Simpan sementara ke localStorage produk toko
+            let storedProducts = JSON.parse(localStorage.getItem('kantong_store_products') || '[]');
+            storedProducts.push({ id: 'prod_' + Date.now(), ...product });
+            localStorage.setItem('kantong_store_products', JSON.stringify(storedProducts));
 
-            try {
-                const response = await fetch('http://localhost:5000/api/admin/products', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, product })
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    alert('Produk berhasil disimpan ke katalog!');
-                    document.getElementById('adminProdName').value = '';
-                    document.getElementById('adminProdCategory').value = '';
-                    document.getElementById('adminProdPrice').value = '';
-                    document.getElementById('adminProdStock').value = '';
-                    document.getElementById('adminProdDesc').value = '';
-                    document.getElementById('adminProdImage').value = '';
-                } else {
-                    alert(result.message);
-                }
-            } catch (err) {
-                alert('Gagal menyimpan produk.');
-            }
+            alert('Produk berhasil disimpan ke katalog lokal!');
+            document.getElementById('adminProdName').value = '';
+            document.getElementById('adminProdCategory').value = '';
+            document.getElementById('adminProdPrice').value = '';
+            document.getElementById('adminProdStock').value = '';
+            document.getElementById('adminProdDesc').value = '';
+            document.getElementById('adminProdImage').value = '';
         });
     }
 </script>

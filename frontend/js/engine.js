@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.sample-item-btn:not(.disabled):not(#drawerAdminBtn)').forEach(btn => {
         btn.addEventListener('click', () => {
             const compFile = btn.getAttribute('data-component');
-            if (!compFile) return; // Lindungi dari nilai null
+            if (!compFile) return;
             if (drawer) drawer.style.display = 'none';
 
             fetch(`components/${compFile}`)
@@ -52,39 +52,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 4. Cek otomatis apakah perangkat ini milik Admin yang sah & Tangani Tombol Admin
-    const savedAdminEmail = localStorage.getItem('kantong_admin_email');
-    const drawerAdminBtn = document.getElementById('drawerAdminBtn');
+    // ==========================================
+    // 4. SISTEM MANDIRI CLIENT-SIDE ADMIN AUTH (TANPA LOCALHOST)
+    // ==========================================
+    
+    // Daftar Whitelist Email Admin Resmi Kamu
+    const ADMIN_EMAILS = [
+        "micken.jobmail@gmail.com" // Ganti/tambah email admin lainnya di sini jika perlu
+    ];
 
+    const drawerAdminBtn = document.getElementById('drawerAdminBtn');
+    const savedAdminEmail = localStorage.getItem('kantong_admin_email');
+
+    // Fungsi pembantu untuk decode JWT Token dari Google OAuth
+    function parseJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Cek apakah di sesi browser ini sudah tersimpan email admin yang sah
     if (drawerAdminBtn) {
-        if (savedAdminEmail) {
-            fetch('http://localhost:5000/api/admin/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: savedAdminEmail })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    drawerAdminBtn.style.display = 'block';
-                } else {
-                    drawerAdminBtn.style.display = 'none';
-                    localStorage.removeItem('kantong_admin_email');
-                }
-            })
-            .catch(err => {
-                drawerAdminBtn.style.display = 'none';
-            });
+        if (savedAdminEmail && ADMIN_EMAILS.includes(savedAdminEmail)) {
+            // Jika sudah tervalidasi sebelumnya, langsung tampilkan tombol admin di menu
+            drawerAdminBtn.style.display = 'block';
         } else {
             drawerAdminBtn.style.display = 'none';
+            localStorage.removeItem('kantong_admin_email');
         }
 
-        // Aksi khusus saat tombol menu admin diklik
+        // Aksi saat tombol "Masuk ke Dashboard Admin" diklik
         drawerAdminBtn.addEventListener('click', () => {
-            const drawer = document.getElementById('sampleDrawer');
             if (drawer) drawer.style.display = 'none';
 
-            // Path yang benar dan bersih
+            // Muat komponen admin-dashboard.html
             fetch('components/admin-dashboard.html')
                 .then(res => {
                     if (!res.ok) throw new Error("File komponen admin tidak ditemukan");
@@ -93,12 +101,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(html => {
                     if (container) {
                         container.innerHTML = html;
-                        // Aktifkan tombol tutup modal admin jika ada
+                        
+                        // Tombol tutup modal admin
                         const closeAdminModal = container.querySelector('#closeAdminModal');
                         if (closeAdminModal) {
                             closeAdminModal.addEventListener('click', () => {
                                 container.innerHTML = '';
                             });
+                        }
+
+                        // Inisialisasi Google Sign-In (OAuth Popup) di dalam modal admin
+                        if (window.google && google.accounts && google.accounts.id) {
+                            // Ambil Client ID dari konfigurasi atau isi langsung
+                            const googleClientId = (typeof KantoongConfig !== 'undefined' && KantoongConfig.google_client_id) 
+                                ? KantoongConfig.google_client_id 
+                                : "153262298610-iskanclientidanda.apps.googleusercontent.com"; // Pastikan Client ID sesuai
+
+                            google.accounts.id.initialize({
+                                client_id: googleClientId,
+                                callback: (response) => {
+                                    const responsePayload = parseJwt(response.credential);
+                                    if (responsePayload && responsePayload.email) {
+                                        const userEmail = responsePayload.email;
+
+                                        // Validasi apakah email yang login masuk dalam whitelist ADMIN_EMAILS
+                                        if (ADMIN_EMAILS.includes(userEmail)) {
+                                            localStorage.setItem('kantong_admin_email', userEmail);
+                                            alert("Login Admin Berhasil! Selamat datang, " + responsePayload.name);
+                                            location.reload(); // Refresh halaman untuk mengunci sesi admin
+                                        } else {
+                                            alert("Akses Ditolak: Akun Google (" + userEmail + ") bukan admin resmi toko ini!");
+                                        }
+                                    }
+                                }
+                            });
+
+                            // Render tombol Google Sign-In otomatis ke elemen ber-ID 'googleSignInDiv' di modal admin
+                            const signInDiv = container.querySelector('#googleSignInDiv');
+                            if (signInDiv) {
+                                google.accounts.id.renderButton(
+                                    signInDiv,
+                                    { theme: "outline", size: "large", width: "100%" }
+                                );
+                            }
                         }
                     }
                 })
@@ -106,5 +151,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-

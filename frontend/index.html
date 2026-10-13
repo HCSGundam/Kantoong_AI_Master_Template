@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="css/chat-panel.css">
     <link rel="stylesheet" href="css/input-bar.css">
     <link rel="stylesheet" href="css/animation.css">
+
+    <!-- Google Identity Services (Google OAuth / Sign-In Resmi) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="mobile-container">
@@ -38,7 +41,7 @@
             </div>
             <p class="drawer-desc" style="color: #666; font-size: 13px;">Pilih modul atau fitur toko:</p>
             
-            <!-- Tombol Admin (DISEMPUNYIKAN SECARA DEFAULT UNTUK KONSUMEN) -->
+            <!-- Tombol Admin (DISEMPUNYIKAN SECARA DEFAULT UNTUK KONSUMEN, MUNCUL OTOMATIS JIKA GMAIL ADMIN TERDETEKSI) -->
             <button class="sample-item-btn" id="drawerAdminBtn" style="display: none; background: #111; color: #e5c07b; border-color: #111; font-weight: bold;">
                 🔐 Masuk ke Dashboard Admin
             </button>
