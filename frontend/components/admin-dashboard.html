@@ -47,22 +47,28 @@
         });
     }
 
-    // 4. FUNGSI UTAMA: Load Modul HTML Secara Dinamis Beserta Eksekusi Script-nya
+    // 4. FUNGSI UTAMA: Load Modul HTML Secara Dinamis (Mendukung Multi-Path Cerdas)
     window.loadAdminModule = function(modulePath) {
         const contentContainer = document.getElementById('adminModuleContent');
         if (!contentContainer) return;
 
         contentContainer.innerHTML = `<p style="text-align: center; color: #6e6e73; padding: 40px;">Memuat modul...</p>`;
 
+        // Coba fetch jalur langsung, jika gagal (404) coba cari di dalam folder frontend/
         fetch(modulePath)
             .then(res => {
-                if (!res.ok) throw new Error("Gagal memuat file modul: " + modulePath);
+                if (!res.ok) {
+                    return fetch('frontend/' + modulePath).then(resAlt => {
+                        if (!resAlt.ok) throw new Error("Gagal menemukan file modul: " + modulePath);
+                        return resAlt.text();
+                    });
+                }
                 return res.text();
             })
             .then(html => {
                 contentContainer.innerHTML = html;
 
-                // Trik penting: Jalankan ulang tag <script> yang ada di dalam file HTML yang baru di-fetch
+                // Jalankan ulang tag <script> di dalam komponen yang di-load
                 const scripts = contentContainer.querySelectorAll('script');
                 scripts.forEach(script => {
                     const newScript = document.createElement('script');
@@ -76,14 +82,14 @@
                 });
             })
             .catch(err => {
-                contentContainer.innerHTML = `<p style="color: #c62828; text-align: center; padding: 20px;">Error: ${err.message}</p>`;
+                contentContainer.innerHTML = `<p style="color: #c62828; text-align: center; padding: 20px;">Error: ${err.message}<br><small style="color:#6e6e73;">Pastikan file komponen sudah terunggah dengan benar di struktur direktori project.</small></p>`;
             });
     };
 
     // 5. OTOMATIS LOAD MODUL OVERVIEW SAAT PERTAMA KALI DIBUKA
     loadAdminModule('components/admin/dashboard/overview.html');
 
-    // 6. EVENT LISTENER GLOBAL UNTUK TOMBOL PINTASAN DI DALAM DASHBOARD
+    // 6. EVENT LISTENER GLOBAL UNTUK TOMBOL PINTASAN
     document.addEventListener('click', (e) => {
         if (e.target.classList.contains('overview-quick-btn')) {
             const targetType = e.target.getAttribute('data-target');
