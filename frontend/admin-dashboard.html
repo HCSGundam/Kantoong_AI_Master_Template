@@ -47,14 +47,13 @@
         });
     }
 
-    // 4. FUNGSI UTAMA: Load Modul HTML Secara Dinamis (Path Disesuaikan dengan Struktur Folder frontend/)
+    // 4. FUNGSI UTAMA: Load Modul HTML Secara Dinamis
     window.loadAdminModule = function(modulePath) {
         const contentContainer = document.getElementById('adminModuleContent');
         if (!contentContainer) return;
 
         contentContainer.innerHTML = `<p style="text-align: center; color: #6e6e73; padding: 40px;">Memuat modul...</p>`;
 
-        // Karena admin-dashboard.html ada di dalam folder frontend/, langsung panggil modulnya tanpa awalan tambahan
         fetch(modulePath)
             .then(res => {
                 if (!res.ok) throw new Error("Gagal menemukan file modul: " + modulePath);

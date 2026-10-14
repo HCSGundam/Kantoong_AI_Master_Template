@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawerAdminBtn.addEventListener('click', () => {
             if (drawer) drawer.style.display = 'none';
 
-            fetch('components/admin-dashboard.html')
+            fetch('admin-dashboard.html')
                 .then(res => {
                     if (!res.ok) throw new Error("File komponen admin tidak ditemukan");
                     return res.text();

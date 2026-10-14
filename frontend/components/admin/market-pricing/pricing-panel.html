@@ -1,6 +1,6 @@
 <div class="admin-pricing-container" style="display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.3s ease;">
     
-    <!-- HEADER MODUL: Netral & Profesional -->
+    <!-- HEADER MODAL: Netral & Profesional -->
     <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 20px; border-radius: 14px; border: 1px solid #e5e5ea;">
         <div>
             <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin: 0 0 4px 0;">📈 Panel Indeks Harga & Komoditas Real-Time</h3>
@@ -43,53 +43,5 @@
 
 </div>
 
-<script>
-    // Logika Panel Harga & Kalkulator Netral
-    (function initPricingPanel() {
-        const buyPriceEl = document.getElementById('liveBuyPrice');
-        const sellPriceEl = document.getElementById('liveSellPrice');
-        const timestampEl = document.getElementById('priceTimestamp');
-        const refreshBtn = document.getElementById('refreshPriceBtn');
-        
-        const weightInput = document.getElementById('calcWeight');
-        const gradeSelect = document.getElementById('calcGrade');
-        const resultEl = document.getElementById('calcResult');
-
-        // Simulasi harga pasar dasar
-        let baseBuyRate = 1250000; 
-        let baseSellRate = 1200000;
-
-        function updateDisplay() {
-            if (buyPriceEl) buyPriceEl.textContent = 'Rp ' + baseBuyRate.toLocaleString('id-ID');
-            if (sellPriceEl) sellPriceEl.textContent = 'Rp ' + baseSellRate.toLocaleString('id-ID');
-            if (timestampEl) timestampEl.textContent = new Date().toLocaleTimeString('id-ID');
-            calculateTotal();
-        }
-
-        function calculateTotal() {
-            const weight = parseFloat(weightInput.value || 0);
-            const multiplier = parseFloat(gradeSelect.value || 1);
-            const total = weight * baseBuyRate * multiplier;
-            if (resultEl) {
-                resultEl.textContent = 'Rp ' + Math.round(total).toLocaleString('id-ID');
-            }
-        }
-
-        updateDisplay();
-
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                const fluctuation = Math.floor(Math.random() * 5000) - 2500;
-                baseBuyRate += fluctuation;
-                baseSellRate += fluctuation;
-                updateDisplay();
-                alert('Data indeks harga berhasil diperbarui!');
-            });
-        }
-
-        if (weightInput) weightInput.addEventListener('input', calculateTotal);
-        if (gradeSelect) gradeSelect.addEventListener('change', calculateTotal);
-    })();
-</script>
-
+<!-- Memanggil Controller Logika Terpisah -->
 <script src="components/admin/market-pricing/pricing-service.js"></script>
