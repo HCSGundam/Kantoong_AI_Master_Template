@@ -2,32 +2,32 @@
     
     <!-- HEADER MODAL ADMIN -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
-        <h3 style="font-size: 18px; font-weight: bold; color: #1d1d1f;" id="adminDashboardHeaderTitle">✨ Dashboard Admin Toko</h3>
+        <h3 style="font-size: 18px; font-weight: bold; color: #1d1d1f;" id="adminDashboardHeaderTitle">✨ Dashboard Pengelola Sistem</h3>
         <button id="closeAdminModal" style="background: transparent; border: 1px solid #ccc; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
     </div>
 
     <!-- STATUS ADMIN & KELUAR SESI -->
-    <div style="background: #e8f5e9; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div style="background: #f5f5f7; border: 1px solid #e5e5ea; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div>
-            <p style="font-size: 11px; color: #2e7d32; font-weight: bold; margin: 0;">STATUS: ADMIN AKTIF ✅</p>
+            <p style="font-size: 11px; color: #1d1d1f; font-weight: bold; margin: 0;">STATUS: SESI AKTIF ✅</p>
             <p style="font-size: 13px; color: #1d1d1f; font-weight: 600; margin: 4px 0 0 0;" id="loggedInEmailText">-</p>
         </div>
         <button id="adminLogoutBtn" style="background: #ffebee; color: #c62828; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px;">Keluar</button>
     </div>
 
-    <!-- WADAH UTAMA KONTEN MODULAR (Tempat overview.html / modul lain dirender) -->
+    <!-- WADAH UTAMA KONTEN MODULAR -->
     <div id="adminModuleContent" style="flex: 1; display: flex; flex-direction: column;">
-        <!-- Konten modul akan masuk secara dinamis di sini -->
+        <!-- Konten modul dimuat dinamis di sini -->
     </div>
 </div>
 
 <script>
-    // Set Email Admin yang Aktif di Header Modal
+    // 1. Set Email Admin yang Aktif di Header Modal
     const savedAdminEmail = localStorage.getItem('kantong_admin_email') || 'micken.jobmail@gmail.com';
     const emailTextEl = document.getElementById('loggedInEmailText');
     if (emailTextEl) emailTextEl.textContent = savedAdminEmail;
 
-    // Tombol Logout Sesi Admin
+    // 2. Tombol Logout Sesi Admin
     const logoutBtn = document.getElementById('adminLogoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
@@ -38,29 +38,64 @@
         });
     }
 
-    // Tombol Tutup Modal Dashboard
+    // 3. Tombol Tutup Modal Dashboard
     const closeModalBtn = document.getElementById('closeAdminModal');
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', () => {
-            document.getElementById('dynamicComponentContainer').innerHTML = '';
+            const container = document.getElementById('dynamicComponentContainer');
+            if (container) container.innerHTML = '';
         });
     }
 
-    // OTOMATIS LOAD MODUL OVERVIEW SAAT DASHBOARD PERTAMA KALI DIBUKA
-    (function loadDefaultOverview() {
+    // 4. FUNGSI UTAMA: Load Modul HTML Secara Dinamis Beserta Eksekusi Script-nya
+    window.loadAdminModule = function(modulePath) {
         const contentContainer = document.getElementById('adminModuleContent');
         if (!contentContainer) return;
 
-        fetch('components/admin/dashboard/overview.html')
+        contentContainer.innerHTML = `<p style="text-align: center; color: #6e6e73; padding: 40px;">Memuat modul...</p>`;
+
+        fetch(modulePath)
             .then(res => {
-                if (!res.ok) throw new Error("Gagal memuat modul Overview Dashboard");
+                if (!res.ok) throw new Error("Gagal memuat file modul: " + modulePath);
                 return res.text();
             })
             .then(html => {
                 contentContainer.innerHTML = html;
+
+                // Trik penting: Jalankan ulang tag <script> yang ada di dalam file HTML yang baru di-fetch
+                const scripts = contentContainer.querySelectorAll('script');
+                scripts.forEach(script => {
+                    const newScript = document.createElement('script');
+                    if (script.src) {
+                        newScript.src = script.src;
+                    } else {
+                        newScript.textContent = script.textContent;
+                    }
+                    document.body.appendChild(newScript);
+                    script.remove();
+                });
             })
             .catch(err => {
-                contentContainer.innerHTML = `<p style="color: red; text-align: center; padding: 20px;">Error: ${err.message}</p>`;
+                contentContainer.innerHTML = `<p style="color: #c62828; text-align: center; padding: 20px;">Error: ${err.message}</p>`;
             });
-    })();
+    };
+
+    // 5. OTOMATIS LOAD MODUL OVERVIEW SAAT PERTAMA KALI DIBUKA
+    loadAdminModule('components/admin/dashboard/overview.html');
+
+    // 6. EVENT LISTENER GLOBAL UNTUK TOMBOL PINTASAN DI DALAM DASHBOARD
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('overview-quick-btn')) {
+            const targetType = e.target.getAttribute('data-target');
+            if (targetType === 'products') {
+                loadAdminModule('components/admin/products/products-list.html');
+            } else if (targetType === 'modules' || targetType === 'gold') {
+                loadAdminModule('components/admin/market-pricing/pricing-panel.html');
+            } else if (targetType === 'sales') {
+                loadAdminModule('components/admin/sales/sales-table.html');
+            } else {
+                loadAdminModule('components/admin/dashboard/overview.html');
+            }
+        }
+    });
 </script>
