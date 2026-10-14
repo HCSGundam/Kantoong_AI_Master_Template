@@ -1,0 +1,110 @@
+<link rel="stylesheet" href="css/dashboard.css">
+
+<div class="admin-overview-container" style="display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.3s ease;">
+    
+    <!-- HEADER DASHBOARD: Dinamis membaca nama brand dari KantoongConfig (Netral Hitam-Putih) -->
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #1d1d1f; color: #fff; padding: 24px; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+        <div>
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; font-weight: 600;" id="badgeTenantType">Enterprise Master Edition</span>
+            <h2 style="font-size: 22px; font-weight: 700; margin: 8px 0 4px 0;" id="welcomeTenantName">Pusat Kontrol Bisnis</h2>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin: 0;">Ringkasan performa bisnis, statistik operasional, dan pemantauan real-time.</p>
+        </div>
+        <div style="text-align: right; display: none; @media(min-width: 600px){ display: block; }">
+            <span style="font-size: 12px; color: rgba(255,255,255,0.6);" id="currentDateDisplay">--/--/----</span>
+        </div>
+    </div>
+
+    <!-- KARTU STATISTIK KILAT (KPI CARDS) - Dinamis & Netral -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;" id="kpiCardsContainer">
+        <!-- Kartu 1: Total Produk / Item -->
+        <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 12px; color: #6e6e73; font-weight: 600;">Total Katalog / Stok</span>
+                <span style="font-size: 16px;">📦</span>
+            </div>
+            <h3 style="font-size: 24px; font-weight: 700; color: #1d1d1f; margin: 0;" id="kpiTotalProducts">0</h3>
+            <span style="font-size: 11px; color: #1d1d1f; font-weight: 600; margin-top: 4px; display: block;">● Sinkron dengan LocalStorage</span>
+        </div>
+
+        <!-- Kartu 2: Estimasi Nilai / Omzet -->
+        <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 12px; color: #6e6e73; font-weight: 600;">Estimasi Nilai Aset</span>
+                <span style="font-size: 16px;">💰</span>
+            </div>
+            <h3 style="font-size: 24px; font-weight: 700; color: #1d1d1f; margin: 0;" id="kpiAssetValue">Rp 0</h3>
+            <span style="font-size: 11px; color: #1d1d1f; font-weight: 600; margin-top: 4px; display: block;">● Valuasi Aktif</span>
+        </div>
+
+        <!-- Kartu 3: Status Sesi Admin -->
+        <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 12px; color: #6e6e73; font-weight: 600;">Sesi Aktif Admin</span>
+                <span style="font-size: 16px;">🛡️</span>
+            </div>
+            <h3 style="font-size: 14px; font-weight: 700; color: #1d1d1f; margin: 0; word-break: break-all;" id="kpiAdminEmail">-</h3>
+            <span style="font-size: 11px; color: #1d1d1f; font-weight: 600; margin-top: 4px; display: block;">● Whitelist Verified</span>
+        </div>
+    </div>
+
+    <!-- PANEL AKTIVITAS & PINTASAN MODUL (Modular Quick Actions) -->
+    <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+        <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 20px;">
+            <h4 style="font-size: 15px; font-weight: 700; color: #1d1d1f; margin-bottom: 12px;">⚡ Pintasan Modul Master Template</h4>
+            <p style="font-size: 13px; color: #6e6e73; line-height: 1.5; margin-bottom: 16px;">
+                Pilih modul di bawah untuk mulai mengelola data secara modular tanpa memuat ulang halaman utama.
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;" id="quickActionButtons">
+                <button class="overview-quick-btn" data-target="products" style="background: #f5f5f7; border: 1px solid #d2d2d7; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; transition: all 0.2s;">📦 Kelola Produk & Stok</button>
+                <button class="overview-quick-btn" data-target="modules" style="background: #f5f5f7; border: 1px solid #d2d2d7; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; transition: all 0.2s;">🪙 Modul Spesifik Industri</button>
+                <button class="overview-quick-btn" data-target="sales" style="background: #f5f5f7; border: 1px solid #d2d2d7; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #1d1d1f; cursor: pointer; transition: all 0.2s;">📊 Laporan & Aktivitas</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Logika Inisialisasi Dinamis Overview Dashboard (Non-Hardcode)
+    (function() {
+        // 1. Set Tanggal Hari Ini
+        const dateEl = document.getElementById('currentDateDisplay');
+        if (dateEl) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateEl.textContent = new Date().toLocaleDateString('id-ID', options);
+        }
+
+        // 2. Baca Nama Brand dari Konfigurasi Klien (client-config.js)
+        const tenantNameEl = document.getElementById('welcomeTenantName');
+        if (tenantNameEl && typeof KantoongConfig !== 'undefined') {
+            tenantNameEl.textContent = `Dashboard Pengelola — ${KantoongConfig.app_name}`;
+        }
+
+        // 3. Tampilkan Email Admin yang Sedang Aktif
+        const adminEmailEl = document.getElementById('kpiAdminEmail');
+        const savedEmail = localStorage.getItem('kantong_admin_email') || 'micken.jobmail@gmail.com';
+        if (adminEmailEl) {
+            adminEmailEl.textContent = savedEmail;
+        }
+
+        // 4. Hitung Statistik Dinamis dari Data Produk Lokal (jika ada)
+        try {
+            const products = JSON.parse(localStorage.getItem('kantong_store_products') || '[]');
+            const totalProductsEl = document.getElementById('kpiTotalProducts');
+            const totalAssetEl = document.getElementById('kpiAssetValue');
+
+            if (totalProductsEl) {
+                totalProductsEl.textContent = products.length;
+            }
+
+            if (totalAssetEl && products.length > 0) {
+                const totalVal = products.reduce((acc, curr) => acc + (parseFloat(curr.price || 0) * parseInt(curr.stock || 1)), 0);
+                totalAssetEl.textContent = 'Rp ' + totalVal.toLocaleString('id-ID');
+            }
+        } catch (e) {
+            console.error("Gagal memuat statistik produk:", e);
+        }
+    })();
+</script>
+
+<script src="components/admin/dashboard/stats-cards.js"></script>

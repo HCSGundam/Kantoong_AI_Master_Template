@@ -1,0 +1,88 @@
+<div class="admin-settings-container" style="display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.3s ease;">
+    
+    <!-- HEADER MODUL: Netral & Profesional -->
+    <div style="background: #fff; padding: 20px; border-radius: 14px; border: 1px solid #e5e5ea;">
+        <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin: 0 0 4px 0;">⚙️ Pengaturan & Profil Sistem</h3>
+        <p style="font-size: 13px; color: #6e6e73; margin: 0;">Kelola konfigurasi identitas bisnis, preferensi sistem, dan informasi akun pengelola.</p>
+    </div>
+
+    <!-- KARTU PENGATURAN IDENTITAS BISNIS -->
+    <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 20px;">
+        <h4 style="font-size: 15px; font-weight: 700; color: #1d1d1f; margin-bottom: 14px;">🏢 Identitas Bisnis / Nama Tenant</h4>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+            <div>
+                <label style="font-size: 12px; font-weight: 600; color: #6e6e73; display: block; margin-bottom: 6px;">Nama Bisnis / Aplikasi</label>
+                <input type="text" id="settingAppName" placeholder="Cth: Kantoong Enterprise Store" style="width: 100%; padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px; box-sizing: border-box;">
+            </div>
+            <div>
+                <label style="font-size: 12px; font-weight: 600; color: #6e6e73; display: block; margin-bottom: 6px;">Mata Uang / Satuan Default</label>
+                <input type="text" id="settingCurrency" value="IDR (Rupiah)" disabled style="width: 100%; padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px; background: #f5f5f7; color: #6e6e73; box-sizing: border-box;">
+            </div>
+        </div>
+        <button id="saveSettingsBtn" style="background: #1d1d1f; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Simpan Perubahan Identitas</button>
+    </div>
+
+    <!-- KARTU INFORMASI AKUN & SESI -->
+    <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 20px;">
+        <h4 style="font-size: 15px; font-weight: 700; color: #1d1d1f; margin-bottom: 14px;">🛡️ Informasi Sesi & Keamanan</h4>
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: #1d1d1f; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e5ea;">
+                <span style="color: #6e6e73;">Email Akun Aktif:</span>
+                <span id="settingAdminEmail" style="font-weight: 600;">-</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e5ea;">
+                <span style="color: #6e6e73;">Status Otorisasi:</span>
+                <span style="font-weight: 600; color: #2e7d32;">Terverifikasi (Whitelist)</span>
+            </div>
+        </div>
+        <button id="logoutSessionBtn" style="background: #ffebee; color: #c62828; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Keluar Sesi (Logout)</button>
+    </div>
+
+</div>
+
+<script>
+    // Logika Pengaturan (Settings Manager)
+    (function initSettingsModule() {
+        const appNameInput = document.getElementById('settingAppName');
+        const saveBtn = document.getElementById('saveSettingsBtn');
+        const adminEmailDisplay = document.getElementById('settingAdminEmail');
+        const logoutBtn = document.getElementById('logoutSessionBtn');
+
+        // 1. Muat data konfigurasi saat ini ke form
+        if (appNameInput) {
+            const savedName = localStorage.getItem('kantong_app_name') || (typeof KantoongConfig !== 'undefined' ? KantoongConfig.app_name : 'Enterprise System');
+            appNameInput.value = savedName;
+        }
+
+        // 2. Tampilkan email admin aktif
+        if (adminEmailDisplay) {
+            const activeEmail = localStorage.getItem('kantong_admin_email') || 'micken.jobmail@gmail.com';
+            adminEmailDisplay.textContent = activeEmail;
+        }
+
+        // 3. Simpan Peraturan Nama Aplikasi
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                const newName = appNameInput.value.trim();
+                if (!newName) {
+                    alert('Nama bisnis / aplikasi tidak boleh kosong!');
+                    return;
+                }
+                localStorage.setItem('kantong_app_name', newName);
+                alert('Pengaturan identitas berhasil diperbarui! Muat ulang halaman untuk melihat perubahan menyeluruh.');
+            });
+        }
+
+        // 4. Aksi Keluar Sesi
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('Apakah Anda yakin ingin keluar dari sesi admin ini?')) {
+                    localStorage.removeItem('kantong_admin_email');
+                    window.location.reload();
+                }
+            });
+        }
+    })();
+</script>
+
+<script src="components/admin/settings/admin-auth.js"></script>

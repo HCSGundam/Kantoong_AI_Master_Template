@@ -1,0 +1,54 @@
+<link rel="stylesheet" href="css/products.css">
+
+<div class="admin-products-container" style="display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.3s ease;">
+    
+    <!-- HEADER MODUL: Netral & Profesional -->
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 20px; border-radius: 14px; border: 1px solid #e5e5ea;">
+        <div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin: 0 0 4px 0;">📦 Manajemen Katalog & Inventaris</h3>
+            <p style="font-size: 13px; color: #6e6e73; margin: 0;">Kelola inventaris item, kategori, harga, dan ketersediaan stok secara real-time.</p>
+        </div>
+        <button id="openAddProductModalBtn" style="background: #1d1d1f; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;">+ Tambah Item</button>
+    </div>
+
+    <!-- TABEL DAFTAR PRODUK (Dinamis dari LocalStorage) -->
+    <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; overflow: hidden;">
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                <thead>
+                    <tr style="background: #f5f5f7; border-bottom: 1px solid #e5e5ea; color: #6e6e73;">
+                        <th style="padding: 12px 16px; font-weight: 600;">Nama Item / Produk</th>
+                        <th style="padding: 12px 16px; font-weight: 600;">Kategori / Divisi</th>
+                        <th style="padding: 12px 16px; font-weight: 600;">Harga Satuan (Rp)</th>
+                        <th style="padding: 12px 16px; font-weight: 600;">Stok Tersedia</th>
+                        <th style="padding: 12px 16px; font-weight: 600; text-align: right;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody">
+                    <!-- Data produk akan disuntikkan secara dinamis via products-form.js -->
+                </tbody>
+            </table>
+        </div>
+        <!-- Kondisi jika data kosong -->
+        <div id="emptyProductState" style="padding: 40px; text-align: center; display: none;">
+            <p style="font-size: 14px; color: #6e6e73; margin-bottom: 12px;">Belum ada item terdaftar di katalog lokal.</p>
+        </div>
+    </div>
+
+    <!-- FORM INPUT / TAMBAH PRODUK / ITEM -->
+    <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 20px;" id="addProductSection">
+        <h4 style="font-size: 15px; font-weight: 700; color: #1d1d1f; margin-bottom: 14px;">➕ Tambah Item Baru ke Katalog</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+            <input type="text" id="inputProdName" placeholder="Nama Item / Produk (Cth: Barang A)" style="padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px;">
+            <input type="text" id="inputProdCategory" placeholder="Kategori / Divisi (Cth: Umum)" style="padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px;">
+            <input type="number" id="inputProdPrice" placeholder="Harga Satuan (Angka)" style="padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px;">
+            <input type="number" id="inputProdStock" placeholder="Jumlah Stok" style="padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px;">
+        </div>
+        <textarea id="inputProdDesc" placeholder="Deskripsi spesifikasi / catatan..." style="width: 100%; padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px; height: 60px; resize: none; margin-bottom: 12px; box-sizing: border-box;"></textarea>
+        <button id="saveNewProductBtn" style="background: #1d1d1f; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Simpan ke Katalog</button>
+    </div>
+
+</div>
+
+<!-- Menghubungkan logika form & tabel produk secara modular terpisah -->
+<script src="components/admin/products/products-form.js"></script>

@@ -1,6 +1,8 @@
 <div class="admin-modal" style="position: absolute; inset: 0; background: #ffffff; z-index: 99999; padding: 24px; display: flex; flex-direction: column; overflow-y: auto;">
+    
+    <!-- HEADER MODAL ADMIN -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
-        <h3 style="font-size: 18px; font-weight: bold; color: #1d1d1f;">✨ Dashboard Admin Toko</h3>
+        <h3 style="font-size: 18px; font-weight: bold; color: #1d1d1f;" id="adminDashboardHeaderTitle">✨ Dashboard Admin Toko</h3>
         <button id="closeAdminModal" style="background: transparent; border: 1px solid #ccc; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
     </div>
 
@@ -8,23 +10,23 @@
     <div style="background: #e8f5e9; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div>
             <p style="font-size: 11px; color: #2e7d32; font-weight: bold; margin: 0;">STATUS: ADMIN AKTIF ✅</p>
-            <p style="font-size: 13px; color: #1d1d1f; font-weight: 600; margin: 4px 0 0 0;" id="loggedInEmailText">micken.jobmail@gmail.com</p>
+            <p style="font-size: 13px; color: #1d1d1f; font-weight: 600; margin: 4px 0 0 0;" id="loggedInEmailText">-</p>
         </div>
         <button id="adminLogoutBtn" style="background: #ffebee; color: #c62828; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px;">Keluar</button>
     </div>
 
-    <!-- AREA KONTEN DASHBOARD (SIAP KITA DESAIN) -->
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-        <div style="background: #f9f9fb; border: 1px solid #e5e5ea; border-radius: 12px; padding: 20px; text-align: center;">
-            <h4 style="font-size: 16px; font-weight: bold; color: #1d1d1f; margin-bottom: 8px;">🚀 Selamat Datang di Panel Pengelola Toko</h4>
-            <p style="font-size: 13px; color: #666; line-height: 1.5;">
-                Pintu masuk sudah steril dan aman. Di sini kita bebas merancang fitur-fitur dan desain dashboard admin sesuai keinginanmu!
-            </p>
-        </div>
+    <!-- WADAH UTAMA KONTEN MODULAR (Tempat overview.html / modul lain dirender) -->
+    <div id="adminModuleContent" style="flex: 1; display: flex; flex-direction: column;">
+        <!-- Konten modul akan masuk secara dinamis di sini -->
     </div>
 </div>
 
 <script>
+    // Set Email Admin yang Aktif di Header Modal
+    const savedAdminEmail = localStorage.getItem('kantong_admin_email') || 'micken.jobmail@gmail.com';
+    const emailTextEl = document.getElementById('loggedInEmailText');
+    if (emailTextEl) emailTextEl.textContent = savedAdminEmail;
+
     // Tombol Logout Sesi Admin
     const logoutBtn = document.getElementById('adminLogoutBtn');
     if (logoutBtn) {
@@ -43,4 +45,22 @@
             document.getElementById('dynamicComponentContainer').innerHTML = '';
         });
     }
+
+    // OTOMATIS LOAD MODUL OVERVIEW SAAT DASHBOARD PERTAMA KALI DIBUKA
+    (function loadDefaultOverview() {
+        const contentContainer = document.getElementById('adminModuleContent');
+        if (!contentContainer) return;
+
+        fetch('components/admin/dashboard/overview.html')
+            .then(res => {
+                if (!res.ok) throw new Error("Gagal memuat modul Overview Dashboard");
+                return res.text();
+            })
+            .then(html => {
+                contentContainer.innerHTML = html;
+            })
+            .catch(err => {
+                contentContainer.innerHTML = `<p style="color: red; text-align: center; padding: 20px;">Error: ${err.message}</p>`;
+            });
+    })();
 </script>

@@ -1,0 +1,95 @@
+<div class="admin-pricing-container" style="display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.3s ease;">
+    
+    <!-- HEADER MODUL: Netral & Profesional -->
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 20px; border-radius: 14px; border: 1px solid #e5e5ea;">
+        <div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin: 0 0 4px 0;">📈 Panel Indeks Harga & Komoditas Real-Time</h3>
+            <p style="font-size: 13px; color: #6e6e73; margin: 0;">Pantau fluktuasi harga pasar, kurs, atau nilai komoditas secara langsung.</p>
+        </div>
+        <button id="refreshPriceBtn" style="background: #1d1d1f; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;">🔄 Perbarui Data</button>
+    </div>
+
+    <!-- KARTU INFORMASI HARGA / INDEKS UTAMA -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 18px;">
+            <span style="font-size: 12px; color: #6e6e73; font-weight: 600; display: block; margin-bottom: 8px;">Nilai Beli / Acuan Dasar</span>
+            <h3 style="font-size: 26px; font-weight: 700; color: #1d1d1f; margin: 0;" id="liveBuyPrice">Rp 0</h3>
+            <span style="font-size: 11px; color: #6e6e73; margin-top: 6px; display: block;">● Update Terakhir: <span id="priceTimestamp">-</span></span>
+        </div>
+
+        <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 18px;">
+            <span style="font-size: 12px; color: #6e6e73; font-weight: 600; display: block; margin-bottom: 8px;">Nilai Jual / Likuiditas</span>
+            <h3 style="font-size: 26px; font-weight: 700; color: #1d1d1f; margin: 0;" id="liveSellPrice">Rp 0</h3>
+            <span style="font-size: 11px; color: #6e6e73; margin-top: 6px; display: block;">● Selisih Spread Stabil</span>
+        </div>
+    </div>
+
+    <!-- PANEL SIMULASI / KALKULATOR NILAI -->
+    <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 20px;">
+        <h4 style="font-size: 15px; font-weight: 700; color: #1d1d1f; margin-bottom: 14px;">🧮 Kalkulator Valuasi & Konversi</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+            <input type="number" id="calcWeight" placeholder="Masukkan Berat / Volume (Unit)" style="padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px;">
+            <select id="calcGrade" style="padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px; background: #fff;">
+                <option value="1.0">Standar / Murni (100%)</option>
+                <option value="0.9">Kelas Premium (90%)</option>
+                <option value="0.75">Kelas Standar (75%)</option>
+            </select>
+        </div>
+        <div style="background: #f5f5f7; padding: 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; font-weight: 600; color: #1d1d1f;">Estimasi Total Valuasi:</span>
+            <span style="font-size: 18px; font-weight: 700; color: #1d1d1f;" id="calcResult">Rp 0</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Logika Panel Harga & Kalkulator Netral
+    (function initPricingPanel() {
+        const buyPriceEl = document.getElementById('liveBuyPrice');
+        const sellPriceEl = document.getElementById('liveSellPrice');
+        const timestampEl = document.getElementById('priceTimestamp');
+        const refreshBtn = document.getElementById('refreshPriceBtn');
+        
+        const weightInput = document.getElementById('calcWeight');
+        const gradeSelect = document.getElementById('calcGrade');
+        const resultEl = document.getElementById('calcResult');
+
+        // Simulasi harga pasar dasar
+        let baseBuyRate = 1250000; 
+        let baseSellRate = 1200000;
+
+        function updateDisplay() {
+            if (buyPriceEl) buyPriceEl.textContent = 'Rp ' + baseBuyRate.toLocaleString('id-ID');
+            if (sellPriceEl) sellPriceEl.textContent = 'Rp ' + baseSellRate.toLocaleString('id-ID');
+            if (timestampEl) timestampEl.textContent = new Date().toLocaleTimeString('id-ID');
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            const weight = parseFloat(weightInput.value || 0);
+            const multiplier = parseFloat(gradeSelect.value || 1);
+            const total = weight * baseBuyRate * multiplier;
+            if (resultEl) {
+                resultEl.textContent = 'Rp ' + Math.round(total).toLocaleString('id-ID');
+            }
+        }
+
+        updateDisplay();
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                const fluctuation = Math.floor(Math.random() * 5000) - 2500;
+                baseBuyRate += fluctuation;
+                baseSellRate += fluctuation;
+                updateDisplay();
+                alert('Data indeks harga berhasil diperbarui!');
+            });
+        }
+
+        if (weightInput) weightInput.addEventListener('input', calculateTotal);
+        if (gradeSelect) gradeSelect.addEventListener('change', calculateTotal);
+    })();
+</script>
+
+<script src="components/admin/market-pricing/pricing-service.js"></script>

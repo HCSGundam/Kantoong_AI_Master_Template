@@ -1,0 +1,42 @@
+/* ================================================= */
+/* KANTOONG AI & YANTI GOLD - PRODUCTS STYLING       */
+/* ================================================= */
+
+.admin-products-container {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1d1d1f;
+}
+
+/* Tabel Produk Styling */
+.admin-products-container table th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-products-container table td {
+    vertical-align: middle;
+}
+
+.admin-products-container table tbody tr:hover {
+    background-color: #f9f9fb;
+}
+
+/* Tombol Aksi Tambah Produk */
+#openAddProductModalBtn:hover {
+    background-color: #333336 !important;
+    transform: translateY(-1px);
+}
+
+#saveNewProductBtn:hover {
+    background-color: #005bb5 !important;
+    transform: translateY(-1px);
+}
+
+/* Form Input Focus Effect */
+.admin-products-container input:focus, 
+.admin-products-container textarea:focus {
+    border-color: #0071e3 !important;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+}

@@ -1,0 +1,68 @@
+<div class="admin-sales-container" style="display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.3s ease;">
+    
+    <!-- HEADER MODUL: Netral & Profesional -->
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 20px; border-radius: 14px; border: 1px solid #e5e5ea;">
+        <div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #1d1d1f; margin: 0 0 4px 0;">📊 Rekapitulasi Transaksi & Kasir</h3>
+            <p style="font-size: 13px; color: #6e6e73; margin: 0;">Catat transaksi masuk, pantau riwayat penjualan, dan kelola arus kas harian.</p>
+        </div>
+        <button id="openNewTransactionBtn" style="background: #1d1d1f; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;">+ Catat Transaksi Baru</button>
+    </div>
+
+    <!-- RINGKASAN METRIK PENJUALAN -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 18px;">
+            <span style="font-size: 12px; color: #6e6e73; font-weight: 600; display: block; margin-bottom: 8px;">Total Omzet Periode Ini</span>
+            <h3 style="font-size: 24px; font-weight: 700; color: #1d1d1f; margin: 0;" id="totalSalesRevenue">Rp 0</h3>
+            <span style="font-size: 11px; color: #1d1d1f; margin-top: 6px; display: block;">● Terhitung dari LocalStorage</span>
+        </div>
+        <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 18px;">
+            <span style="font-size: 12px; color: #6e6e73; font-weight: 600; display: block; margin-bottom: 8px;">Jumlah Transaksi Berhasil</span>
+            <h3 style="font-size: 24px; font-weight: 700; color: #1d1d1f; margin: 0;" id="totalSalesCount">0 Transaksi</h3>
+            <span style="font-size: 11px; color: #1d1d1f; margin-top: 6px; display: block;">● Status: Sinkron</span>
+        </div>
+    </div>
+
+    <!-- TABEL RIWAYAT TRANSAKSI -->
+    <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; overflow: hidden;">
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                <thead>
+                    <tr style="background: #f5f5f7; border-bottom: 1px solid #e5e5ea; color: #6e6e73;">
+                        <th style="padding: 12px 16px; font-weight: 600;">ID / Waktu</th>
+                        <th style="padding: 12px 16px; font-weight: 600;">Keterangan / Item</th>
+                        <th style="padding: 12px 16px; font-weight: 600;">Metode Bayar</th>
+                        <th style="padding: 12px 16px; font-weight: 600;">Total Nominal (Rp)</th>
+                        <th style="padding: 12px 16px; font-weight: 600; text-align: right;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="salesTableBody">
+                    <!-- Data transaksi disuntikkan secara dinamis -->
+                </tbody>
+            </table>
+        </div>
+        <!-- Kondisi jika data kosong -->
+        <div id="emptySalesState" style="padding: 40px; text-align: center; display: none;">
+            <p style="font-size: 14px; color: #6e6e73; margin-bottom: 12px;">Belum ada data transaksi tercatat pada sistem.</p>
+        </div>
+    </div>
+
+    <!-- FORM INPUT / KASIR SEDERHANA -->
+    <div style="background: #fff; border: 1px solid #e5e5ea; border-radius: 14px; padding: 20px;" id="addSalesSection">
+        <h4 style="font-size: 15px; font-weight: 700; color: #1d1d1f; margin-bottom: 14px;">➕ Entri Transaksi Baru</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px;">
+            <input type="text" id="inputSalesDesc" placeholder="Keterangan / Nama Pembeli / Item" style="padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px;">
+            <select id="inputSalesMethod" style="padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px; background: #fff;">
+                <option value="Tunai / Cash">Tunai / Cash</option>
+                <option value="Transfer Bank">Transfer Bank</option>
+                <option value="QRIS / Digital">QRIS / Digital Payment</option>
+            </select>
+            <input type="number" id="inputSalesNominal" placeholder="Total Nominal (Rp)" style="padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px;">
+        </div>
+        <button id="saveNewSalesBtn" style="background: #1d1d1f; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Simpan Transaksi</button>
+    </div>
+
+</div>
+
+<!-- Memanggil file logika terpisah untuk modul transaksi -->
+<script src="components/admin/sales/sales-controller.js"></script>
