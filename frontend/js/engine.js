@@ -17,8 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (menuBtn && drawer) {
         menuBtn.addEventListener('click', () => {
             drawer.style.display = 'flex';
-            // Inisialisasi ulang tombol Google saat laci dibuka agar selalu siap
-            initGoogleAuthUI();
         });
     }
     if (closeDrawer && drawer) {
@@ -55,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // 4. SISTEM DUAL-AUTH ADAPTIF & RENDER BUTTON RESMI
+    // 4. SISTEM AUTO-DETECT ADMIN & GOOGLE ONE TAP
     // ==========================================
     
     const ADMIN_EMAILS = [
@@ -66,8 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const customerGoogleSignInDiv = document.getElementById('customerGoogleSignInDiv');
     const drawerCustomerLogoutBtn = document.getElementById('drawerCustomerLogoutBtn');
     
-    const savedAdminEmail = localStorage.getItem('kantong_admin_email');
-    const savedCustomerEmail = localStorage.getItem('kantong_customer_email');
+    let savedAdminEmail = localStorage.getItem('kantong_admin_email');
+    let savedCustomerEmail = localStorage.getItem('kantong_customer_email');
 
     // Fungsi pembantu decode JWT Token Google OAuth
     function parseJwt(token) {
@@ -83,45 +81,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Atur Tampilan Menu Berdasarkan Status Login (Admin vs Customer)
-    if (savedAdminEmail && ADMIN_EMAILS.includes(savedAdminEmail)) {
-        // Jika yang login adalah Admin
-        if (drawerAdminBtn) drawerAdminBtn.style.display = 'block';
-        if (customerGoogleSignInDiv) customerGoogleSignInDiv.style.display = 'none';
-        if (drawerCustomerLogoutBtn) {
-            drawerCustomerLogoutBtn.style.display = 'block';
-            drawerCustomerLogoutBtn.textContent = `🔐 Admin: ${savedAdminEmail.split('@')[0]} (Keluar)`;
+    // Fungsi Mengatur Tampilan Menu secara Dinamis & Bersih
+    function updateMenuUI() {
+        if (savedAdminEmail && ADMIN_EMAILS.includes(savedAdminEmail)) {
+            // JIKA ADMIN: Tombol admin muncul, tombol customer & container-nya HILANG TOTAL (bersih!)
+            if (drawerAdminBtn) drawerAdminBtn.style.display = 'block';
+            if (customerGoogleSignInDiv) customerGoogleSignInDiv.parentElement.style.display = 'none';
+            if (drawerCustomerLogoutBtn) {
+                drawerCustomerLogoutBtn.style.display = 'block';
+                drawerCustomerLogoutBtn.textContent = `🔐 Admin: ${savedAdminEmail.split('@')[0]} (Keluar)`;
+            }
+        } else if (savedCustomerEmail) {
+            // JIKA CUSTOMER: Tombol admin disembunyikan, tampil status akun customer
+            if (drawerAdminBtn) drawerAdminBtn.style.display = 'none';
+            if (customerGoogleSignInDiv) customerGoogleSignInDiv.style.display = 'none';
+            if (drawerCustomerLogoutBtn) {
+                drawerCustomerLogoutBtn.style.display = 'block';
+                drawerCustomerLogoutBtn.textContent = `👤 Akun: ${savedCustomerEmail.split('@')[0]} (Keluar)`;
+            }
+        } else {
+            // BELUM LOGIN: Tampilkan tombol customer standar / render tombol
+            if (drawerAdminBtn) drawerAdminBtn.style.display = 'none';
+            if (drawerCustomerLogoutBtn) drawerCustomerLogoutBtn.style.display = 'none';
+            if (customerGoogleSignInDiv) customerGoogleSignInDiv.parentElement.style.display = 'block';
         }
-    } else if (savedCustomerEmail) {
-        // Jika yang login adalah Customer biasa
-        if (drawerAdminBtn) drawerAdminBtn.style.display = 'none';
-        if (customerGoogleSignInDiv) customerGoogleSignInDiv.style.display = 'none';
-        if (drawerCustomerLogoutBtn) {
-            drawerCustomerLogoutBtn.style.display = 'block';
-            drawerCustomerLogoutBtn.textContent = `👤 Akun: ${savedCustomerEmail.split('@')[0]} (Keluar)`;
-        }
-    } else {
-        // Belum login sama sekali
-        if (drawerAdminBtn) drawerAdminBtn.style.display = 'none';
-        if (customerGoogleSignInDiv) customerGoogleSignInDiv.style.display = 'block';
-        if (drawerCustomerLogoutBtn) drawerCustomerLogoutBtn.style.display = 'none';
     }
 
-    // Tombol Logout / Keluar Akun
+    // Jalankan pengecekan UI awal
+    updateMenuUI();
+
+    // Tombol Logout / Keluar Sesi
     if (drawerCustomerLogoutBtn) {
         drawerCustomerLogoutBtn.addEventListener('click', () => {
-            if (confirm("Apakah Anda ingin keluar dari sesi akun ini?")) {
+            if (confirm("Apakah Anda ingin keluar dari sesi ini?")) {
                 localStorage.removeItem('kantong_admin_email');
                 localStorage.removeItem('kantong_customer_email');
-                alert("Berhasil keluar.");
                 location.reload();
             }
         });
     }
 
-    // Inisialisasi Tombol Fisik Google Sign-In
-    function initGoogleAuthUI() {
-        if (!savedCustomerEmail && !savedAdminEmail && window.google && google.accounts && google.accounts.id) {
+    // Inisialisasi Google One Tap / Auto-Login di Background
+    window.addEventListener('load', () => {
+        if (!savedAdminEmail && !savedCustomerEmail && window.google && google.accounts && google.accounts.id) {
             const googleClientId = (typeof KantoongConfig !== 'undefined' && KantoongConfig.google_client_id) 
                 ? KantoongConfig.google_client_id 
                 : "153262298610-rrhi1e6mlqlg553vri7ig7k9po2buulm.apps.googleusercontent.com";
@@ -133,33 +135,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (responsePayload && responsePayload.email) {
                         const userEmail = responsePayload.email;
 
-                        // Cek apakah email yang login adalah admin
+                        // Otomatis deteksi apakah email yang aktif adalah Admin
                         if (ADMIN_EMAILS.includes(userEmail)) {
                             localStorage.setItem('kantong_admin_email', userEmail);
-                            alert("Login Admin Berhasil! Selamat datang, " + responsePayload.name);
-                            location.reload();
+                            savedAdminEmail = userEmail;
+                            updateMenuUI();
                         } else {
-                            // Sesi customer tersimpan aman (Remember Me)
                             localStorage.setItem('kantong_customer_email', userEmail);
-                            alert("Login Customer Berhasil! Selamat berbelanja, " + responsePayload.name);
-                            location.reload();
+                            savedCustomerEmail = userEmail;
+                            updateMenuUI();
                         }
+                    }
+                },
+                auto_select: true, // Coba pilih otomatis jika akun sudah dikenal browser
+                cancel_on_tap_outside: true
+            });
+
+            // Jalankan Google One Tap otomatis di latar belakang
+            google.accounts.id.prompt((notification) => {
+                // Jika One Tap tertutup/tidak tampil, render tombol fisik biasa sebagai cadangan di laci
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    if (customerGoogleSignInDiv && customerGoogleSignInDiv.innerHTML.trim() === "") {
+                        google.accounts.id.renderButton(
+                            customerGoogleSignInDiv,
+                            { theme: "outline", size: "large", width: "240px", text: "signin_with" }
+                        );
                     }
                 }
             });
-
-            // Render tombol fisik resmi Google ke dalam elemen laci menu
-            if (customerGoogleSignInDiv && customerGoogleSignInDiv.innerHTML.trim() === "") {
-                google.accounts.id.renderButton(
-                    customerGoogleSignInDiv,
-                    { theme: "outline", size: "large", width: "240px", text: "signin_with" }
-                );
-            }
         }
-    }
-
-    // Jalankan inisialisasi saat halaman dimuat
-    setTimeout(initGoogleAuthUI, 500);
+    });
 
     // Aksi Tombol Admin (Membuka Dashboard Admin)
     if (drawerAdminBtn) {
