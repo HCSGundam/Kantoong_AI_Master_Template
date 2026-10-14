@@ -167,4 +167,31 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    // Aksi Tombol Admin (Membuka Dashboard Admin secara instan)
+    if (drawerAdminBtn) {
+        drawerAdminBtn.addEventListener('click', () => {
+            if (drawer) drawer.style.display = 'none';
+
+            fetch('components/admin-dashboard.html')
+                .then(res => {
+                    if (!res.ok) throw new Error("File komponen admin tidak ditemukan");
+                    return res.text();
+                })
+                .then(html => {
+                    if (container) {
+                        container.innerHTML = html;
+                        
+                        // Tombol tutup modal dashboard admin
+                        const closeAdminModal = container.querySelector('#closeAdminModal');
+                        if (closeAdminModal) {
+                            closeAdminModal.addEventListener('click', () => {
+                                container.innerHTML = '';
+                            });
+                        }
+                    }
+                })
+                .catch(err => alert("Info: " + err.message));
+        });
+    }
 });
