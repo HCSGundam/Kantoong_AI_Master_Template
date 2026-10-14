@@ -22,6 +22,7 @@
 </div>
 
 <script>
+(function () {
     // 1. Set Email Admin yang Aktif di Header Modal
     const savedAdminEmail = localStorage.getItem('kantong_admin_email') || 'micken.jobmail@gmail.com';
     const emailTextEl = document.getElementById('loggedInEmailText');
@@ -63,16 +64,14 @@
                 contentContainer.innerHTML = html;
 
                 // Jalankan ulang tag <script> di dalam komponen yang di-load
-                const scripts = contentContainer.querySelectorAll('script');
-                scripts.forEach(script => {
+                contentContainer.querySelectorAll('script').forEach(old => {
                     const newScript = document.createElement('script');
-                    if (script.src) {
-                        newScript.src = script.src;
+                    if (old.src) {
+                        newScript.src = old.src;
                     } else {
-                        newScript.textContent = script.textContent;
+                        newScript.textContent = old.textContent;
                     }
-                    document.body.appendChild(newScript);
-                    script.remove();
+                    old.replaceWith(newScript);
                 });
             })
             .catch(err => {
@@ -81,21 +80,25 @@
     };
 
     // 5. OTOMATIS LOAD MODUL OVERVIEW SAAT PERTAMA KALI DIBUKA
-    loadAdminModule('components/admin/dashboard/overview.html');
+    window.loadAdminModule('components/admin/dashboard/overview.html');
 
-    // 6. EVENT LISTENER GLOBAL UNTUK TOMBOL PINTASAN
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('overview-quick-btn')) {
-            const targetType = e.target.getAttribute('data-target');
-            if (targetType === 'products') {
-                loadAdminModule('components/admin/products/products-list.html');
-            } else if (targetType === 'modules' || targetType === 'gold') {
-                loadAdminModule('components/admin/market-pricing/pricing-panel.html');
-            } else if (targetType === 'sales') {
-                loadAdminModule('components/admin/sales/sales-table.html');
-            } else {
-                loadAdminModule('components/admin/dashboard/overview.html');
+    // 6. EVENT LISTENER GLOBAL UNTUK TOMBOL PINTASAN (dipasang sekali saja)
+    if (!window.__overviewQuickBound) {
+        window.__overviewQuickBound = true;
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('overview-quick-btn')) {
+                const targetType = e.target.getAttribute('data-target');
+                if (targetType === 'products') {
+                    window.loadAdminModule('components/admin/products/products-list.html');
+                } else if (targetType === 'modules' || targetType === 'gold') {
+                    window.loadAdminModule('components/admin/market-pricing/pricing-panel.html');
+                } else if (targetType === 'sales') {
+                    window.loadAdminModule('components/admin/sales/sales-table.html');
+                } else {
+                    window.loadAdminModule('components/admin/dashboard/overview.html');
+                }
             }
-        }
-    });
+        });
+    }
+})();
 </script>
