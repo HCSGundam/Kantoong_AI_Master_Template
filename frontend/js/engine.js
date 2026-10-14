@@ -64,7 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const customerGoogleSignInDiv = document.getElementById('customerGoogleSignInDiv');
     const drawerCustomerLogoutBtn = document.getElementById('drawerCustomerLogoutBtn');
     
-    let savedAdminEmail = localStorage.getItem('kantong_admin_email');
+    // Paksa kunci langsung ke email adminmu agar browser langsung mengenalinya tanpa perlu login berulang
+    let savedAdminEmail = localStorage.getItem('kantong_admin_email') || "micken.jobmail@gmail.com";
+    localStorage.setItem('kantong_admin_email', savedAdminEmail);
     let savedCustomerEmail = localStorage.getItem('kantong_customer_email');
 
     // Fungsi pembantu decode JWT Token Google OAuth
@@ -165,30 +167,4 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-
-    // Aksi Tombol Admin (Membuka Dashboard Admin)
-    if (drawerAdminBtn) {
-        drawerAdminBtn.addEventListener('click', () => {
-            if (drawer) drawer.style.display = 'none';
-
-            fetch('components/admin-dashboard.html')
-                .then(res => {
-                    if (!res.ok) throw new Error("File komponen admin tidak ditemukan");
-                    return res.text();
-                })
-                .then(html => {
-                    if (container) {
-                        container.innerHTML = html;
-                        
-                        const closeAdminModal = container.querySelector('#closeAdminModal');
-                        if (closeAdminModal) {
-                            closeAdminModal.addEventListener('click', () => {
-                                container.innerHTML = '';
-                            });
-                        }
-                    }
-                })
-                .catch(err => alert("Info: " + err.message));
-        });
-    }
 });

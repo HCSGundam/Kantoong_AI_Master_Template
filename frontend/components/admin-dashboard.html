@@ -1,172 +1,46 @@
 <div class="admin-modal" style="position: absolute; inset: 0; background: #ffffff; z-index: 99999; padding: 24px; display: flex; flex-direction: column; overflow-y: auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="font-size: 18px; font-weight: bold; color: #1d1d1f;" id="adminModalTitle">🔐 Portal Verifikasi Admin</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
+        <h3 style="font-size: 18px; font-weight: bold; color: #1d1d1f;">✨ Dashboard Admin Toko</h3>
         <button id="closeAdminModal" style="background: transparent; border: 1px solid #ccc; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
     </div>
 
-    <!-- TAMPILAN 1: GOOGLE SIGN-IN RESMI (PILIH AKUN GMAIL) -->
-    <div id="adminLoginView" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; margin-top: 40px; text-align: center;">
-        <p style="font-size: 13px; color: #666; max-width: 280px; line-height: 1.4;">Silakan masuk menggunakan akun Google resmi Anda untuk memverifikasi akses pengelola toko:</p>
-        
-        <!-- Wadah Tombol Google Sign-In (Pop-up Gmail) -->
-        <div id="g_id_signin" style="margin-top: 10px;"></div>
+    <!-- STATUS ADMIN & KELUAR SESI -->
+    <div style="background: #e8f5e9; padding: 12px 16px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <p style="font-size: 11px; color: #2e7d32; font-weight: bold; margin: 0;">STATUS: ADMIN AKTIF ✅</p>
+            <p style="font-size: 13px; color: #1d1d1f; font-weight: 600; margin: 4px 0 0 0;" id="loggedInEmailText">micken.jobmail@gmail.com</p>
+        </div>
+        <button id="adminLogoutBtn" style="background: #ffebee; color: #c62828; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px;">Keluar</button>
     </div>
 
-    <!-- TAMPILAN 2: DASHBOARD UTAMA (SETELAH LOLOS WHITELIST) -->
-    <div id="adminDashboardView" style="display: none; flex-direction: column; gap: 12px;">
-        <div style="background: #e8f5e9; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <p style="font-size: 11px; color: #2e7d32; font-weight: bold;">STATUS: ADMIN TERVERIFIKASI ✅</p>
-                <p style="font-size: 13px; color: #1d1d1f; font-weight: 600;" id="loggedInEmailText">-</p>
-            </div>
-            <button id="adminLogoutBtn" style="background: #ffebee; color: #c62828; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 11px;">Keluar</button>
+    <!-- AREA KONTEN DASHBOARD (SIAP KITA DESAIN) -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #f9f9fb; border: 1px solid #e5e5ea; border-radius: 12px; padding: 20px; text-align: center;">
+            <h4 style="font-size: 16px; font-weight: bold; color: #1d1d1f; margin-bottom: 8px;">🚀 Selamat Datang di Panel Pengelola Toko</h4>
+            <p style="font-size: 13px; color: #666; line-height: 1.5;">
+                Pintu masuk sudah steril dan aman. Di sini kita bebas merancang fitur-fitur dan desain dashboard admin sesuai keinginanmu!
+            </p>
         </div>
-        
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 4px 0;">
-
-        <h4 style="font-size: 14px; font-weight: bold; color: #333;">➕ Tambah Produk Katalog</h4>
-        <input type="text" id="adminProdName" placeholder="Nama Produk" style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;">
-        <input type="text" id="adminProdCategory" placeholder="Kategori (Contoh: Perhiasan)" style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;">
-        <input type="number" id="adminProdPrice" placeholder="Harga (Angka)" style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;">
-        <input type="number" id="adminProdStock" placeholder="Stok Tersedia" style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;">
-        <textarea id="adminProdDesc" placeholder="Deskripsi singkat produk..." style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; resize: none; height: 60px;"></textarea>
-        <input type="text" id="adminProdImage" placeholder="URL Foto Produk (Opsional)" style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;">
-        
-        <button id="adminSaveBtn" style="background: #111; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 6px;">Simpan & Publikasikan Produk</button>
     </div>
 </div>
 
-<!-- SDK Google Identity Services -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-
 <script>
-    // Daftar Whitelist Email Admin Resmi (Pastikan sama dengan di engine.js)
-    const ADMIN_WHITELIST = [
-        "micken.jobmail@gmail.com"
-    ];
-
-    const savedEmail = localStorage.getItem('kantong_admin_email');
-    const loginView = document.getElementById('adminLoginView');
-    const dashboardView = document.getElementById('adminDashboardView');
-    const loggedInEmailText = document.getElementById('loggedInEmailText');
-    const modalTitle = document.getElementById('adminModalTitle');
-
-    // Cek apakah sudah tersimpan sesi admin di browser
-    if (savedEmail && ADMIN_WHITELIST.includes(savedEmail)) {
-        openDashboard(savedEmail);
-    } else {
-        setTimeout(initGoogleSignIn, 400);
-    }
-
-    function openDashboard(email) {
-        localStorage.setItem('kantong_admin_email', email);
-        if (loginView) loginView.style.display = 'none';
-        if (dashboardView) dashboardView.style.display = 'flex';
-        if (modalTitle) modalTitle.textContent = '✨ Dashboard Admin Toko';
-        if (loggedInEmailText) loggedInEmailText.textContent = email;
-
-        // Munculkan tombol admin di laci menu utama secara otomatis
-        const drawerAdminBtn = window.parent.document.getElementById('drawerAdminBtn');
-        if (drawerAdminBtn) drawerAdminBtn.style.display = 'block';
-    }
-
-    // Inisialisasi Tombol Google Sign-In Resmi
-    function initGoogleSignIn() {
-        if (typeof google !== 'undefined' && google.accounts) {
-            const googleClientId = (typeof KantoongConfig !== 'undefined' && KantoongConfig.google_client_id) 
-                ? KantoongConfig.google_client_id 
-                : "153262298610-rrhi1e6mlqlg553vri7ig7k9po2buulm.apps.googleusercontent.com"; // Sesuaikan Client ID
-
-            google.accounts.id.initialize({
-                client_id: googleClientId,
-                callback: handleCredentialResponse
-            });
-            
-            const signinDiv = document.getElementById("g_id_signin");
-            if (signinDiv) {
-                google.accounts.id.renderButton(
-                    signinDiv,
-                    { theme: "outline", size: "large", width: "250", text: "signin_with" }
-                );
-            }
-        } else {
-            setTimeout(initGoogleSignIn, 500);
-        }
-    }
-
-    // Tangkap Respon Token dari Pop-up Google OAuth
-    function handleCredentialResponse(response) {
-        const responsePayload = decodeJwtResponse(response.credential);
-        const email = responsePayload.email;
-
-        if (ADMIN_WHITELIST.includes(email)) {
-            alert("Login Admin Berhasil! Selamat datang, " + responsePayload.name);
-            openDashboard(email);
-        } else {
-            alert("Akses Ditolak: Akun Google (" + email + ") bukan admin resmi toko ini!");
-            localStorage.removeItem('kantong_admin_email');
-        }
-    }
-
-    // Decoder Token JWT dari Google
-    function decodeJwtResponse(token) {
-        let base64Url = token.split('.')[1];
-        let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('0' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(jsonPayload);
-    }
-
-    // Tombol Logout
+    // Tombol Logout Sesi Admin
     const logoutBtn = document.getElementById('adminLogoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
-            localStorage.removeItem('kantong_admin_email');
-            alert('Sesi admin diakhiri.');
-            const drawerAdminBtn = window.parent.document.getElementById('drawerAdminBtn');
-            if (drawerAdminBtn) drawerAdminBtn.style.display = 'none';
-            document.getElementById('dynamicComponentContainer').innerHTML = '';
+            if (confirm("Apakah Anda ingin keluar dari sesi admin?")) {
+                localStorage.removeItem('kantong_admin_email');
+                location.reload();
+            }
         });
     }
 
-    // Tombol Tutup Modal
+    // Tombol Tutup Modal Dashboard
     const closeModalBtn = document.getElementById('closeAdminModal');
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', () => {
             document.getElementById('dynamicComponentContainer').innerHTML = '';
-        });
-    }
-
-    // Tombol Simpan Produk (Client-Side Storage / Siap Diperluas)
-    const saveBtn = document.getElementById('adminSaveBtn');
-    if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
-            const product = {
-                name: document.getElementById('adminProdName').value,
-                category: document.getElementById('adminProdCategory').value,
-                price: document.getElementById('adminProdPrice').value,
-                stock: document.getElementById('adminProdStock').value,
-                description: document.getElementById('adminProdDesc').value,
-                image: document.getElementById('adminProdImage').value
-            };
-
-            if (!product.name || !product.price) {
-                return alert('Nama produk dan harga wajib diisi!');
-            }
-
-            // Simpan sementara ke localStorage produk toko
-            let storedProducts = JSON.parse(localStorage.getItem('kantong_store_products') || '[]');
-            storedProducts.push({ id: 'prod_' + Date.now(), ...product });
-            localStorage.setItem('kantong_store_products', JSON.stringify(storedProducts));
-
-            alert('Produk berhasil disimpan ke katalog lokal!');
-            document.getElementById('adminProdName').value = '';
-            document.getElementById('adminProdCategory').value = '';
-            document.getElementById('adminProdPrice').value = '';
-            document.getElementById('adminProdStock').value = '';
-            document.getElementById('adminProdDesc').value = '';
-            document.getElementById('adminProdImage').value = '';
         });
     }
 </script>
