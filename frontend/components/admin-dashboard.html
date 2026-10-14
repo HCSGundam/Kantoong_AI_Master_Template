@@ -47,22 +47,17 @@
         });
     }
 
-    // 4. FUNGSI UTAMA: Load Modul HTML Secara Dinamis (Mendukung Multi-Path Cerdas)
+    // 4. FUNGSI UTAMA: Load Modul HTML Secara Dinamis (Path Disesuaikan dengan Struktur Folder frontend/)
     window.loadAdminModule = function(modulePath) {
         const contentContainer = document.getElementById('adminModuleContent');
         if (!contentContainer) return;
 
         contentContainer.innerHTML = `<p style="text-align: center; color: #6e6e73; padding: 40px;">Memuat modul...</p>`;
 
-        // Coba fetch jalur langsung, jika gagal (404) coba cari di dalam folder frontend/
+        // Karena admin-dashboard.html ada di dalam folder frontend/, langsung panggil modulnya tanpa awalan tambahan
         fetch(modulePath)
             .then(res => {
-                if (!res.ok) {
-                    return fetch('frontend/' + modulePath).then(resAlt => {
-                        if (!resAlt.ok) throw new Error("Gagal menemukan file modul: " + modulePath);
-                        return resAlt.text();
-                    });
-                }
+                if (!res.ok) throw new Error("Gagal menemukan file modul: " + modulePath);
                 return res.text();
             })
             .then(html => {
@@ -82,7 +77,7 @@
                 });
             })
             .catch(err => {
-                contentContainer.innerHTML = `<p style="color: #c62828; text-align: center; padding: 20px;">Error: ${err.message}<br><small style="color:#6e6e73;">Pastikan file komponen sudah terunggah dengan benar di struktur direktori project.</small></p>`;
+                contentContainer.innerHTML = `<p style="color: #c62828; text-align: center; padding: 20px;">Error: ${err.message}</p>`;
             });
     };
 
