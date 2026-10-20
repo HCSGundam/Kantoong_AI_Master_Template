@@ -1,45 +1,61 @@
 /* ========================================= */
-/* BAB 5: BAR KETIK PESAN (GAYA YANTI GOLD)  */
+/* BAB 5: BAR KETIK PESAN                    */
+/* Mikrofon + kotak ketik oval + tombol      */
+/* kirim bulat. Padding kiri-kanan diatur    */
+/* oleh .chat-panel, jadi tidak ditambah di  */
+/* sini. Floating input bar sudah dihapus.   */
 /* ========================================= */
 
 .input-bar-container {
-    margin-top: auto; 
+    margin-top: auto;
+    flex-shrink: 0;
     display: flex;
     align-items: flex-end;
     gap: 10px;
-    padding-top: 6px;
-    flex-shrink: 0;
+    padding-top: 8px;
 }
 
-/* Kotak Oval Tempat Mengetik Utama */
+/* Kotak oval tempat mengetik */
 .input-box {
-    flex: 1; 
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
-    background: #ffffff;                    /* Warna latar dalam kotak: Putih bersih */
-    border: 1.5px solid #111111;            /* <--- INI DIA GARIS PINGGIR (BORDER) HITAM TEGAS NYA! */
-    border-radius: 30px; 
-    padding: 8px 14px;
-    gap: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);  /* Bayangan tipis biar ada efek 3D */
+    gap: 8px;
+    padding: 6px 16px 6px 8px;
+    min-height: 46px;
+    background: var(--surface);
+    border: 1.5px solid var(--line-strong);
+    border-radius: 24px;
+    transition: box-shadow 0.2s var(--ease);
+}
+
+.input-box:focus-within {
+    box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12);
 }
 
 .input-box textarea {
     flex: 1;
+    min-width: 0;
+    height: 20px;          /* tinggi awal 1 baris, diperbesar otomatis oleh panel.js */
+    max-height: 90px;
+    padding: 0;
+    margin: 0;
     background: transparent !important;
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
-    color: #1d1d1f !important;
+    color: var(--text-primary) !important;
     font-family: inherit;
     font-size: 14px;
-    resize: none;
-    overflow-y: hidden;
-    height: 20px;
-    max-height: 90px;
-    padding: 0;
-    margin: 0;
     line-height: 20px;
+    resize: none;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.input-box textarea::-webkit-scrollbar {
+    display: none;
 }
 
 .input-box textarea::placeholder {
@@ -47,85 +63,53 @@
     opacity: 1;
 }
 
-.icon-input {
-    cursor: pointer;
-    opacity: 0.8;
-    stroke: #555;
+/* Tombol mikrofon (disiapkan, belum aktif) */
+.mic-btn {
+    width: 34px;
+    height: 34px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--text-primary);
+    transition: background 0.2s var(--ease);
 }
 
-/* Tombol Kirim Bulat di Kanan Luar */
+.mic-btn:disabled {
+    color: #b4b4ba;
+    cursor: not-allowed;
+}
+
+.mic-btn:not(:disabled):hover {
+    background: var(--surface-soft);
+}
+
+/* Tombol kirim bulat. Dipakai juga di kartu sambutan AI (panah di kanan) */
 .send-btn {
-    background: #c5a059;
-    border: none;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    width: 46px;
+    height: 46px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--text-primary);
+    color: var(--text-light);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    transition: transform 0.15s var(--ease), background 0.2s var(--ease);
 }
 
 .send-btn svg {
-    margin-right: 2px;
-    margin-top: 2px;
-    stroke: #ffffff !important;
+    stroke: currentColor;
 }
 
-/* --- FLOATING INPUT BAR --- */
-#floatingInputBar {
-    display: none; 
-    position: absolute;
-    bottom: 25px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-    max-width: 420px;
-    z-index: 30;
-    align-items: center;
-    gap: 12px;
+.send-btn:active {
+    transform: scale(0.92);
 }
 
-.floating-input-box {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    background: #ffffff;
-    border: 1.5px solid #111111;            /* <--- INI JUGA GARIS PINGGIR HITAMNYA */
-    border-radius: 30px;
-    padding: 10px 16px;
-    gap: 12px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-#kolomKetikFloating {
-    flex: 1;
-    background: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    color: #1d1d1f !important;
-    font-size: 14px;
-    resize: none;
-    max-height: 90px;
-    font-family: inherit;
-    line-height: 20px;
-}
-
-#tombolKirimFloating {
-    background: #c5a059;
-    border: none;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    color: white;
-    flex-shrink: 0;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+@media (hover: hover) {
+    .send-btn:hover {
+        background: #2a2a2d;
+    }
 }

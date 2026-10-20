@@ -1,8 +1,24 @@
-<div class="admin-modal" style="position: absolute; inset: 0; background: #ffffff; z-index: 99999; padding: 24px; display: flex; flex-direction: column; overflow-y: auto;">
+<div class="admin-modal" style="position: absolute; inset: 0; background: #ffffff; z-index: 99999; padding: 24px; display: flex; flex-direction: column; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;">
+    <style>
+        /* Sembunyikan scrollbar di semua browser untuk modal admin & elemen di dalamnya */
+        .admin-modal::-webkit-scrollbar,
+        .admin-modal *::-webkit-scrollbar {
+            display: none !important;
+        }
+        .admin-modal,
+        .admin-modal * {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+    </style>
     
     <!-- HEADER MODAL ADMIN -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
-        <h3 style="font-size: 18px; font-weight: bold; color: #1d1d1f;" id="adminDashboardHeaderTitle">✨ Dashboard Pengelola Sistem</h3>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <!-- Tombol Back (Kembali ke Overview) -->
+            <button id="adminBackBtn" style="background: transparent; border: 1px solid #ccc; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 14px;" title="Kembali ke Overview">←</button>
+            <h3 style="font-size: 18px; font-weight: bold; color: #1d1d1f; margin: 0;" id="adminDashboardHeaderTitle">✨ Dashboard Pengelola Sistem</h3>
+        </div>
         <button id="closeAdminModal" style="background: transparent; border: 1px solid #ccc; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
     </div>
 
@@ -21,12 +37,16 @@
     </div>
 </div>
 
+
+
 <script>
 (function () {
     // 1. Set Email Admin yang Aktif di Header Modal
     const savedAdminEmail = localStorage.getItem('kantong_admin_email') || 'micken.jobmail@gmail.com';
     const emailTextEl = document.getElementById('loggedInEmailText');
     if (emailTextEl) emailTextEl.textContent = savedAdminEmail;
+
+    const backBtn = document.getElementById('adminBackBtn');
 
     // 2. Tombol Logout Sesi Admin
     const logoutBtn = document.getElementById('adminLogoutBtn');
@@ -49,9 +69,14 @@
     }
 
     // 4. FUNGSI UTAMA: Load Modul HTML Secara Dinamis
-    window.loadAdminModule = function(modulePath) {
+    window.loadAdminModule = function(modulePath, isOverview = false) {
         const contentContainer = document.getElementById('adminModuleContent');
         if (!contentContainer) return;
+
+        // Kontrol Tombol Back (otomatis sembunyi jika sedang di halaman overview)
+        if (backBtn) {
+            backBtn.style.display = isOverview ? 'none' : 'flex';
+        }
 
         contentContainer.innerHTML = `<p style="text-align: center; color: #6e6e73; padding: 40px;">Memuat modul...</p>`;
 
@@ -79,8 +104,15 @@
             });
     };
 
+    // Aksi Tombol Back (Kembali ke Overview Dashboard)
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            window.loadAdminModule('components/admin/dashboard/overview.html', true);
+        });
+    }
+
     // 5. OTOMATIS LOAD MODUL OVERVIEW SAAT PERTAMA KALI DIBUKA
-    window.loadAdminModule('components/admin/dashboard/overview.html');
+    window.loadAdminModule('components/admin/dashboard/overview.html', true);
 
     // 6. EVENT LISTENER GLOBAL UNTUK TOMBOL PINTASAN (dipasang sekali saja)
     if (!window.__overviewQuickBound) {
@@ -89,13 +121,13 @@
             if (e.target.classList.contains('overview-quick-btn')) {
                 const targetType = e.target.getAttribute('data-target');
                 if (targetType === 'products') {
-                    window.loadAdminModule('components/admin/products/products-list.html');
+                    window.loadAdminModule('components/admin/products/products-list.html', false);
                 } else if (targetType === 'modules' || targetType === 'gold') {
-                    window.loadAdminModule('components/admin/market-pricing/pricing-panel.html');
+                    window.loadAdminModule('components/admin/market-pricing/pricing-panel.html', false);
                 } else if (targetType === 'sales') {
-                    window.loadAdminModule('components/admin/sales/sales-table.html');
+                    window.loadAdminModule('components/admin/sales/sales-table.html', false);
                 } else {
-                    window.loadAdminModule('components/admin/dashboard/overview.html');
+                    window.loadAdminModule('components/admin/dashboard/overview.html', true);
                 }
             }
         });

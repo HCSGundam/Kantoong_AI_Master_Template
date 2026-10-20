@@ -1,0 +1,1137 @@
+/* =========================================================
+   KANTOONG CORE — CUSTOMER MENU
+   File: frontend/menu/menu.css
+   Design: Premium Commerce · Mobile First
+   ========================================================= */
+
+/* ---------- 01. Design tokens ---------- */
+
+#sampleDrawer.kantoong-menu-drawer {
+    --km-bg: #f7f5ef;
+    --km-card: #ffffff;
+    --km-soft: #efeee7;
+    --km-text: #17243b;
+    --km-muted: #737b89;
+    --km-line: #e6e4dc;
+    --km-gold: #c4a568;
+    --km-gold-soft: #f3ead8;
+    --km-teal: #4b9b91;
+    --km-shadow: 0 12px 35px rgba(23, 36, 59, 0.06);
+
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    box-sizing: border-box;
+    border: 0;
+    border-radius: 0;
+
+    background: var(--km-bg);
+    color: var(--km-text);
+
+    font-family:
+        Inter, "DM Sans", -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: left;
+
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--km-line) transparent;
+
+    color-scheme: light;
+}
+
+#sampleDrawer.kantoong-menu-drawer *,
+#sampleDrawer.kantoong-menu-drawer *::before,
+#sampleDrawer.kantoong-menu-drawer *::after {
+    box-sizing: border-box;
+}
+
+#sampleDrawer.kantoong-menu-drawer.is-open {
+    display: flex;
+    animation: km-enter 240ms ease both;
+}
+
+#sampleDrawer.kantoong-menu-drawer button,
+#sampleDrawer.kantoong-menu-drawer input {
+    font: inherit;
+}
+
+#sampleDrawer.kantoong-menu-drawer button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+#sampleDrawer.kantoong-menu-drawer button:focus-visible,
+#sampleDrawer.kantoong-menu-drawer input:focus-visible {
+    outline: 3px solid rgba(75, 155, 145, 0.65);
+    outline-offset: 3px;
+}
+
+#sampleDrawer.kantoong-menu-drawer svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+/* ---------- 02. Top navigation ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+
+    flex-shrink: 0;
+    width: 100%;
+    padding:
+        max(15px, env(safe-area-inset-top))
+        18px
+        14px;
+
+    border-bottom: 1px solid var(--km-line);
+    background: var(--km-bg);
+
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-brand-mark {
+    display: grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+
+    border: 1px solid rgba(196, 165, 104, 0.4);
+    border-radius: 15px;
+
+    background: var(--km-text);
+    color: #f5e7c7;
+
+    box-shadow: 0 5px 14px rgba(23, 36, 59, 0.12);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-brand-name {
+    margin: 0;
+
+    color: var(--km-text);
+    font-size: 15px;
+    font-weight: 850;
+    letter-spacing: 0.055em;
+    line-height: 1.3;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-brand-sub {
+    margin: 3px 0 0;
+
+    color: var(--km-muted);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    line-height: 1.4;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-icon-btn {
+    display: inline-grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+
+    border: 1px solid var(--km-line);
+    border-radius: 50%;
+
+    background: var(--km-card);
+    color: var(--km-text);
+
+    cursor: pointer;
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease,
+        transform 180ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-icon-btn:active {
+    transform: scale(0.94);
+}
+
+/* ---------- 03. Main content ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-content {
+    width: 100%;
+    max-width: 1180px;
+    min-width: 0;
+
+    margin: 0 auto;
+    padding: 23px 17px calc(38px + env(safe-area-inset-bottom));
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-intro {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+
+    margin: 6px 0 22px;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-eyebrow {
+    margin: 0 0 9px;
+
+    color: var(--km-muted);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.17em;
+    line-height: 1.5;
+    text-transform: uppercase;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-title {
+    max-width: 700px;
+    margin: 0;
+
+    color: var(--km-text);
+    font-size: clamp(29px, 7vw, 43px);
+    font-weight: 850;
+    letter-spacing: -0.065em;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-subtitle {
+    max-width: 470px;
+    margin: 10px 0 0;
+
+    color: var(--km-muted);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.75;
+}
+
+/* ---------- 04. Feature search ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-search {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    width: 100%;
+    min-height: 51px;
+    margin: 0 0 22px;
+    padding: 0 15px;
+
+    border: 1px solid var(--km-line);
+    border-radius: 16px;
+
+    background: var(--km-card);
+    color: var(--km-muted);
+
+    box-shadow: 0 3px 12px rgba(23, 36, 59, 0.025);
+
+    transition:
+        border-color 180ms ease,
+        box-shadow 180ms ease,
+        background-color 180ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-search:focus-within {
+    border-color: var(--km-teal);
+    box-shadow: 0 0 0 4px rgba(75, 155, 145, 0.1);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-search input {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+    color: var(--km-text);
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-search input::placeholder {
+    color: var(--km-muted);
+    opacity: 0.85;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-search input:focus-visible {
+    outline: 0;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-search input::-webkit-search-cancel-button {
+    cursor: pointer;
+}
+
+/* ---------- 05. Premium promo banner ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-promo {
+    position: relative;
+    isolation: isolate;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 17px;
+
+    min-height: 190px;
+    margin: 0 0 30px;
+    padding: 23px 21px;
+
+    overflow: hidden;
+    border: 1px solid rgba(196, 165, 104, 0.36);
+    border-radius: 23px;
+
+    background:
+        radial-gradient(
+            circle at 92% 5%,
+            rgba(196, 165, 104, 0.25),
+            transparent 36%
+        ),
+        linear-gradient(130deg, #17243b 0%, #243650 100%);
+
+    color: #fffdf8;
+    box-shadow: 0 14px 32px rgba(23, 36, 59, 0.12);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo::before {
+    position: absolute;
+    z-index: -1;
+    top: -65px;
+    right: -55px;
+
+    width: 190px;
+    height: 190px;
+
+    border: 1px solid rgba(245, 231, 199, 0.24);
+    border-radius: 50%;
+
+    content: "";
+    pointer-events: none;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo::after {
+    position: absolute;
+    z-index: -1;
+    top: -34px;
+    right: -25px;
+
+    width: 130px;
+    height: 130px;
+
+    border: 1px solid rgba(245, 231, 199, 0.16);
+    border-radius: 50%;
+
+    content: "";
+    pointer-events: none;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-copy {
+    position: relative;
+    z-index: 1;
+
+    width: 100%;
+    max-width: 520px;
+    min-width: 0;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-kicker {
+    margin: 0 0 10px;
+
+    color: #e4ca91;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    line-height: 1.5;
+    text-transform: uppercase;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-title {
+    max-width: 480px;
+    margin: 0;
+
+    color: #fffdf8;
+    font-size: clamp(21px, 5.3vw, 30px);
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 1.16;
+    overflow-wrap: anywhere;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-text {
+    max-width: 440px;
+    margin: 9px 0 0;
+
+    color: rgba(255, 253, 248, 0.76);
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-controls {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    margin-top: 19px;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-controls button {
+    display: inline-grid;
+    place-items: center;
+
+    width: 33px;
+    height: 33px;
+    padding: 0;
+
+    border: 1px solid rgba(255, 253, 248, 0.3);
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.06);
+    color: #fffdf8;
+
+    cursor: pointer;
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease,
+        transform 180ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-controls button:hover {
+    border-color: var(--km-gold);
+    background: rgba(196, 165, 104, 0.2);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-controls button:active {
+    transform: scale(0.93);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-count {
+    min-width: 36px;
+
+    color: rgba(255, 253, 248, 0.78);
+    font-size: 10px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo-symbol {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+    place-items: center;
+
+    width: 60px;
+    height: 60px;
+    flex: 0 0 60px;
+
+    border: 1px solid rgba(228, 202, 145, 0.55);
+    border-radius: 19px;
+
+    background: rgba(255, 255, 255, 0.06);
+    color: #e4ca91;
+
+    transform: rotate(7deg);
+    transition: transform 220ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-promo:hover .km-promo-symbol {
+    transform: rotate(0deg) scale(1.04);
+}
+
+/* ---------- 06. Section heading ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin: 30px 0 14px;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-section-title {
+    margin: 0;
+
+    color: var(--km-text);
+    font-size: 17px;
+    font-weight: 850;
+    letter-spacing: -0.045em;
+    line-height: 1.35;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-section-note {
+    flex: 0 0 auto;
+
+    color: var(--km-muted);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: right;
+}
+
+/* ---------- 07. Feature card grid ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 11px;
+
+    width: 100%;
+    min-width: 0;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card {
+    position: relative;
+    isolation: isolate;
+
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+
+    min-width: 0;
+    min-height: 158px;
+    padding: 14px;
+
+    overflow: hidden;
+    border: 1px solid var(--km-line);
+    border-radius: 19px;
+
+    background: var(--km-card);
+    color: var(--km-text);
+
+    text-align: left;
+    cursor: pointer;
+
+    box-shadow: 0 3px 10px rgba(23, 36, 59, 0.025);
+
+    transition:
+        transform 190ms ease,
+        border-color 190ms ease,
+        box-shadow 190ms ease,
+        background-color 190ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card::after {
+    position: absolute;
+    z-index: -1;
+    right: -35px;
+    bottom: -48px;
+
+    width: 100px;
+    height: 100px;
+
+    border: 1px solid rgba(196, 165, 104, 0.13);
+    border-radius: 50%;
+
+    content: "";
+    pointer-events: none;
+    transition: transform 220ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card:hover {
+    border-color: rgba(196, 165, 104, 0.75);
+    box-shadow: 0 12px 26px rgba(23, 36, 59, 0.08);
+    transform: translateY(-3px);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card:hover::after {
+    transform: scale(1.18);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card:active {
+    transform: scale(0.98);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+
+    width: 100%;
+    min-width: 0;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card-icon {
+    display: grid;
+    place-items: center;
+
+    width: 41px;
+    height: 41px;
+    flex: 0 0 41px;
+
+    border: 1px solid rgba(196, 165, 104, 0.22);
+    border-radius: 14px;
+
+    background: var(--km-soft);
+    color: var(--km-text);
+
+    transition:
+        background-color 180ms ease,
+        color 180ms ease,
+        transform 180ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card:hover .km-card-icon {
+    background: var(--km-gold-soft);
+    color: #795d2e;
+    transform: translateY(-1px);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card-arrow {
+    display: grid;
+    place-items: center;
+
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+
+    border: 1px solid var(--km-line);
+    border-radius: 50%;
+
+    color: var(--km-muted);
+    opacity: 0.85;
+
+    transition:
+        color 180ms ease,
+        border-color 180ms ease,
+        transform 180ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card:hover .km-card-arrow {
+    border-color: var(--km-gold);
+    color: var(--km-text);
+    transform: translateX(2px);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card-title {
+    position: relative;
+
+    margin: 16px 0 0;
+
+    color: var(--km-text);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.45;
+
+    overflow-wrap: anywhere;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-card-description {
+    position: relative;
+
+    margin: 6px 0 0;
+
+    color: var(--km-muted);
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1.65;
+
+    overflow-wrap: anywhere;
+}
+
+/* Kartu lebar mengikuti class yang dibuat menu.js. */
+
+#sampleDrawer.kantoong-menu-drawer .km-card.is-wide {
+    grid-column: 1 / -1;
+    min-height: 132px;
+    padding: 16px;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-wide-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+
+    width: 100%;
+    min-width: 0;
+    margin-top: 13px;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-wide-content > div {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-wide-content .km-card-title {
+    margin-top: 0;
+    font-size: 14px;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-wide-content .km-card-description {
+    max-width: 390px;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-wide-mark {
+    display: grid;
+    place-items: center;
+
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+
+    border: 1px solid var(--km-line);
+    border-radius: 15px;
+
+    background: var(--km-soft);
+    color: var(--km-muted);
+    opacity: 0.9;
+}
+
+/* ---------- 08. Search empty state ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-empty {
+    grid-column: 1 / -1;
+
+    padding: 27px 16px;
+    border: 1px dashed var(--km-line);
+    border-radius: 17px;
+
+    background: var(--km-card);
+    color: var(--km-muted);
+
+    font-size: 12px;
+    line-height: 1.7;
+    text-align: center;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-hidden {
+    display: none !important;
+}
+
+/* ---------- 09. Account area ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-account-slot {
+    margin-top: 25px;
+    padding: 17px;
+
+    border: 1px solid var(--km-line);
+    border-radius: 19px;
+
+    background: var(--km-card);
+    box-shadow: 0 4px 15px rgba(23, 36, 59, 0.025);
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-account-slot:empty {
+    display: none;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-account-slot .km-eyebrow {
+    margin-bottom: 6px;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-account-slot .km-subtitle {
+    margin-top: 5px;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-account-slot .sample-item-btn {
+    display: block;
+
+    width: 100%;
+    min-height: 43px;
+    margin: 7px 0;
+    padding: 11px 14px;
+
+    border: 1px solid var(--km-line);
+    border-radius: 12px;
+
+    background: var(--km-soft);
+    color: var(--km-text);
+
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-account-slot .sample-item-btn:hover {
+    border-color: var(--km-gold);
+}
+
+/* Elemen admin lama tetap dapat ditampilkan. */
+
+#sampleDrawer.kantoong-menu-drawer .km-legacy-admin {
+    display: block;
+    width: 100%;
+    margin: 0 0 10px;
+}
+
+/* ---------- 10. Footer ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+
+    margin-top: 27px;
+    padding-top: 17px;
+
+    border-top: 1px solid var(--km-line);
+
+    color: var(--km-muted);
+    font-size: 9px;
+    line-height: 1.7;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-footer > span {
+    max-width: 75%;
+}
+
+#sampleDrawer.kantoong-menu-drawer .km-footer button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    min-height: 32px;
+    padding: 4px 0;
+
+    border: 0;
+    background: transparent;
+    color: var(--km-text);
+
+    font-size: 10px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+/* ---------- 11. Toast notification ---------- */
+
+#sampleDrawer.kantoong-menu-drawer .km-toast {
+    position: fixed;
+    z-index: 1100;
+    left: 50%;
+    bottom: calc(22px + env(safe-area-inset-bottom));
+
+    width: max-content;
+    max-width: calc(100% - 32px);
+    padding: 13px 17px;
+
+    border: 1px solid rgba(196, 165, 104, 0.3);
+    border-radius: 14px;
+
+    background: var(--km-text);
+    color: var(--km-bg);
+
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.17);
+
+    transform: translateX(-50%);
+    animation: km-toast-in 200ms ease both;
+}
+
+/* ---------- 12. Dark theme ---------- */
+
+#sampleDrawer.kantoong-menu-drawer.km-dark {
+    --km-bg: #111722;
+    --km-card: #192231;
+    --km-soft: #222d3d;
+    --km-text: #f1f4f8;
+    --km-muted: #a4afbd;
+    --km-line: #303b4b;
+    --km-gold: #d5b777;
+    --km-gold-soft: #343022;
+    --km-teal: #73c1b4;
+    --km-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+
+    color-scheme: dark;
+}
+
+#sampleDrawer.kantoong-menu-drawer.km-dark .km-brand-mark {
+    border-color: rgba(213, 183, 119, 0.35);
+    background: #e4d1a6;
+    color: #172033;
+}
+
+#sampleDrawer.kantoong-menu-drawer.km-dark .km-promo {
+    border-color: #47546a;
+
+    background:
+        radial-gradient(
+            circle at 92% 5%,
+            rgba(213, 183, 119, 0.17),
+            transparent 36%
+        ),
+        linear-gradient(130deg, #26344a 0%, #1a2739 100%);
+}
+
+#sampleDrawer.kantoong-menu-drawer.km-dark .km-promo-kicker {
+    color: #e7ce96;
+}
+
+#sampleDrawer.kantoong-menu-drawer.km-dark .km-promo-title {
+    color: #ffffff;
+}
+
+#sampleDrawer.kantoong-menu-drawer.km-dark .km-promo-text {
+    color: #c4cdd9;
+}
+
+#sampleDrawer.kantoong-menu-drawer.km-dark .km-promo-count {
+    color: #c4cdd9;
+}
+
+#sampleDrawer.kantoong-menu-drawer.km-dark .km-card:hover .km-card-icon {
+    background: #343022;
+    color: #e7ce96;
+}
+
+#sampleDrawer.kantoong-menu-drawer.km-dark .km-wide-mark {
+    color: var(--km-muted);
+}
+
+/* ---------- 13. Responsive: small phones ---------- */
+
+@media (max-width: 360px) {
+    #sampleDrawer.kantoong-menu-drawer .km-topbar {
+        padding-right: 13px;
+        padding-left: 13px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-content {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-grid {
+        gap: 8px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card {
+        min-height: 151px;
+        padding: 11px;
+        border-radius: 16px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card-icon {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card-title {
+        font-size: 11px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card-description {
+        font-size: 9px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-promo {
+        gap: 9px;
+        padding: 19px 15px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-promo-symbol {
+        width: 43px;
+        height: 43px;
+        flex-basis: 43px;
+        border-radius: 14px;
+    }
+}
+
+/* ---------- 14. Responsive: tablet ---------- */
+
+@media (min-width: 600px) {
+    #sampleDrawer.kantoong-menu-drawer .km-topbar {
+        padding-right: 26px;
+        padding-left: 26px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-content {
+        padding: 30px 26px calc(44px + env(safe-area-inset-bottom));
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-intro {
+        margin-bottom: 26px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-search {
+        max-width: 620px;
+        margin-bottom: 26px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-promo {
+        min-height: 205px;
+        padding: 28px;
+        border-radius: 26px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-promo-symbol {
+        width: 72px;
+        height: 72px;
+        flex-basis: 72px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card {
+        min-height: 170px;
+        padding: 16px;
+        border-radius: 21px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card.is-wide {
+        grid-column: span 2;
+        min-height: 145px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card-title {
+        font-size: 13px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card-description {
+        font-size: 11px;
+    }
+}
+
+/* ---------- 15. Responsive: desktop ---------- */
+
+@media (min-width: 960px) {
+    #sampleDrawer.kantoong-menu-drawer .km-topbar {
+        padding-right: max(32px, calc((100vw - 1180px) / 2));
+        padding-left: max(32px, calc((100vw - 1180px) / 2));
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-content {
+        padding: 37px 36px 52px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-intro {
+        margin-top: 12px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card {
+        min-height: 175px;
+        padding: 17px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card.is-wide {
+        grid-column: span 2;
+        min-height: 150px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-section-head {
+        margin-top: 35px;
+    }
+}
+
+@media (min-width: 1400px) {
+    #sampleDrawer.kantoong-menu-drawer .km-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card {
+        min-height: 185px;
+        padding: 19px;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card.is-wide {
+        min-height: 155px;
+    }
+}
+
+/* ---------- 16. Motion and accessibility ---------- */
+
+@keyframes km-enter {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes km-toast-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+@media (hover: none) {
+    #sampleDrawer.kantoong-menu-drawer .km-card:hover {
+        box-shadow: 0 3px 10px rgba(23, 36, 59, 0.025);
+        transform: none;
+    }
+
+    #sampleDrawer.kantoong-menu-drawer .km-card:active {
+        border-color: var(--km-gold);
+        transform: scale(0.985);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #sampleDrawer.kantoong-menu-drawer *,
+    #sampleDrawer.kantoong-menu-drawer *::before,
+    #sampleDrawer.kantoong-menu-drawer *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

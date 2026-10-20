@@ -1,163 +1,143 @@
-window.addEventListener('DOMContentLoaded', () => {
-    const chatPanel = document.getElementById('chatPanel');
-    const dragHandle = document.getElementById('dragHandle');
-    const container = document.querySelector('.mobile-container');
+// ============================================================
+// panel.js - Kantoong UI Bottom Sheet & Gesture Controller
+// Mengatur panel chat yang bisa ditarik naik-turun dengan tiga
+// posisi: peek (kartu sambutan) -> half -> full.
+// Tinggi tiap posisi didefinisikan di chat-panel.css lewat
+// atribut data-state; file ini hanya mengubah state & menangani
+// gestur. Tidak ada CSS di dalam file ini.
+//
+// EVENT MASUK
+//   kantoong:consult  {text}  buka chat ke posisi half
+//   kantoong:collapse         kecilkan chat ke posisi peek
+// ============================================================
 
-    const logoBtn = document.getElementById('logoBtn');
-    const logoText = document.getElementById('logoText');
-    const logoDots = document.getElementById('logoDots');
-    const floatingInputBar = document.getElementById('floatingInputBar');
-    const kolomKetikFloating = document.getElementById('kolomKetikFloating');
-    const tombolKirimFloating = document.getElementById('tombolKirimFloating');
+const panel = document.getElementById('chatPanel');
+const head = document.getElementById('panelHead');
+const peekSendBtn = document.getElementById('peekSendBtn');
+const closeBtn = document.getElementById('chatCloseBtn');
+const chatBox = document.getElementById('chatBox');
+const input = document.getElementById('kolomKetik');
 
-    const kolomKetikUtama = document.getElementById('kolomKetik');
-    const tombolKirimUtama = document.getElementById('tombolKirim');
+if (!panel || !head) {
+    console.warn('⚠️ [Panel] #chatPanel atau #panelHead tidak ditemukan di index.html.');
+} else {
+    const MOVE_THRESHOLD = 4;      // px minimal sebelum dianggap menarik, bukan mengetuk
+    const FLICK_PROJECTION = 150;  // ms: seberapa jauh kecepatan lepas jari "melempar" panel
 
-    if (!chatPanel || !container) return;
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-    let startY = 0;
-    let startHeight = 0;
-    let isDragging = false;
+    // Tinggi tiap posisi dalam px (harus sama dengan nilai di chat-panel.css)
+    function stateHeights() {
+        const container = panel.offsetParent ? panel.offsetParent.clientHeight : window.innerHeight;
+        const peekVar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--peek-h')) || 150;
+        return { peek: peekVar - 40, half: container * 0.55, full: container * 0.88 };
+    }
 
-    // Diubah jadi 0.42 (42% tinggi layar) agar pas proporsional seperti Yanti Gold
-    const getInitialHeight = () => container.getBoundingClientRect().height * 0.42;
-    const getMaxHeight = () => container.getBoundingClientRect().height * 0.88;
+    // Pindah ke posisi tertentu dengan animasi dari tinggi saat ini
+    function setState(state, { focus = false } = {}) {
+        const from = panel.offsetHeight;
+        panel.classList.remove('is-dragging');
+        panel.style.height = from + 'px';
+        void panel.offsetHeight;          // paksa browser mencatat tinggi awal agar transisi jalan
+        panel.dataset.state = state;
+        panel.style.height = '';          // kembali memakai tinggi dari CSS sesuai data-state
 
-    const startDrag = (e) => {
-        isDragging = true;
-        startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-        startHeight = chatPanel.getBoundingClientRect().height;
-        chatPanel.style.transition = 'none'; 
-    };
-
-    const onDrag = (e) => {
-        if (!isDragging) return;
-        const currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-        const deltaY = currentY - startY;
-
-        let newHeight = startHeight - deltaY;
-        const maxH = getMaxHeight();
-
-        if (newHeight > maxH) newHeight = maxH;
-        if (newHeight < 90) newHeight = 90;
-
-        chatPanel.style.height = `${newHeight}px`;
-        chatPanel.style.transform = 'translateY(0)';
-    };
-
-    const stopDrag = () => {
-        if (!isDragging) return;
-        isDragging = false;
-        
-        chatPanel.style.transition = 'height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
-        
-        const currentHeight = chatPanel.getBoundingClientRect().height;
-        const initialH = getInitialHeight();
-        const maxH = getMaxHeight();
-
-        if (currentHeight < 140) {
-            chatPanel.style.transform = 'translateY(110%)'; 
-            if (logoBtn) {
-                setTimeout(() => { logoBtn.style.display = 'flex'; }, 300);
-            }
-        } 
-        else if (currentHeight > initialH + 60) {
-            chatPanel.style.height = `${maxH}px`;
-        } 
-        else {
-            chatPanel.style.height = `${initialH}px`;
+        if (state !== 'peek' && chatBox) {
+            setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 360);
         }
-    };
-
-    if (dragHandle) {
-        dragHandle.addEventListener('mousedown', startDrag);
-        document.addEventListener('mousemove', onDrag);
-        document.addEventListener('mouseup', stopDrag);
-        dragHandle.addEventListener('touchstart', startDrag, {passive: true});
-        document.addEventListener('touchmove', onDrag, {passive: true});
-        document.addEventListener('touchend', stopDrag);
-    }
-
-    // Inisialisasi tinggi awal panel
-    chatPanel.style.height = `${getInitialHeight()}px`;
-
-    // --- ANIMASI ACAK MATA ORB & GELOMBANG ---
-    setInterval(() => {
-        if (logoBtn && logoBtn.style.display === 'flex' && logoText && logoDots) {
-            const isListening = Math.random() > 0.5;
-            if (isListening) {
-                logoText.style.display = 'none';
-                logoDots.style.display = 'flex';
-            } else {
-                logoText.style.display = 'flex';
-                logoDots.style.display = 'none';
-            }
+        if (focus && state !== 'peek' && input) {
+            setTimeout(() => input.focus({ preventScroll: true }), 360);
         }
-    }, 4000);
-
-    // --- AUTO-EXPAND TEXTAREA (GAYA WHATSAPP) ---
-    function autoExpand(textarea) {
-        if (!textarea) return;
-        textarea.style.height = '20px'; 
-        textarea.style.height = (textarea.scrollHeight) + 'px';
     }
 
-    if (kolomKetikFloating) {
-        kolomKetikFloating.addEventListener('input', function() { autoExpand(this); });
-    }
-    if (kolomKetikUtama) {
-        kolomKetikUtama.addEventListener('input', function() { autoExpand(this); });
+    // ---------------- Gestur tarik ----------------
+    let drag = null;
+
+    head.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button')) return; // tombol di dalam head tetap berfungsi normal
+        drag = {
+            startY: e.clientY,
+            startH: panel.offsetHeight,
+            lastY: e.clientY,
+            startT: performance.now(),
+            moved: false,
+            id: e.pointerId
+        };
+        head.setPointerCapture(e.pointerId);
+    });
+
+    head.addEventListener('pointermove', (e) => {
+        if (!drag || e.pointerId !== drag.id) return;
+        const delta = drag.startY - e.clientY; // naik = positif
+        if (!drag.moved && Math.abs(delta) < MOVE_THRESHOLD) return;
+
+        if (!drag.moved) {
+            drag.moved = true;
+            panel.classList.add('is-dragging'); // matikan transisi agar mengikuti jari
+        }
+
+        const h = stateHeights();
+        const next = clamp(drag.startH + delta, h.peek, h.full);
+        panel.style.height = next + 'px';
+        drag.lastY = e.clientY;
+
+        // Tampilkan isi chat segera setelah ditarik melewati kartu sambutan
+        panel.dataset.state = next > h.peek + 60 ? 'half' : 'peek';
+    });
+
+    function endDrag(e) {
+        if (!drag || e.pointerId !== drag.id) return;
+        const d = drag;
+        drag = null;
+
+        // Ketukan tanpa menarik: buka chat jika masih kecil
+        if (!d.moved) {
+            if (panel.dataset.state === 'peek') setState('half', { focus: true });
+            return;
+        }
+
+        const h = stateHeights();
+        const current = panel.offsetHeight;
+        const elapsed = Math.max(1, performance.now() - d.startT);
+        const velocity = (d.startY - e.clientY) / elapsed;          // px/ms, naik = positif
+        const projected = clamp(current + velocity * FLICK_PROJECTION, h.peek, h.full);
+
+        // Pilih posisi terdekat dari tinggi hasil proyeksi
+        const target = ['peek', 'half', 'full']
+            .sort((a, b) => Math.abs(h[a] - projected) - Math.abs(h[b] - projected))[0];
+
+        setState(target, { focus: false });
     }
 
-    // --- 1. SAAT TOMBOL ORB / WAVE DIKLIK ---
-    if (logoBtn && floatingInputBar && kolomKetikFloating) {
-        logoBtn.addEventListener('click', () => {
-            logoBtn.style.display = 'none';
-            chatPanel.style.transition = 'none';
-            chatPanel.style.transform = 'translateY(110%)';
-            floatingInputBar.style.display = 'flex';
-            kolomKetikFloating.focus();
+    head.addEventListener('pointerup', endDrag);
+    head.addEventListener('pointercancel', endDrag);
+
+    // ---------------- Tombol ----------------
+    if (peekSendBtn) peekSendBtn.addEventListener('click', () => setState('half', { focus: true }));
+    if (closeBtn) closeBtn.addEventListener('click', () => setState('peek'));
+
+    // Escape mengecilkan chat
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && panel.dataset.state !== 'peek') setState('peek');
+    });
+
+    // ---------------- Event dari modul lain ----------------
+    window.addEventListener('kantoong:consult', (e) => {
+        const hasText = Boolean(e.detail && e.detail.text);
+        if (panel.dataset.state === 'peek') setState('half', { focus: !hasText });
+        else if (!hasText && input) input.focus({ preventScroll: true });
+    });
+
+    window.addEventListener('kantoong:collapse', () => setState('peek'));
+
+    // ---------------- Auto-expand kotak ketik (gaya WhatsApp) ----------------
+    if (input) {
+        input.addEventListener('input', () => {
+            input.style.height = '20px';
+            input.style.height = Math.min(input.scrollHeight, 90) + 'px';
         });
     }
 
-    // --- 2. SAAT TOMBOL KIRIM DI FLOATING BAR DIKLIK ---
-    if (tombolKirimFloating && floatingInputBar && kolomKetikFloating) {
-        tombolKirimFloating.addEventListener('click', () => {
-            const textUser = kolomKetikFloating.value.trim();
-            if (textUser !== "") {
-                floatingInputBar.style.display = 'none';
-                chatPanel.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                chatPanel.style.height = `${getInitialHeight()}px`;
-                chatPanel.style.transform = 'translateY(0)';
-                
-                if (typeof addMessageToChat === "function") {
-                    addMessageToChat(textUser, 'user');
-                    setTimeout(() => {
-                        addMessageToChat("Baik Kak, sistem sedang mengecek permintaannya... ✨", 'ai');
-                    }, 1000);
-                }
-
-                kolomKetikFloating.value = "";
-                kolomKetikFloating.style.height = '20px'; 
-            }
-        });
-    }
-
-    // --- KLIK KIRIM DI BAR UTAMA DALAM PANEL ---
-    if (tombolKirimUtama && kolomKetikUtama) {
-        tombolKirimUtama.addEventListener('click', () => {
-            const textUser = kolomKetikUtama.value.trim();
-            if (textUser !== "") {
-                if (typeof addMessageToChat === "function") {
-                    addMessageToChat(textUser, 'user');
-                    setTimeout(() => {
-                        addMessageToChat("Baik Kak, pesanan Kakak segera diproses ya! ✨", 'ai');
-                    }, 1000);
-                }
-
-                kolomKetikUtama.value = "";
-                kolomKetikUtama.style.height = '20px'; 
-            }
-        });
-    }
-});
+    // Pastikan posisi awal konsisten dengan CSS
+    if (!panel.dataset.state) panel.dataset.state = 'peek';
+}

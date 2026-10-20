@@ -1,47 +1,202 @@
-/* BAB 1: RESET & CONTAINER (Tema Minimalis Hitam & Putih Bersih) */
+/* ========================================= */
+/* BAB 1: TOKEN, RESET & LAYOUT DASAR        */
+/* Tema vanilla hitam-putih. Ganti token di  */
+/* :root untuk kustomisasi per klien.        */
+/* ========================================= */
+
 :root {
-    --bg-main: #f5f5f7;         /* Latar luar kontainer */
-    --container-bg: #ffffff;    /* Latar dalam aplikasi (Putih Bersih) */
-    --text-primary: #1d1d1f;    /* Teks utama (Hitam Elegan) */
-    --accent-color: #000000;    /* Warna aksen utama */
+    /* Warna */
+    --bg-main: #f5f5f7;          /* Latar di luar kontainer (desktop) */
+    --container-bg: #ffffff;     /* Latar aplikasi */
+    --surface: #ffffff;          /* Kartu, panel */
+    --surface-soft: #f4f4f5;     /* Latar placeholder, balon AI */
+    --text-primary: #111111;     /* Teks utama */
+    --text-muted: #6b6b70;       /* Teks pendukung */
+    --text-light: #ffffff;       /* Teks di atas latar gelap (dipakai modal-popup) */
+    --bg-dark: #111111;          /* Latar gelap (dipakai modal-popup) */
+    --line: #e4e4e7;             /* Garis pemisah & border tipis */
+    --line-strong: #111111;      /* Border tegas (input, tombol) */
+    --accent-color: #000000;     /* Aksen utama */
+    --primary-color: #111111;    /* Diisi engine.js dari client-config.js */
+
+    /* Bentuk */
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+
+    /* Ukuran yang dipakai bersama oleh header, konten, dan panel chat */
+    --header-h: 72px;            /* Tinggi header navigasi */
+    --peek-h: 150px;             /* Tinggi kartu sambutan AI saat panel kecil */
+    --page-pad: 16px;            /* Jarak kiri-kanan konten */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+    /* Gerak */
+    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html,
+body {
+    height: 100%;
 }
 
 body {
-    background-color: #e2e2e2; 
+    background-color: var(--bg-main);
+    color: var(--text-primary);
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
 }
+
+button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+img,
+video {
+    max-width: 100%;
+    display: block;
+}
+
+:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+}
+
+/* ========================================= */
+/* KONTAINER APLIKASI (tampilan HP)          */
+/* Header & panel chat menempel (absolute),  */
+/* konten halaman di dalam .page-scroll.     */
+/* ========================================= */
 
 .mobile-container {
     width: 100%;
-    max-width: 430px; 
+    max-width: 430px;
     height: 100vh;
-    max-height: 932px; 
+    height: 100dvh;
+    max-height: 932px;
     position: relative;
-    overflow: hidden; 
-    border-radius: 40px; 
+    overflow: hidden;
+    border-radius: 40px;
     background-color: var(--container-bg);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-    border: 1px solid #dcdcdc;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--line);
 }
 
 @media (max-width: 430px) {
     .mobile-container {
         border-radius: 0;
-        max-height: 100vh;
+        max-height: 100dvh;
+        border: none;
+        box-shadow: none;
     }
 }
 
-/* HAPUS BACKGROUND GAMBAR - DIBUAT BERSIH POLOS */
-.bg-image {
-    display: none !important;
+/* Area konten yang bisa di-scroll (hero, etalase, kategori) */
+.page-scroll {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: calc(var(--header-h) + var(--safe-top));
+    padding-bottom: calc(var(--peek-h) + var(--safe-bottom) + 24px); /* ruang agar konten tidak tertutup kartu AI */
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+}
+
+.page-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* ========================================= */
+/* KOMPONEN STRUKTUR UMUM                    */
+/* ========================================= */
+
+.page-section {
+    padding: 24px var(--page-pad) 0 var(--page-pad);
+}
+
+.section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.section-head h2 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.section-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 4px 0;
+}
+
+/* Baris geser horizontal (slider hero, kartu produk) */
+.scroll-x {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.scroll-x::-webkit-scrollbar {
+    display: none;
+}
+
+.scroll-x > * {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+}
+
+.empty-state {
+    padding: 20px 4px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Menyembunyikan elemen secara aksesibel (label untuk screen reader) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Hormati pengguna yang mematikan animasi di perangkatnya */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

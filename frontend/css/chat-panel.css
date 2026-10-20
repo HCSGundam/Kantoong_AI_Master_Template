@@ -1,87 +1,188 @@
 /* ========================================= */
-/* BAB 4: PANEL CHAT BERSIH & PROPORSIONAL   */
+/* BAB 4: PANEL CHAT (BOTTOM SHEET)          */
+/* Tiga posisi lewat atribut data-state:     */
+/*   peek = kartu sambutan kecil             */
+/*   half = setengah layar                   */
+/*   full = hampir penuh                     */
+/* panel.js mengatur data-state & tinggi     */
+/* saat ditarik (inline height). Tanpa JS,   */
+/* tinggi tiap posisi memakai nilai di bawah.*/
 /* ========================================= */
 
 .chat-panel {
     position: absolute;
-    bottom: -2px; 
-    left: 0;
-    width: 100%;
-    height: 48%; /* Diturunkan sedikit agar tidak ketinggian */
-    
-    background: #ffffff; 
-    
-    border-top: 1.5px solid #dcdcdc;
-    border-left: 1px solid #eaeaea;
-    border-right: 1px solid #eaeaea;
-    border-bottom: none;
-    
-    border-top-left-radius: 32px;
-    border-top-right-radius: 32px;
-    
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.08);
-    
-    transition: height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    z-index: 10; 
-    
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + var(--safe-bottom));
+    z-index: 40;
+
     display: flex;
     flex-direction: column;
-    justify-content: space-between; 
-    overflow: hidden;               
-    padding: 12px 18px 16px 18px;
-    box-sizing: border-box;
+    overflow: hidden;
+    padding: 8px 16px 14px 16px;
+
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
+
+    height: calc(var(--peek-h) - 40px);
+    transition: height 0.35s var(--ease), box-shadow 0.35s var(--ease);
 }
 
-.panel-half { height: 48%; transform: translateY(0); }
-.panel-full { height: 85%; transform: translateY(0); }
-.panel-hidden { transform: translateY(110%); }
+.chat-panel[data-state="peek"] { height: calc(var(--peek-h) - 40px); }
+.chat-panel[data-state="half"] { height: 55%; }
+.chat-panel[data-state="full"] { height: 88%; }
 
-.drag-handle {
-    width: 40px;
-    height: 4px;
-    background-color: #d1d1d6;
-    border-radius: 10px;
-    margin: 0 auto 10px auto; 
+/* Saat jari sedang menarik, tinggi mengikuti jari tanpa jeda */
+.chat-panel.is-dragging {
+    transition: none;
+}
+
+/* ----------------------------- */
+/* Bagian atas (area tarik)      */
+/* ----------------------------- */
+
+.panel-head {
+    flex-shrink: 0;
+    touch-action: none;   /* mencegah halaman ikut ter-scroll saat panel ditarik */
     cursor: grab;
-    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
-.drag-handle:active {
+
+.panel-head:active {
     cursor: grabbing;
 }
 
-.chat-header {
+.drag-handle {
+    width: 44px;
+    height: 5px;
+    margin: 0 auto 10px auto;
+    border-radius: 10px;
+    background-color: #d4d4d8;
+}
+
+/* ----------------------------- */
+/* Posisi kecil: kartu sambutan  */
+/* ----------------------------- */
+
+.peek-row {
     display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 6px;
+}
+
+.ai-avatar {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--text-primary);
+    color: var(--text-light);
+    box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
+}
+
+.peek-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.peek-text strong {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.peek-text p {
+    margin-top: 2px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ----------------------------- */
+/* Posisi terbuka: judul chat    */
+/* ----------------------------- */
+
+.chat-header {
+    display: none;
     justify-content: space-between;
     align-items: center;
-    color: #1d1d1f;
-    margin-bottom: 8px;
-    flex-shrink: 0;
+    padding-bottom: 8px;
+    color: var(--text-primary);
 }
 
 .chat-header h2 {
-    font-size: 20px;
-    font-weight: bold;
-    letter-spacing: 0.3px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
-.chat-header svg {
-    cursor: pointer;
-    stroke: #333;
+.chat-close {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--text-primary);
+    transition: background 0.2s var(--ease);
 }
 
-/* Styling Laci Sampel Komponen */
+.chat-close:hover {
+    background: var(--surface-soft);
+}
+
+/* ----------------------------- */
+/* Pengaturan tampil per posisi  */
+/* ----------------------------- */
+
+/* Peek: hanya kartu sambutan */
+.chat-panel[data-state="peek"] .chat-box,
+.chat-panel[data-state="peek"] .chat-suggestions,
+.chat-panel[data-state="peek"] .input-bar-container {
+    display: none;
+}
+
+/* Half & full: tampilkan percakapan, sembunyikan kartu sambutan */
+.chat-panel[data-state="half"] .peek-row,
+.chat-panel[data-state="full"] .peek-row {
+    display: none;
+}
+
+.chat-panel[data-state="half"] .chat-header,
+.chat-panel[data-state="full"] .chat-header {
+    display: flex;
+}
+
+/* ========================================= */
+/* LACI MENU UTAMA (Menu hamburger)          */
+/* ========================================= */
+
 .sample-drawer {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
     z-index: 99999;
-    padding: 24px;
+    padding: calc(24px + var(--safe-top)) 24px 24px 24px;
     display: flex;
     flex-direction: column;
     gap: 14px;
     overflow-y: auto;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
 }
 
 .drawer-header {
@@ -91,40 +192,38 @@
 }
 
 .drawer-header h3 {
-    color: #1d1d1f;
-    font-size: 16px;
-    font-weight: bold;
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 700;
 }
 
 .btn-close-drawer {
-    background: transparent;
-    border: 1px solid #dcdcdc;
-    color: #1d1d1f;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--text-primary);
+    font-weight: 700;
+    cursor: pointer;
 }
 
 .sample-item-btn {
-    background: #f8f9fa;
-    border: 1px solid #dcdcdc;
-    color: #1d1d1f;
     padding: 14px 16px;
+    border: 1px solid var(--line);
     border-radius: 14px;
+    background: var(--surface-soft);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
     text-align: left;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    transition: background 0.2s;
+    transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
 }
 
 .sample-item-btn:hover {
-    background: #e9ecef;
-    border-color: #111111;
+    background: #e9e9ec;
+    border-color: var(--text-primary);
 }

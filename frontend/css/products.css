@@ -40,3 +40,15 @@
     outline: none;
     box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
 }
+
+/* Sembunyikan scrollbar horizontal pada tabel agar bersih ala Apple UI */
+.admin-products-container table::-webkit-scrollbar,
+.admin-sales-container table::-webkit-scrollbar,
+div[style*="overflow-x: auto"]::-webkit-scrollbar {
+    display: none !important;
+}
+
+div[style*="overflow-x: auto"] {
+    scrollbar-width: none !important; /* Untuk Firefox */
+    -ms-overflow-style: none !important; /* Untuk IE/Edge lama */
+}

@@ -1,97 +1,269 @@
 /* ========================================= */
-/* BAB 6: DESAIN GELEMBUNG CHAT BERSIH       */
+/* BAB 6: GELEMBUNG CHAT, KARTU FOTO PRODUK  */
+/* & SARAN PERTANYAAN                        */
+/* Padding kiri-kanan diatur .chat-panel.    */
 /* ========================================= */
 
 .chat-box {
-    flex: 1; 
-    overflow-y: auto; 
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding-top: 10px;    
-    padding-bottom: 20px; 
-    scrollbar-width: none; 
+    padding: 8px 0 12px 0;
+    scrollbar-width: none;
+    overscroll-behavior: contain;
 }
 
-.chat-box::-webkit-scrollbar { display: none; }
+.chat-box::-webkit-scrollbar {
+    display: none;
+}
 
 .message-wrapper {
     display: flex;
     gap: 10px;
-    max-width: 92%;
-    animation: fadeIn 0.3s ease-out forwards;
+    max-width: 94%;
+    animation: msgIn 0.3s var(--ease) both;
 }
 
-.message-wrapper.ai { 
-    align-self: flex-start; 
-    align-items: flex-start; 
+.message-wrapper.ai {
+    align-self: flex-start;
+    align-items: flex-start;
 }
 
-.message-wrapper.user { 
-    align-self: flex-end; 
-    flex-direction: row-reverse; 
-    align-items: flex-end; 
+.message-wrapper.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+    align-items: flex-end;
 }
 
 .avatar {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
-    background-color: #111111;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 9px;
-    font-weight: bold;
-    color: #ffffff;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.message-wrapper.ai .avatar {
+    background: var(--text-primary);
+    color: var(--text-light);
+}
+
+.message-wrapper.user .avatar {
+    background: var(--surface-soft);
+    color: var(--text-primary);
+    border: 1px solid var(--line);
 }
 
 .bubble {
-    padding: 8px 14px 20px 14px; 
-    border-radius: 16px; 
-    font-size: 14px;
-    line-height: 1.4;
     position: relative;
-    min-width: 80px; 
+    min-width: 80px;
+    min-height: 36px;
+    padding: 9px 14px 22px 14px; /* ruang bawah untuk jam */
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.45;
     word-break: break-word;
 }
 
 .bubble-text {
-    white-space: pre-wrap; 
     display: block;
+    white-space: pre-wrap;
 }
 
-/* AI (Kiri): Abu-abu terang bersih */
+/* AI (kiri): abu-abu terang */
 .message-wrapper.ai .bubble {
-    background: #f1f3f5; 
-    color: #1d1d1f;
-    border: 1px solid #e2e8f0; 
-    border-top-left-radius: 4px; 
+    background: var(--surface-soft);
+    color: var(--text-primary);
+    border: 1px solid var(--line);
+    border-top-left-radius: 6px;
 }
 
-/* User (Kanan): Hitam pekat elegan */
+/* User (kanan): hitam pekat */
 .message-wrapper.user .bubble {
-    background: #111111; 
-    color: #ffffff;
-    border: 1px solid #111111;
-    border-bottom-right-radius: 4px; 
+    background: var(--text-primary);
+    color: var(--text-light);
+    border: 1px solid var(--text-primary);
+    border-bottom-right-radius: 6px;
 }
 
 .time-stamp {
-    font-size: 10px;
-    color: rgba(0, 0, 0, 0.45);
     position: absolute;
-    bottom: 4px; 
-    right: 12px; 
-    line-height: 1; 
+    right: 12px;
+    bottom: 6px;
+    font-size: 10px;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.45);
 }
 
 .message-wrapper.user .time-stamp {
     color: rgba(255, 255, 255, 0.6);
 }
 
-@keyframes fadeIn {
+/* ----------------------------- */
+/* Foto produk rekomendasi AI    */
+/* Hanya foto + nama; detail     */
+/* lengkap tampil di etalase.    */
+/* ----------------------------- */
+
+.chat-products {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.chat-products::-webkit-scrollbar {
+    display: none;
+}
+
+.chat-product {
+    width: 84px;
+    flex-shrink: 0;
+    text-align: left;
+    color: var(--text-primary);
+}
+
+.chat-product-thumb {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    font-size: 26px;
+    font-weight: 800;
+    color: #c9c9ce;
+    transition: border-color 0.2s var(--ease);
+}
+
+.chat-product-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-product-name {
+    margin-top: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@media (hover: hover) {
+    .chat-product:hover .chat-product-thumb {
+        border-color: var(--text-primary);
+    }
+}
+
+/* Tautan "lengkapnya bisa lihat di katalog" */
+.chat-catalog-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ----------------------------- */
+/* Indikator "AI sedang mengetik"*/
+/* (gerakannya di animation.css) */
+/* ----------------------------- */
+
+.bubble.is-typing {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 14px 16px;
+}
+
+.bubble.is-typing .typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #a1a1a8;
+}
+
+/* ----------------------------- */
+/* Saran pertanyaan (untuk user  */
+/* yang bingung pertama masuk)   */
+/* ----------------------------- */
+
+.chat-suggestions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    max-height: 132px;
+    padding: 6px 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.chat-suggestions::-webkit-scrollbar {
+    display: none;
+}
+
+.chat-suggestions:empty {
+    display: none;
+}
+
+.suggestion-chip {
+    max-width: 92%;
+    padding: 8px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 18px;
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 12.5px;
+    line-height: 1.35;
+    text-align: right;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.suggestion-chip:active {
+    background: var(--text-primary);
+    color: var(--text-light);
+}
+
+@media (hover: hover) {
+    .suggestion-chip:hover {
+        background: var(--text-primary);
+        color: var(--text-light);
+    }
+}
+
+/* ----------------------------- */
+/* Animasi masuk pesan           */
+/* (diganti nama dari fadeIn agar tidak bentrok */
+/* dengan fadeIn di dashboard.css)              */
+/* ----------------------------- */
+
+@keyframes msgIn {
     from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+    to   { opacity: 1; transform: translateY(0); }
 }
