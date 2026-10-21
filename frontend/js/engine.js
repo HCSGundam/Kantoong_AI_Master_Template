@@ -1,102 +1,307 @@
-// ============================================================
-// engine.js - Kantoong AI Master Template (Core Engine)
-// Tugas: terapkan config, ambil data Supabase, render etalase
-// (hero, area bebas, produk unggulan, kategori), keranjang,
-// laci menu, dan login. Chat ada di ai-brain.js, gestur panel
-// ada di panel.js. Antar-modul berkomunikasi lewat event window.
-//
-// EVENT KELUAR (engine -> modul lain)
-//   kantoong:consult        {text, productId?}  buka chat (+ kirim pesan jika text ada)
-//   supabase-data-ready     products[]          data produk siap
-//   kantoong-ai-ready       KantoongState       data siap (nama lama, tetap dipertahankan)
-//   kantoong:catalog-reset  -                   user menekan "Kembali ke awal"
-// EVENT MASUK (modul lain -> engine)
-//   kantoong:matched        {ids: []}           AI mencocokkan produk -> etalase berganti
-//   kantoong:show-catalog   -                   gulir halaman ke etalase
-// ============================================================
+
+/* ============================================================
+   KANTOONG AI
+   File: js/engine.js
+   Core Engine · Storefront · Supabase · AI Events · Menu
+   Dashboard Bento · Auth · Dynamic Components
+   ============================================================ */
 
 import { supabase } from './supabase-client.js';
 
-// Ubah ke false SEBELUM template dipakai klien / dijual.
+// Ubah menjadi false sebelum template digunakan di produksi.
 const DEV_AUTO_ADMIN = true;
 
-const CFG = (typeof KantoongConfig !== 'undefined') ? KantoongConfig : {};
+const CFG = typeof KantoongConfig !== 'undefined'
+    ? KantoongConfig
+    : {};
 
-// State Global untuk Kantoong Core + AI Agent Context
+// ============================================================
+// 1. GLOBAL STATE
+// ============================================================
+
 export const KantoongState = {
     products: [],
     featured: [],
-    matched: null,       // array produk hasil pencocokan AI, atau null = etalase default
+    matched: null,
     cart: [],
     isLoading: false,
     usingDemo: false,
     activeTenant: CFG.business_id || 'yanti-gold-default',
     agentStatus: 'ready'
 };
+
 const S = KantoongState;
 
-// ------------------------------------------------------------
-// Helper kecil
-// ------------------------------------------------------------
-const $ = (sel, root = document) => root.querySelector(sel);
-const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
+// ============================================================
+// 2. HELPERS
+// ============================================================
 
-const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const $ = (selector, root = document) =>
+    root.querySelector(selector);
 
-const rupiah = (n) => new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', maximumFractionDigits: 0
-}).format(Number(n) || 0);
-
-const store = {
-    get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
-    set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage penuh/diblokir */ } }
+const emit = (name, detail = {}) => {
+    window.dispatchEvent(new CustomEvent(name, { detail }));
 };
 
-// Render HTML ke elemen DAN jalankan <script> di dalamnya.
-function injectHTML(el, html) {
-    el.innerHTML = html;
-    el.querySelectorAll('script').forEach(old => {
-        const s = document.createElement('script');
-        if (old.src) s.src = old.src;
-        else s.textContent = old.textContent;
-        old.replaceWith(s);
+const esc = (value) =>
+    String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+
+const rupiah = (value) =>
+    new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0
+    }).format(Number(value) || 0);
+
+const store = {
+    get(key, fallback) {
+        try {
+            return JSON.parse(localStorage.getItem(key)) ?? fallback;
+        } catch {
+            return fallback;
+        }
+    },
+
+    set(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch {
+            // Penyimpanan bisa penuh atau dinonaktifkan browser.
+        }
+    }
+};
+
+// Memasukkan HTML komponen dan menjalankan script di dalamnya.
+function injectHTML(element, html) {
+    if (!element) return;
+
+    element.innerHTML = html;
+
+    element.querySelectorAll('script').forEach((oldScript) => {
+        const script = document.createElement('script');
+
+        [...oldScript.attributes].forEach((attribute) => {
+            script.setAttribute(attribute.name, attribute.value);
+        });
+
+        script.textContent = oldScript.textContent;
+        oldScript.replaceWith(script);
     });
 }
 
-// ------------------------------------------------------------
-// 1. Terapkan konfigurasi (judul, warna, sapaan AI)
-// ------------------------------------------------------------
-function applyConfig() {
-    if (CFG.app_name) {
-        document.title = CFG.app_name;
-        const pageTitle = $('#pageTitle');
-        const brandTitle = $('#brandTitle');
-        if (pageTitle) pageTitle.textContent = CFG.app_name;
-        if (brandTitle) brandTitle.textContent = CFG.app_name;
-    }
-    if (CFG.theme_color_primary) {
-        document.documentElement.style.setProperty('--primary-color', CFG.theme_color_primary);
-    }
-    const peekTitle = $('#peekTitle');
-    const peekGreeting = $('#peekGreeting');
-    if (peekTitle && CFG.ai_title) peekTitle.textContent = CFG.ai_title;
-    if (peekGreeting && CFG.ai_greetings?.length) {
-        peekGreeting.textContent = CFG.ai_greetings[Math.floor(Math.random() * CFG.ai_greetings.length)];
+// ============================================================
+// 3. DRAWER HELPERS
+// Konsisten dengan atribut hidden di index.html.
+// ============================================================
+
+function openDrawer() {
+    const drawer = $('#sampleDrawer');
+    const menuButton = $('#showcaseMenuBtn');
+
+    if (!drawer) return;
+
+    drawer.hidden = false;
+    drawer.style.display = 'flex';
+    drawer.setAttribute('aria-hidden', 'false');
+
+    if (menuButton) {
+        menuButton.setAttribute('aria-expanded', 'true');
     }
 }
 
-// ------------------------------------------------------------
-// 2. Hero: slider yang geser otomatis tiap X detik
-// ------------------------------------------------------------
-function slideMedia(s) {
-    if (s.type === 'video' && s.src) {
-        return `<video src="${esc(s.src)}" muted loop playsinline autoplay preload="metadata"></video>`;
+function closeDrawer() {
+    const drawer = $('#sampleDrawer');
+    const menuButton = $('#showcaseMenuBtn');
+
+    if (drawer) {
+        drawer.hidden = true;
+        drawer.style.display = '';
+        drawer.setAttribute('aria-hidden', 'true');
     }
-    if (s.type === 'image' && s.src) {
-        return `<img src="${esc(s.src)}" alt="${esc(s.title)}" loading="lazy">`;
+
+    if (menuButton) {
+        menuButton.setAttribute('aria-expanded', 'false');
     }
-    return `<span class="hero-media-label">${esc(s.media_label || 'Foto / video brand')}</span>`;
+}
+
+// ============================================================
+// 4. DASHBOARD BENTO BRIDGE
+// Hamburger membuka dashboard Bento.
+// Dashboard ditampilkan sebagai pengganti storefront.
+// ============================================================
+
+let dashboardLoadPromise = null;
+let dashboardInitialized = false;
+
+async function openKantoongBentoDashboard() {
+    const host = $('#kantoongDashboardHost');
+    const page = $('#pageScroll');
+
+    if (!host || !page) {
+        console.warn(
+            '[Kantoong Dashboard] Host dashboard atau pageScroll tidak ditemukan.'
+        );
+        openDrawer();
+        return;
+    }
+
+    closeDrawer();
+
+    try {
+        if (!dashboardLoadPromise) {
+            dashboardLoadPromise = fetch('menu/dashboard/dashboard.html')
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(
+                            'Gagal memuat menu/dashboard/dashboard.html'
+                        );
+                    }
+
+                    return response.text();
+                })
+                .then((html) => {
+                    host.innerHTML = html;
+                    return true;
+                })
+                .catch((error) => {
+                    dashboardLoadPromise = null;
+                    throw error;
+                });
+        }
+
+        await dashboardLoadPromise;
+
+        if (
+            !dashboardInitialized &&
+            window.KantoongDashboard &&
+            typeof window.KantoongDashboard.init === 'function'
+        ) {
+            window.KantoongDashboard.init();
+            dashboardInitialized = true;
+        }
+
+        host.hidden = false;
+        page.hidden = true;
+
+        host.setAttribute('aria-hidden', 'false');
+        page.setAttribute('aria-hidden', 'true');
+
+        emit('kantoong:dashboard-loaded');
+        emit('kantoong:dashboard-visibility', { visible: true });
+    } catch (error) {
+        console.error('[Kantoong Dashboard]', error);
+
+        host.hidden = true;
+        page.hidden = false;
+
+        openDrawer();
+
+        alert(
+            'Dashboard Bento belum bisa dibuka. Periksa file ' +
+            'menu/dashboard/dashboard.html dan dashboard.js.'
+        );
+    }
+}
+
+function closeKantoongBentoDashboard() {
+    const host = $('#kantoongDashboardHost');
+    const page = $('#pageScroll');
+
+    if (host) {
+        host.hidden = true;
+        host.setAttribute('aria-hidden', 'true');
+    }
+
+    if (page) {
+        page.hidden = false;
+        page.setAttribute('aria-hidden', 'false');
+    }
+
+    emit('kantoong:dashboard-visibility', { visible: false });
+}
+
+// Fungsi global untuk modul dashboard atau modul lain.
+window.openKantoongBentoDashboard = openKantoongBentoDashboard;
+window.closeKantoongBentoDashboard = closeKantoongBentoDashboard;
+window.KantoongBentoIntegrated = true;
+
+// ============================================================
+// 5. APPLY CONFIG
+// ============================================================
+
+function applyConfig() {
+    if (CFG.app_name) {
+        document.title = CFG.app_name;
+
+        const pageTitle = $('#pageTitle');
+        const brandTitle = $('#brandTitle');
+
+        if (pageTitle) pageTitle.textContent = CFG.app_name;
+        if (brandTitle) brandTitle.textContent = CFG.app_name;
+    }
+
+    if (CFG.theme_color_primary) {
+        document.documentElement.style.setProperty(
+            '--primary-color',
+            CFG.theme_color_primary
+        );
+    }
+
+    const peekTitle = $('#peekTitle');
+    const peekGreeting = $('#peekGreeting');
+
+    if (peekTitle && CFG.ai_title) {
+        peekTitle.textContent = CFG.ai_title;
+    }
+
+    if (peekGreeting && CFG.ai_greetings?.length) {
+        const index = Math.floor(
+            Math.random() * CFG.ai_greetings.length
+        );
+
+        peekGreeting.textContent = CFG.ai_greetings[index];
+    }
+}
+
+// ============================================================
+// 6. HERO SLIDER
+// ============================================================
+
+function slideMedia(slide) {
+    if (slide.type === 'video' && slide.src) {
+        return `
+            <video
+                src="${esc(slide.src)}"
+                muted
+                loop
+                playsinline
+                autoplay
+                preload="metadata"
+            ></video>
+        `;
+    }
+
+    if (slide.type === 'image' && slide.src) {
+        return `
+            <img
+                src="${esc(slide.src)}"
+                alt="${esc(slide.title)}"
+                loading="lazy"
+            >
+        `;
+    }
+
+    return `
+        <span class="hero-media-label">
+            ${esc(slide.media_label || 'Foto / video brand')}
+        </span>
+    `;
 }
 
 function renderHero() {
@@ -104,250 +309,543 @@ function renderHero() {
     const track = $('#heroTrack');
     const dotsBox = $('#heroDots');
     const slides = CFG.hero?.slides || [];
+
     if (!section || !track) return;
-    if (!slides.length) { section.hidden = true; return; }
 
-    track.innerHTML = slides.map((s, i) => `
-        <article class="hero-slide${i === 0 ? ' is-active' : ''}">
-            <div class="hero-media">${slideMedia(s)}</div>
-            <p class="hero-eyebrow">${esc(s.caption)}</p>
-            <h2 class="hero-title">${esc(s.title)}</h2>
-            <p class="hero-text">${esc(s.text)}</p>
-            <div class="hero-cta">
-                <button class="btn-primary" data-action="scroll-featured">Lihat produk →</button>
-                <button class="btn-outline" data-action="consult" data-prompt="${esc(s.ai_prompt || '')}">✦ Konsultasi AI</button>
+    if (!slides.length) {
+        section.hidden = true;
+        return;
+    }
+
+    section.hidden = false;
+
+    track.innerHTML = slides.map((slide, index) => `
+        <article class="hero-slide${index === 0 ? ' is-active' : ''}">
+            <div class="hero-media">
+                ${slideMedia(slide)}
             </div>
-        </article>`).join('');
 
-    const n = slides.length;
-    if (n < 2) return; // satu slide: tanpa titik dan tanpa geser otomatis
+            <p class="hero-eyebrow">${esc(slide.caption)}</p>
+            <h2 class="hero-title">${esc(slide.title)}</h2>
+            <p class="hero-text">${esc(slide.text)}</p>
 
-    dotsBox.innerHTML = slides.map((_, i) => `<span class="dot${i === 0 ? ' active' : ''}"></span>`).join('');
+            <div class="hero-cta">
+                <button
+                    class="btn-primary"
+                    type="button"
+                    data-action="scroll-featured"
+                >
+                    Lihat produk →
+                </button>
+
+                <button
+                    class="btn-outline"
+                    type="button"
+                    data-action="consult"
+                    data-prompt="${esc(slide.ai_prompt || '')}"
+                >
+                    ✦ Konsultasi AI
+                </button>
+            </div>
+        </article>
+    `).join('');
+
+    if (!dotsBox) return;
+
+    const count = slides.length;
+
+    if (count < 2) {
+        dotsBox.innerHTML = '';
+        return;
+    }
+
+    dotsBox.innerHTML = slides.map((_, index) => `
+        <span class="dot${index === 0 ? ' active' : ''}"></span>
+    `).join('');
+
     const dots = [...dotsBox.children];
     const items = [...track.children];
     let current = 0;
-
-    const setActive = (i) => {
-        current = i;
-        dots.forEach((d, k) => d.classList.toggle('active', k === i));
-        items.forEach((s, k) => s.classList.toggle('is-active', k === i));
-    };
-    const goTo = (i) => track.scrollTo({ left: ((i + n) % n) * track.clientWidth, behavior: 'smooth' });
-
-    // Sinkronkan titik dengan posisi geser (baik otomatis maupun digeser jari)
     let ticking = false;
+
+    function setActive(index) {
+        current = index;
+
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+
+        items.forEach((item, i) => {
+            item.classList.toggle('is-active', i === index);
+        });
+    }
+
+    function goTo(index) {
+        track.scrollTo({
+            left: ((index + count) % count) * track.clientWidth,
+            behavior: 'smooth'
+        });
+    }
+
     track.addEventListener('scroll', () => {
         if (ticking) return;
+
         ticking = true;
+
         requestAnimationFrame(() => {
-            const i = Math.round(track.scrollLeft / track.clientWidth);
-            if (i !== current && i >= 0 && i < n) setActive(i);
+            if (track.clientWidth > 0) {
+                const index = Math.round(
+                    track.scrollLeft / track.clientWidth
+                );
+
+                if (
+                    index !== current &&
+                    index >= 0 &&
+                    index < count
+                ) {
+                    setActive(index);
+                }
+            }
+
             ticking = false;
         });
     }, { passive: true });
 
-    // Geser otomatis; berhenti saat disentuh, tab tersembunyi, atau user memilih "reduce motion"
     const seconds = Number(CFG.hero?.interval_seconds) || 0;
-    if (!seconds || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    if (
+        !seconds ||
+        matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+        return;
+    }
 
     let paused = false;
     let timer = setInterval(tick, seconds * 1000);
-    function tick() { if (!paused && !document.hidden) goTo(current + 1); }
-    const restart = () => { clearInterval(timer); timer = setInterval(tick, seconds * 1000); };
 
-    track.addEventListener('pointerdown', () => { paused = true; });
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
-        track.addEventListener(ev, () => { paused = false; restart(); }));
+    function tick() {
+        if (!paused && !document.hidden) {
+            goTo(current + 1);
+        }
+    }
+
+    function restart() {
+        clearInterval(timer);
+        timer = setInterval(tick, seconds * 1000);
+    }
+
+    track.addEventListener('pointerdown', () => {
+        paused = true;
+    });
+
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((eventName) => {
+        track.addEventListener(eventName, () => {
+            paused = false;
+            restart();
+        });
+    });
 }
 
-// ------------------------------------------------------------
-// 3. Area bebas pemilik brand
-// ------------------------------------------------------------
+// ============================================================
+// 7. BRAND SLOT
+// ============================================================
+
 function renderBrandSlot() {
     const box = $('#brandSlot');
-    const cfg = CFG.brand_slot || {};
+    const config = CFG.brand_slot || {};
+
     if (!box) return;
+
     box.innerHTML = '';
-    if (cfg.type === 'highlights' && cfg.items?.length) {
-        box.innerHTML = `<div class="brand-highlights">${cfg.items.map(it =>
-            `<div class="brand-highlight"><strong>${esc(it.title)}</strong><span>${esc(it.sub)}</span></div>`).join('')}</div>`;
-    } else if (cfg.type === 'text' && cfg.text) {
-        box.innerHTML = `<div class="brand-slot-box">${esc(cfg.text).replace(/\n/g, '<br>')}</div>`;
+
+    if (config.type === 'highlights' && config.items?.length) {
+        box.innerHTML = `
+            <div class="brand-highlights">
+                ${config.items.map((item) => `
+                    <div class="brand-highlight">
+                        <strong>${esc(item.title)}</strong>
+                        <span>${esc(item.sub)}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else if (config.type === 'text' && config.text) {
+        box.innerHTML = `
+            <div class="brand-slot-box">
+                ${esc(config.text).replace(/\n/g, '<br>')}
+            </div>
+        `;
     }
 }
 
-// ------------------------------------------------------------
-// 4. Kartu produk, etalase unggulan, dan kategori
-// ------------------------------------------------------------
-function productCard(p, i = 0) {
-    const initial = esc((p.name || '?').trim().charAt(0).toUpperCase());
-    const thumb = p.image_url
-        ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy">`
+// ============================================================
+// 8. PRODUCT CARDS
+// ============================================================
+
+function productCard(product, index = 0) {
+    const initial = esc(
+        (product.name || '?').trim().charAt(0).toUpperCase()
+    );
+
+    const thumbnail = product.image_url
+        ? `
+            <img
+                src="${esc(product.image_url)}"
+                alt="${esc(product.name)}"
+                loading="lazy"
+            >
+        `
         : initial;
+
     return `
-        <article class="product-card" style="--i:${i}" data-id="${esc(p.id)}">
-            <div class="product-thumb">${thumb}</div>
-            <h3 class="product-name">${esc(p.name)}</h3>
-            <p class="product-price">${rupiah(p.price)}</p>
-            <div class="product-actions">
-                <button class="product-ask" data-action="ask-product" data-id="${esc(p.id)}">${esc(CFG.featured?.ask_label || 'Tanyakan produk ini')}</button>
-                <button class="product-cart" data-action="add-cart" data-id="${esc(p.id)}" aria-label="Tambah ke keranjang">+</button>
+        <article
+            class="product-card"
+            style="--i:${index}"
+            data-id="${esc(product.id)}"
+        >
+            <div class="product-thumb">
+                ${thumbnail}
             </div>
-        </article>`;
+
+            <h3 class="product-name">
+                ${esc(product.name)}
+            </h3>
+
+            <p class="product-price">
+                ${rupiah(product.price)}
+            </p>
+
+            <div class="product-actions">
+                <button
+                    class="product-ask"
+                    type="button"
+                    data-action="ask-product"
+                    data-id="${esc(product.id)}"
+                >
+                    ${esc(
+                        CFG.featured?.ask_label ||
+                        'Tanyakan produk ini'
+                    )}
+                </button>
+
+                <button
+                    class="product-cart"
+                    type="button"
+                    data-action="add-cart"
+                    data-id="${esc(product.id)}"
+                    aria-label="Tambah ke keranjang"
+                >
+                    +
+                </button>
+            </div>
+        </article>
+    `;
 }
 
 function renderSkeleton() {
     const rail = $('#featuredRail');
     if (!rail) return;
+
     rail.innerHTML = Array.from({ length: 3 }, () => `
         <article class="product-card is-loading">
             <div class="product-thumb"></div>
             <h3 class="product-name">&nbsp;</h3>
             <p class="product-price">Rp 000.000</p>
-            <div class="product-actions"><button class="product-ask" disabled>&nbsp;</button><button class="product-cart" disabled></button></div>
-        </article>`).join('');
+
+            <div class="product-actions">
+                <button class="product-ask" disabled>&nbsp;</button>
+                <button class="product-cart" disabled></button>
+            </div>
+        </article>
+    `).join('');
 }
 
 function renderFeatured() {
     const rail = $('#featuredRail');
     const title = $('#featuredTitle');
-    const reset = $('#resetCatalogBtn');
+    const resetButton = $('#resetCatalogBtn');
+
     if (!rail) return;
 
     const list = S.matched || S.featured;
+
     const newTitle = S.matched
         ? (CFG.featured?.matched_title || 'Pilihan AI untuk kamu')
         : (CFG.featured?.title || 'Produk Unggulan');
 
     if (title && title.textContent !== newTitle) {
         title.textContent = newTitle;
-        title.classList.remove('title-swap'); void title.offsetWidth; title.classList.add('title-swap');
+        title.classList.remove('title-swap');
+        void title.offsetWidth;
+        title.classList.add('title-swap');
     }
-    if (reset) reset.hidden = !S.matched;
+
+    if (resetButton) {
+        resetButton.hidden = !S.matched;
+    }
 
     rail.innerHTML = list.length
         ? list.map(productCard).join('')
-        : '<p class="empty-state">Belum ada produk. Tambahkan lewat dashboard admin.</p>';
+        : `
+            <p class="empty-state">
+                Belum ada produk. Tambahkan lewat dashboard admin.
+            </p>
+        `;
+
     rail.scrollTo({ left: 0 });
 
-    // Efek kartu muncul berurutan hanya saat hasil dari AI
     rail.classList.remove('rail-flash');
-    if (S.matched) { void rail.offsetWidth; rail.classList.add('rail-flash'); }
+
+    if (S.matched) {
+        void rail.offsetWidth;
+        rail.classList.add('rail-flash');
+    }
 }
+
+// ============================================================
+// 9. PRODUCT CATEGORIES
+// ============================================================
 
 function renderCategories() {
     const section = $('#categorySection');
     const box = $('#categoryList');
+
     if (!section || !box) return;
-    if (CFG.categories?.enabled === false) { section.hidden = true; return; }
+
+    if (CFG.categories?.enabled === false) {
+        section.hidden = true;
+        return;
+    }
 
     const groups = {};
-    S.products.forEach(p => {
-        const name = String(p.category || '').trim();
-        if (name) (groups[name] ||= []).push(p);
+
+    S.products.forEach((product) => {
+        const category = String(product.category || '').trim();
+
+        if (category) {
+            (groups[category] ||= []).push(product);
+        }
     });
+
     const names = Object.keys(groups);
-    section.hidden = !names.length;
+
+    section.hidden = names.length === 0;
+
     box.innerHTML = names.length
-        ? `<div class="section-head"><h2>${esc(CFG.categories?.title || 'Kategori lain')}</h2></div>` +
-          names.map(n => `
+        ? `
+            <div class="section-head">
+                <h2>${esc(
+                    CFG.categories?.title || 'Kategori lain'
+                )}</h2>
+            </div>
+        ` + names.map((name) => `
             <div class="category-block">
-                <h3 class="category-title">${esc(n)}</h3>
-                <div class="rail scroll-x">${groups[n].map(productCard).join('')}</div>
-            </div>`).join('')
+                <h3 class="category-title">${esc(name)}</h3>
+
+                <div class="rail scroll-x">
+                    ${groups[name].map(productCard).join('')}
+                </div>
+            </div>
+        `).join('')
         : '';
 }
+
+// ============================================================
+// 10. SCROLL TO FEATURED
+// ============================================================
 
 function scrollToFeatured() {
     const page = $('#pageScroll');
     const section = $('#featuredSection');
     const header = $('.app-header');
+
     if (!page || !section) return;
-    const y = section.getBoundingClientRect().top - page.getBoundingClientRect().top + page.scrollTop;
-    page.scrollTo({ top: Math.max(0, y - (header?.offsetHeight || 72) - 16), behavior: 'smooth' });
+
+    const y =
+        section.getBoundingClientRect().top -
+        page.getBoundingClientRect().top +
+        page.scrollTop;
+
+    page.scrollTo({
+        top: Math.max(
+            0,
+            y - (header?.offsetHeight || 72) - 16
+        ),
+        behavior: 'smooth'
+    });
 }
 
-// ------------------------------------------------------------
-// 5. Data Supabase + AI Agent Event Bus
-// ------------------------------------------------------------
+// ============================================================
+// 11. SUPABASE DATA BRIDGE
+// ============================================================
+
 async function initSupabaseDataBridge() {
-    console.info('⚙️ [Kantoong Engine] Menghubungkan etalase ke Supabase Cloud...');
+    console.info(
+        '[Kantoong Engine] Menghubungkan etalase ke Supabase Cloud...'
+    );
+
     S.isLoading = true;
     renderSkeleton();
 
     let rows = [];
+
     try {
-        const { data, error } = await supabase.from('products').select('*');
+        const { data, error } = await supabase
+            .from('products')
+            .select('*');
+
         if (error) throw error;
+
         rows = data || [];
-    } catch (err) {
-        console.warn('⚠️ [Supabase] Gagal mengambil produk, memakai data contoh jika diizinkan:', err.message);
+    } catch (error) {
+        console.warn(
+            '[Supabase] Gagal mengambil produk. ' +
+            'Data contoh akan digunakan jika diizinkan:',
+            error.message
+        );
     }
 
-    rows = rows.filter(p => p.is_published !== false);
-    if (CFG.filter_by_business_id) rows = rows.filter(p => p.business_id === CFG.business_id);
+    rows = rows.filter((product) => {
+        return product.is_published !== false;
+    });
 
-    // Terlaris dulu; jika sama, yang terbaru dulu
+    if (CFG.filter_by_business_id) {
+        rows = rows.filter((product) => {
+            return product.business_id === CFG.business_id;
+        });
+    }
+
+    // Produk terlaris lebih dahulu, lalu yang terbaru.
     rows.sort((a, b) =>
-        (Number(b.sales_count) || 0) - (Number(a.sales_count) || 0) ||
-        String(b.created_at || '').localeCompare(String(a.created_at || '')));
+        (Number(b.sales_count) || 0) -
+        (Number(a.sales_count) || 0) ||
+        String(b.created_at || '').localeCompare(
+            String(a.created_at || '')
+        )
+    );
 
     S.usingDemo = false;
-    if (!rows.length && CFG.use_demo_when_empty !== false) {
+
+    if (
+        !rows.length &&
+        CFG.use_demo_when_empty !== false
+    ) {
         rows = (CFG.demo_products || []).slice();
         S.usingDemo = true;
     }
 
     S.products = rows;
-    S.featured = rows.slice(0, CFG.featured?.limit || 8);
+    S.featured = rows.slice(
+        0,
+        Number(CFG.featured?.limit) || 8
+    );
+
     S.isLoading = false;
+
     renderFeatured();
     renderCategories();
-    console.log(`📦 [Kantoong Core] ${rows.length} produk siap${S.usingDemo ? ' (data contoh)' : ''}.`);
+
+    console.info(
+        `[Kantoong Core] ${rows.length} produk siap` +
+        `${S.usingDemo ? ' (data contoh)' : ''}.`
+    );
 
     emit('supabase-data-ready', S.products);
     emit('kantoong-ai-ready', S);
 }
 
-// AI mencocokkan produk -> etalase berganti otomatis
-window.addEventListener('kantoong:matched', (e) => {
-    const ids = (e.detail?.ids || []).map(String);
-    const list = ids.map(id => S.products.find(p => String(p.id) === id)).filter(Boolean);
+// ============================================================
+// 12. AI PRODUCT MATCHING EVENTS
+// ============================================================
+
+window.addEventListener('kantoong:matched', (event) => {
+    const ids = (event.detail?.ids || []).map(String);
+
+    const list = ids
+        .map((id) => {
+            return S.products.find(
+                (product) => String(product.id) === id
+            );
+        })
+        .filter(Boolean);
+
     if (!list.length) return;
+
     S.matched = list;
+
     renderFeatured();
     scrollToFeatured();
 });
 
-window.addEventListener('kantoong:show-catalog', scrollToFeatured);
+window.addEventListener(
+    'kantoong:show-catalog',
+    scrollToFeatured
+);
 
-// ------------------------------------------------------------
-// 6. Keranjang (diurus modul cart/cart.js; engine hanya mengirim event)
-// ------------------------------------------------------------
+// ============================================================
+// 13. CART EVENT BRIDGE
+// Detail keranjang ditangani oleh cart/cart.js.
+// ============================================================
+
 function addToCart(id) {
-    const product = S.products.find(p => String(p.id) === String(id));
-    if (product) emit('kantoong:cart-add', { product, qty: 1 });
+    const product = S.products.find(
+        (item) => String(item.id) === String(id)
+    );
+
+    if (!product) return;
+
+    emit('kantoong:cart-add', {
+        product,
+        qty: 1
+    });
 }
 
-// ------------------------------------------------------------
-// 7. Klik di seluruh halaman (satu pendengar untuk semua tombol)
-// ------------------------------------------------------------
-document.addEventListener('click', (e) => {
-    const el = e.target.closest('[data-action]');
-    if (!el) return;
-    const { action, id, prompt } = el.dataset;
+// ============================================================
+// 14. DELEGATED ACTIONS
+// ============================================================
 
-    if (action === 'scroll-featured') scrollToFeatured();
-    else if (action === 'consult') emit('kantoong:consult', { text: prompt || '' });
-    else if (action === 'ask-product') {
-        const p = S.products.find(x => String(x.id) === String(id));
-        if (p) emit('kantoong:consult', { text: `Ceritakan tentang ${p.name}`, productId: p.id });
+document.addEventListener('click', (event) => {
+    const element = event.target.closest('[data-action]');
+    if (!element) return;
+
+    const { action, id, prompt } = element.dataset;
+
+    if (action === 'scroll-featured') {
+        scrollToFeatured();
+        return;
     }
-    else if (action === 'add-cart') addToCart(id);
+
+    if (action === 'consult') {
+        emit('kantoong:consult', {
+            text: prompt || ''
+        });
+        return;
+    }
+
+    if (action === 'ask-product') {
+        const product = S.products.find(
+            (item) => String(item.id) === String(id)
+        );
+
+        if (product) {
+            emit('kantoong:consult', {
+                text: `Ceritakan tentang ${product.name}`,
+                productId: product.id
+            });
+        }
+
+        return;
+    }
+
+    if (action === 'add-cart') {
+        addToCart(id);
+    }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    $('#btnSearch')?.addEventListener('click', () => emit('kantoong:consult', { text: '' }));
+    $('#btnSearch')?.addEventListener('click', () => {
+        emit('kantoong:consult', { text: '' });
+    });
 
     $('#resetCatalogBtn')?.addEventListener('click', () => {
         S.matched = null;
@@ -356,164 +854,317 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// ------------------------------------------------------------
-// 8. Laci menu, komponen modular, admin & Google One Tap
-//    (logika lama dipertahankan; akan diganti Supabase Auth
-//    di tahap dashboard admin)
-// ------------------------------------------------------------
+// ============================================================
+// 15. MENU, DRAWER, AND DYNAMIC COMPONENTS
+// ============================================================
+
 function initMenuAndAuth() {
-    const menuBtn = $('#showcaseMenuBtn');
+    const menuButton = $('#showcaseMenuBtn');
     const drawer = $('#sampleDrawer');
-    const closeDrawer = $('#closeDrawer');
+    const closeButton = $('#closeDrawer');
     const container = $('#dynamicComponentContainer');
 
-    if (menuBtn && drawer) menuBtn.addEventListener('click', () => { drawer.style.display = 'flex'; });
-    if (closeDrawer && drawer) closeDrawer.addEventListener('click', () => { drawer.style.display = 'none'; });
+    // Hamburger: buka dashboard Bento.
+    // Jika host dashboard tidak tersedia, fungsi akan fallback
+    // ke drawer menu.
+    menuButton?.addEventListener('click', () => {
+        if (window.KantoongBentoIntegrated) {
+            openKantoongBentoDashboard();
+        } else {
+            openDrawer();
+        }
+    });
 
-    // Tombol "Katalog Produk Toko": tutup laci lalu gulir ke etalase
+    closeButton?.addEventListener('click', closeDrawer);
+
+    // Tutup dashboard melalui tombol yang ditandai di HTML.
+    document.addEventListener('click', (event) => {
+        const closeDashboard = event.target.closest(
+            '[data-kd-close-dashboard]'
+        );
+
+        if (closeDashboard) {
+            closeKantoongBentoDashboard();
+        }
+    });
+
+    // Tombol katalog: tutup drawer, tampilkan storefront.
     $('#btnOpenCatalog')?.addEventListener('click', () => {
-        if (drawer) drawer.style.display = 'none';
+        closeDrawer();
+        closeKantoongBentoDashboard();
         scrollToFeatured();
     });
 
-    // Komponen modular (tombol dengan atribut data-component)
-    document.querySelectorAll('.sample-item-btn[data-component]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const compFile = btn.getAttribute('data-component');
-            if (!compFile) return;
-            if (drawer) drawer.style.display = 'none';
+    // Komponen modular dengan atribut data-component.
+    document
+        .querySelectorAll('.sample-item-btn[data-component]')
+        .forEach((button) => {
+            button.addEventListener('click', async () => {
+                const componentFile = button.getAttribute(
+                    'data-component'
+                );
 
-            fetch(`components/${compFile}`)
-                .then(res => {
-                    if (!res.ok) throw new Error('Gagal memuat komponen: components/' + compFile);
-                    return res.text();
-                })
-                .then(html => {
+                if (!componentFile) return;
+
+                closeDrawer();
+
+                try {
+                    const response = await fetch(
+                        `components/${componentFile}`
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            `Gagal memuat components/${componentFile}`
+                        );
+                    }
+
+                    const html = await response.text();
+
                     if (!container) return;
-                    injectHTML(container, html);
-                    const closeCompBtn = container.querySelector('#closeGoldModal') || container.querySelector('.gp-close');
-                    if (closeCompBtn) closeCompBtn.addEventListener('click', () => { container.innerHTML = ''; });
-                })
-                .catch(err => alert('Info: ' + err.message));
-        });
-    });
 
-    // ---------- Sistem Admin & Google One Tap ----------
+                    injectHTML(container, html);
+
+                    const closeComponentButton =
+                        container.querySelector('#closeGoldModal') ||
+                        container.querySelector('.gp-close');
+
+                    if (closeComponentButton) {
+                        closeComponentButton.addEventListener(
+                            'click',
+                            () => {
+                                container.innerHTML = '';
+                            }
+                        );
+                    }
+                } catch (error) {
+                    console.error(
+                        '[Kantoong Component]',
+                        error
+                    );
+
+                    alert(`Info: ${error.message}`);
+                }
+            });
+        });
+
+    // ========================================================
+    // 16. ADMIN AND CUSTOMER AUTH UI
+    // ========================================================
+
     const ADMIN_EMAILS = [
-        'micken.jobmail@gmail.com' // Email whitelist admin
+        'micken.jobmail@gmail.com'
     ];
 
-    const drawerAdminBtn = $('#drawerAdminBtn');
-    const customerGoogleSignInDiv = $('#customerGoogleSignInDiv');
-    const drawerCustomerLogoutBtn = $('#drawerCustomerLogoutBtn');
+    const adminButton = $('#drawerAdminBtn');
+    const googleSignInDiv = $('#customerGoogleSignInDiv');
+    const customerLogoutButton = $('#drawerCustomerLogoutBtn');
 
-    // Mode testing: otomatis dianggap admin
-    if (DEV_AUTO_ADMIN && !localStorage.getItem('kantong_admin_email')) {
-        localStorage.setItem('kantong_admin_email', ADMIN_EMAILS[0]);
+    // Mode testing: otomatis dianggap admin.
+    if (
+        DEV_AUTO_ADMIN &&
+        !localStorage.getItem('kantong_admin_email')
+    ) {
+        localStorage.setItem(
+            'kantong_admin_email',
+            ADMIN_EMAILS[0]
+        );
     }
 
-    let savedAdminEmail = localStorage.getItem('kantong_admin_email');
-    let savedCustomerEmail = localStorage.getItem('kantong_customer_email');
+    let savedAdminEmail = localStorage.getItem(
+        'kantong_admin_email'
+    );
+
+    let savedCustomerEmail = localStorage.getItem(
+        'kantong_customer_email'
+    );
 
     function parseJwt(token) {
         try {
-            const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
-                '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+            const base64 = token
+                .split('.')[1]
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map((character) => {
+                        return '%' +
+                            ('00' +
+                            character.charCodeAt(0).toString(16))
+                            .slice(-2);
+                    })
+                    .join('')
+            );
+
             return JSON.parse(jsonPayload);
-        } catch (e) {
+        } catch {
             return null;
         }
     }
 
     function updateMenuUI() {
-        if (savedAdminEmail && ADMIN_EMAILS.includes(savedAdminEmail)) {
-            if (drawerAdminBtn) drawerAdminBtn.style.display = 'block';
-            if (customerGoogleSignInDiv) customerGoogleSignInDiv.parentElement.style.display = 'none';
-            if (drawerCustomerLogoutBtn) {
-                drawerCustomerLogoutBtn.style.display = 'block';
-                drawerCustomerLogoutBtn.textContent = `Admin: ${savedAdminEmail.split('@')[0]} (Keluar)`;
+        const isAdmin = Boolean(
+            savedAdminEmail &&
+            ADMIN_EMAILS.includes(savedAdminEmail)
+        );
+
+        const isCustomer = Boolean(
+            !isAdmin && savedCustomerEmail
+        );
+
+        if (adminButton) {
+            adminButton.hidden = !isAdmin;
+            adminButton.style.display = isAdmin ? 'block' : 'none';
+        }
+
+        if (customerLogoutButton) {
+            customerLogoutButton.hidden = !(isAdmin || isCustomer);
+            customerLogoutButton.style.display =
+                isAdmin || isCustomer ? 'block' : 'none';
+
+            if (isAdmin) {
+                customerLogoutButton.textContent =
+                    `Admin: ${savedAdminEmail.split('@')[0]} (Keluar)`;
+            } else if (isCustomer) {
+                customerLogoutButton.textContent =
+                    `Akun: ${savedCustomerEmail.split('@')[0]} (Keluar)`;
             }
-        } else if (savedCustomerEmail) {
-            if (drawerAdminBtn) drawerAdminBtn.style.display = 'none';
-            if (customerGoogleSignInDiv) customerGoogleSignInDiv.parentElement.style.display = 'none';
-            if (drawerCustomerLogoutBtn) {
-                drawerCustomerLogoutBtn.style.display = 'block';
-                drawerCustomerLogoutBtn.textContent = `Akun: ${savedCustomerEmail.split('@')[0]} (Keluar)`;
-            }
-        } else {
-            if (drawerAdminBtn) drawerAdminBtn.style.display = 'none';
-            if (drawerCustomerLogoutBtn) drawerCustomerLogoutBtn.style.display = 'none';
-            if (customerGoogleSignInDiv) customerGoogleSignInDiv.parentElement.style.display = 'block';
+        }
+
+        // Tombol Google berada di dalam #customerAuthContainer.
+        const googleContainer = googleSignInDiv?.parentElement;
+
+        if (googleContainer) {
+            googleContainer.style.display =
+                isAdmin || isCustomer ? 'none' : 'block';
         }
     }
+
     updateMenuUI();
 
-    if (drawerCustomerLogoutBtn) {
-        drawerCustomerLogoutBtn.addEventListener('click', () => {
-            if (confirm('Apakah Anda ingin keluar dari sesi ini?')) {
-                localStorage.removeItem('kantong_admin_email');
-                localStorage.removeItem('kantong_customer_email');
-                location.reload();
-            }
-        });
-    }
-
-    // Google One Tap / Auto-Login
-    window.addEventListener('load', () => {
-        if (!savedAdminEmail && !savedCustomerEmail && window.google && google.accounts && google.accounts.id) {
-            const googleClientId = CFG.google_client_id
-                || '153262298610-rrhi1e6mlqlg553vri7ig7k9po2buulm.apps.googleusercontent.com';
-
-            google.accounts.id.initialize({
-                client_id: googleClientId,
-                callback: (response) => {
-                    const payload = parseJwt(response.credential);
-                    if (payload && payload.email) {
-                        const userEmail = payload.email;
-                        if (ADMIN_EMAILS.includes(userEmail)) {
-                            localStorage.setItem('kantong_admin_email', userEmail);
-                            savedAdminEmail = userEmail;
-                        } else {
-                            localStorage.setItem('kantong_customer_email', userEmail);
-                            savedCustomerEmail = userEmail;
-                        }
-                        updateMenuUI();
-                    }
-                },
-                auto_select: true,
-                cancel_on_tap_outside: true
-            });
-
-            google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    if (customerGoogleSignInDiv && customerGoogleSignInDiv.innerHTML.trim() === '') {
-                        google.accounts.id.renderButton(customerGoogleSignInDiv,
-                            { theme: 'outline', size: 'large', width: '240px', text: 'signin_with' });
-                    }
-                }
-            });
+    customerLogoutButton?.addEventListener('click', () => {
+        if (!confirm('Apakah Anda ingin keluar dari sesi ini?')) {
+            return;
         }
+
+        localStorage.removeItem('kantong_admin_email');
+        localStorage.removeItem('kantong_customer_email');
+
+        location.reload();
     });
 
-    // Tombol Admin: buka Dashboard Admin
-    if (drawerAdminBtn) {
-        drawerAdminBtn.addEventListener('click', () => {
-            if (drawer) drawer.style.display = 'none';
-            fetch('components/admin-dashboard.html')
-                .then(res => {
-                    if (!res.ok) throw new Error('File komponen admin tidak ditemukan: components/admin-dashboard.html');
-                    return res.text();
-                })
-                .then(html => { if (container) injectHTML(container, html); })
-                .catch(err => alert('Info: ' + err.message));
+    // ========================================================
+    // 17. GOOGLE ONE TAP / AUTO-LOGIN
+    // ========================================================
+
+    window.addEventListener('load', () => {
+        if (
+            savedAdminEmail ||
+            savedCustomerEmail ||
+            !window.google?.accounts?.id
+        ) {
+            return;
+        }
+
+        const googleClientId =
+            CFG.google_client_id ||
+            '153262298610-rrhi1e6mlqlg553vri7ig7k9po2buulm.apps.googleusercontent.com';
+
+        google.accounts.id.initialize({
+            client_id: googleClientId,
+
+            callback: (response) => {
+                const payload = parseJwt(response.credential);
+                if (!payload?.email) return;
+
+                const userEmail = payload.email;
+
+                if (ADMIN_EMAILS.includes(userEmail)) {
+                    localStorage.setItem(
+                        'kantong_admin_email',
+                        userEmail
+                    );
+
+                    savedAdminEmail = userEmail;
+                } else {
+                    localStorage.setItem(
+                        'kantong_customer_email',
+                        userEmail
+                    );
+
+                    savedCustomerEmail = userEmail;
+                }
+
+                updateMenuUI();
+            },
+
+            auto_select: true,
+            cancel_on_tap_outside: true
         });
-    }
+
+        google.accounts.id.prompt((notification) => {
+            const shouldRenderButton =
+                notification.isNotDisplayed() ||
+                notification.isSkippedMoment();
+
+            if (
+                shouldRenderButton &&
+                googleSignInDiv &&
+                googleSignInDiv.innerHTML.trim() === ''
+            ) {
+                google.accounts.id.renderButton(
+                    googleSignInDiv,
+                    {
+                        theme: 'outline',
+                        size: 'large',
+                        width: '240px',
+                        text: 'signin_with'
+                    }
+                );
+            }
+        });
+    });
+
+    // ========================================================
+    // 18. ADMIN DASHBOARD COMPONENT
+    // Mempertahankan komponen admin lama.
+    // ========================================================
+
+    adminButton?.addEventListener('click', async () => {
+        closeDrawer();
+
+        try {
+            const response = await fetch(
+                'components/admin-dashboard.html'
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    'File components/admin-dashboard.html tidak ditemukan.'
+                );
+            }
+
+            const html = await response.text();
+
+            if (container) {
+                injectHTML(container, html);
+            }
+        } catch (error) {
+            console.error('[Kantoong Admin]', error);
+            alert(`Info: ${error.message}`);
+        }
+    });
 }
 
-// ------------------------------------------------------------
-// Mulai (module script berjalan setelah HTML selesai dibaca)
-// ------------------------------------------------------------
+// ============================================================
+// 19. INITIALIZATION
+// ============================================================
+
+// Pulihkan data keranjang lokal agar state inti tetap tersedia.
+S.cart = store.get('kantoong:cart', []);
+
 applyConfig();
 renderHero();
 renderBrandSlot();

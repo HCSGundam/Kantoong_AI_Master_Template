@@ -1,0 +1,2035 @@
+
+/* =========================================================
+   KANTOONG CORE
+   Feature : Profile
+   File    : profile.css
+   Design  : Premium Ivory / Charcoal / Champagne Gold
+   Scope   : KANTOONG Profile Module
+   ========================================================= */
+
+/* =========================================================
+   01. DESIGN TOKENS
+   ========================================================= */
+
+.kp-mount,
+[data-kantoong-profile] {
+    --kp-bg: #f7f6f2;
+    --kp-surface: #ffffff;
+    --kp-surface-soft: #fbfaf7;
+    --kp-text: #22231f;
+    --kp-text-secondary: #73746d;
+    --kp-text-muted: #96978f;
+    --kp-border: #e9e7df;
+    --kp-border-strong: #dcd9cf;
+    --kp-gold: #b89653;
+    --kp-gold-dark: #92713b;
+    --kp-gold-soft: #f5eedf;
+    --kp-teal: #278579;
+    --kp-teal-soft: #e8f5f1;
+    --kp-danger: #c44848;
+    --kp-danger-soft: #fff0ef;
+    --kp-success: #27815f;
+    --kp-shadow-sm: 0 2px 8px rgba(32, 33, 27, 0.035);
+    --kp-shadow-md: 0 12px 36px rgba(32, 33, 27, 0.075);
+    --kp-shadow-lg: 0 24px 80px rgba(20, 22, 18, 0.16);
+    --kp-radius-sm: 10px;
+    --kp-radius-md: 16px;
+    --kp-radius-lg: 24px;
+    --kp-radius-xl: 30px;
+    --kp-transition: 180ms ease;
+
+    width: 100%;
+    min-width: 0;
+    color: var(--kp-text);
+    font-family: Inter, "DM Sans", -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.kp-mount *,
+.kp-mount *::before,
+.kp-mount *::after,
+[data-kantoong-profile] *,
+[data-kantoong-profile] *::before,
+[data-kantoong-profile] *::after {
+    box-sizing: border-box;
+}
+
+.kp-mount button,
+.kp-mount input,
+.kp-mount textarea,
+.kp-mount select,
+[data-kantoong-profile] button,
+[data-kantoong-profile] input,
+[data-kantoong-profile] textarea,
+[data-kantoong-profile] select {
+    font: inherit;
+}
+
+.kp-mount button,
+[data-kantoong-profile] button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.kp-mount button:focus-visible,
+.kp-mount a:focus-visible,
+.kp-mount input:focus-visible,
+.kp-mount textarea:focus-visible,
+.kp-mount select:focus-visible,
+[data-kantoong-profile] button:focus-visible,
+[data-kantoong-profile] a:focus-visible,
+[data-kantoong-profile] input:focus-visible,
+[data-kantoong-profile] textarea:focus-visible,
+[data-kantoong-profile] select:focus-visible {
+    outline: 3px solid rgba(184, 150, 83, 0.35);
+    outline-offset: 3px;
+}
+
+.kp-mount [hidden],
+[data-kantoong-profile] [hidden] {
+    display: none !important;
+}
+
+.kp-mount img,
+[data-kantoong-profile] img {
+    display: block;
+    max-width: 100%;
+}
+
+.kp-mount svg,
+[data-kantoong-profile] svg {
+    flex-shrink: 0;
+}
+
+/* =========================================================
+   02. MAIN PROFILE LAYOUT
+   ========================================================= */
+
+.kp-profile {
+    width: 100%;
+    max-width: 1440px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 28px;
+    background: var(--kp-bg);
+    border-radius: var(--kp-radius-lg);
+}
+
+.kp-profile__layout,
+.kp-profile-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+    gap: 24px;
+}
+
+.kp-profile__main,
+.kp-profile-main {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
+}
+
+.kp-profile__sidebar,
+.kp-profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+}
+
+.kp-profile__section,
+.kp-section {
+    min-width: 0;
+    padding: 24px;
+    background: var(--kp-surface);
+    border: 1px solid var(--kp-border);
+    border-radius: var(--kp-radius-lg);
+    box-shadow: var(--kp-shadow-sm);
+}
+
+.kp-profile__section-title,
+.kp-section-title {
+    margin: 0;
+    color: var(--kp-text);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.45px;
+}
+
+.kp-profile__section-description,
+.kp-section-description {
+    margin: 5px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+/* =========================================================
+   03. HEADER
+   ========================================================= */
+
+.kp-header,
+.kp-profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.kp-header__brand,
+.kp-profile-header__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.kp-header__logo,
+.kp-profile-header__logo {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    place-items: center;
+    color: #fff;
+    background: linear-gradient(145deg, #292b26, #414239);
+    border-radius: 15px;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.kp-header__title,
+.kp-profile-header__title {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 750;
+    letter-spacing: -0.65px;
+}
+
+.kp-header__subtitle,
+.kp-profile-header__subtitle {
+    margin: 2px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+}
+
+.kp-header__actions,
+.kp-profile-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* =========================================================
+   04. PROFILE HERO
+   ========================================================= */
+
+.kp-profile-hero,
+.kp-profile__hero {
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+    background: var(--kp-surface);
+    border: 1px solid var(--kp-border);
+    border-radius: var(--kp-radius-xl);
+    box-shadow: var(--kp-shadow-sm);
+}
+
+.kp-profile-hero__cover,
+.kp-profile__cover {
+    position: relative;
+    height: 150px;
+    overflow: hidden;
+    background:
+        radial-gradient(
+            ellipse at 82% 15%,
+            rgba(255, 255, 255, 0.88),
+            transparent 34%
+        ),
+        radial-gradient(
+            ellipse at 10% 100%,
+            rgba(184, 150, 83, 0.2),
+            transparent 43%
+        ),
+        linear-gradient(120deg, #e9e2d3, #f7f4ed 54%, #ded7c8);
+}
+
+.kp-profile-hero__cover::after,
+.kp-profile__cover::after {
+    position: absolute;
+    right: -30px;
+    bottom: -115px;
+    width: 310px;
+    height: 210px;
+    border: 1px solid rgba(184, 150, 83, 0.28);
+    border-radius: 50%;
+    content: "";
+    transform: rotate(-25deg);
+}
+
+.kp-profile-hero__body,
+.kp-profile__hero-body {
+    position: relative;
+    padding: 0 28px 28px;
+}
+
+.kp-profile-hero__identity,
+.kp-profile__identity {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-top: -43px;
+}
+
+.kp-profile-hero__user,
+.kp-profile__user {
+    display: flex;
+    align-items: flex-end;
+    gap: 18px;
+    min-width: 0;
+}
+
+.kp-profile-hero__details,
+.kp-profile__details {
+    min-width: 0;
+    padding-bottom: 5px;
+}
+
+.kp-profile-hero__name,
+.kp-profile__name {
+    overflow-wrap: anywhere;
+    margin: 0;
+    color: var(--kp-text);
+    font-size: clamp(21px, 2.5vw, 28px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.25;
+}
+
+.kp-profile-hero__username,
+.kp-profile__username {
+    margin: 5px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 13px;
+}
+
+.kp-profile-hero__bio,
+.kp-profile__bio {
+    max-width: 640px;
+    margin: 18px 0 0;
+    color: #575850;
+    font-size: 14px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.kp-profile-hero__meta,
+.kp-profile__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 18px;
+    margin-top: 15px;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+}
+
+.kp-profile-hero__meta-item,
+.kp-profile__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.kp-profile-hero__meta-item a,
+.kp-profile__meta-item a {
+    color: var(--kp-teal);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.kp-profile-hero__meta-item a:hover,
+.kp-profile__meta-item a:hover {
+    text-decoration: underline;
+}
+
+.kp-profile-hero__actions,
+.kp-profile__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+}
+
+/* =========================================================
+   05. AVATAR — DEFAULT INITIAL P
+   ========================================================= */
+
+.kp-avatar,
+.kp-profile-avatar,
+.kp-avatar--medium {
+    position: relative;
+    display: grid;
+    width: 94px;
+    height: 94px;
+    flex: 0 0 auto;
+    overflow: hidden;
+    place-items: center;
+    color: #fff;
+    background: linear-gradient(145deg, #292b26, #555044);
+    border: 5px solid var(--kp-surface);
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(25, 26, 21, 0.12);
+    font-size: 37px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.kp-avatar img,
+.kp-profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.kp-avatar--small,
+.kp-profile-avatar--small {
+    width: 42px;
+    height: 42px;
+    border-width: 0;
+    font-size: 17px;
+}
+
+.kp-avatar--large,
+.kp-profile-avatar--large {
+    width: 112px;
+    height: 112px;
+    font-size: 42px;
+}
+
+.kp-avatar__initial,
+.kp-profile-avatar__initial {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+}
+
+.kp-avatar__edit,
+.kp-profile-avatar__edit {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    color: var(--kp-text);
+    background: #fff;
+    border: 1px solid var(--kp-border);
+    border-radius: 50%;
+    box-shadow: var(--kp-shadow-sm);
+    cursor: pointer;
+    transition: transform var(--kp-transition);
+}
+
+.kp-avatar__edit:hover,
+.kp-profile-avatar__edit:hover {
+    transform: scale(1.07);
+}
+
+/* =========================================================
+   06. PROFILE STATUS & BADGES
+   ========================================================= */
+
+.kp-badge,
+.kp-profile-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px 10px;
+    color: var(--kp-gold-dark);
+    background: var(--kp-gold-soft);
+    border: 1px solid #e9dcc0;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 750;
+    line-height: 1.4;
+}
+
+.kp-badge--success {
+    color: var(--kp-success);
+    background: #e9f6ee;
+    border-color: #d5eadc;
+}
+
+.kp-badge--private {
+    color: #6e7068;
+    background: #f1f1ed;
+    border-color: #e4e4dd;
+}
+
+.kp-status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    flex: 0 0 auto;
+    background: #43a578;
+    border-radius: 50%;
+}
+
+/* =========================================================
+   07. BUTTONS
+   ========================================================= */
+
+.kp-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background var(--kp-transition),
+        border-color var(--kp-transition),
+        color var(--kp-transition),
+        transform var(--kp-transition),
+        box-shadow var(--kp-transition);
+}
+
+.kp-button:active {
+    transform: scale(0.98);
+}
+
+.kp-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.kp-button--primary {
+    color: #fff;
+    background: #282a25;
+    border-color: #282a25;
+}
+
+.kp-button--primary:hover {
+    background: #404139;
+    box-shadow: 0 5px 15px rgba(30, 31, 26, 0.12);
+}
+
+.kp-button--secondary {
+    color: var(--kp-text);
+    background: #fff;
+    border-color: var(--kp-border-strong);
+}
+
+.kp-button--secondary:hover {
+    background: var(--kp-surface-soft);
+    border-color: #c9c5b8;
+}
+
+.kp-button--gold {
+    color: #fff;
+    background: linear-gradient(135deg, #b99a60, #94723d);
+    border-color: transparent;
+}
+
+.kp-button--gold:hover {
+    box-shadow: 0 5px 16px rgba(184, 150, 83, 0.24);
+}
+
+.kp-button--danger {
+    color: #fff;
+    background: var(--kp-danger);
+    border-color: var(--kp-danger);
+}
+
+.kp-button--danger:hover {
+    background: #a93838;
+}
+
+.kp-button--full {
+    width: 100%;
+}
+
+.kp-text-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 0;
+    color: var(--kp-text-secondary);
+    background: transparent;
+    border: 0;
+    font-size: 12px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.kp-text-button:hover {
+    color: var(--kp-text);
+}
+
+.kp-icon-button {
+    display: inline-grid;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    place-items: center;
+    color: var(--kp-text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    font-size: 22px;
+    cursor: pointer;
+    transition: background var(--kp-transition);
+}
+
+.kp-icon-button:hover {
+    color: var(--kp-text);
+    background: #f2f1ec;
+}
+
+/* =========================================================
+   08. PROFILE STATISTICS
+   ========================================================= */
+
+.kp-profile-stats,
+.kp-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.kp-stat-card,
+.kp-profile-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    padding: 17px;
+    background: var(--kp-surface-soft);
+    border: 1px solid var(--kp-border);
+    border-radius: var(--kp-radius-md);
+    transition:
+        background var(--kp-transition),
+        border-color var(--kp-transition),
+        transform var(--kp-transition);
+}
+
+.kp-stat-card--clickable,
+.kp-profile-stat--clickable {
+    cursor: pointer;
+}
+
+.kp-stat-card--clickable:hover,
+.kp-profile-stat--clickable:hover {
+    background: #fff;
+    border-color: #d8c7a5;
+    transform: translateY(-2px);
+}
+
+.kp-stat-card__value,
+.kp-profile-stat__value {
+    overflow: hidden;
+    color: var(--kp-text);
+    font-size: clamp(20px, 2vw, 27px);
+    font-weight: 800;
+    letter-spacing: -0.9px;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+}
+
+.kp-stat-card__label,
+.kp-profile-stat__label {
+    color: var(--kp-text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.kp-stat-card__icon,
+.kp-profile-stat__icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    margin-bottom: 7px;
+    place-items: center;
+    color: var(--kp-gold-dark);
+    background: var(--kp-gold-soft);
+    border-radius: 11px;
+}
+
+/* =========================================================
+   09. ACTIVITY TABS
+   ========================================================= */
+
+.kp-profile-tabs,
+.kp-activity-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 4px;
+    background: #f3f2ed;
+    border: 1px solid var(--kp-border);
+    border-radius: 14px;
+    scrollbar-width: thin;
+    scrollbar-color: #d2cfc5 transparent;
+}
+
+.kp-profile-tab,
+.kp-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 40px;
+    flex: 0 0 auto;
+    padding: 10px 15px;
+    color: var(--kp-text-secondary);
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 650;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background var(--kp-transition),
+        color var(--kp-transition),
+        box-shadow var(--kp-transition);
+}
+
+.kp-profile-tab:hover,
+.kp-tab:hover {
+    color: var(--kp-text);
+}
+
+.kp-profile-tab.is-active,
+.kp-tab.is-active,
+.kp-profile-tab[aria-selected="true"],
+.kp-tab[aria-selected="true"] {
+    color: var(--kp-text);
+    background: #fff;
+    box-shadow: 0 2px 7px rgba(25, 26, 21, 0.06);
+}
+
+.kp-profile-tab__count,
+.kp-tab__count {
+    display: inline-grid;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    place-items: center;
+    color: var(--kp-text-secondary);
+    background: #eeede8;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 750;
+}
+
+/* =========================================================
+   10. ACTIVITY CONTENT
+   ========================================================= */
+
+.kp-profile-activity,
+.kp-activity-content,
+[data-profile-activity-content] {
+    min-width: 0;
+    min-height: 190px;
+    margin-top: 18px;
+}
+
+.kp-activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.kp-activity-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 16px;
+    background: #fff;
+    border: 1px solid var(--kp-border);
+    border-radius: 15px;
+    transition: border-color var(--kp-transition);
+}
+
+.kp-activity-card:hover {
+    border-color: #d6c5a2;
+}
+
+.kp-activity-card__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    place-items: center;
+    color: var(--kp-gold-dark);
+    background: var(--kp-gold-soft);
+    border-radius: 12px;
+}
+
+.kp-activity-card__body {
+    min-width: 0;
+    flex: 1;
+}
+
+.kp-activity-card__body strong {
+    display: block;
+    overflow-wrap: anywhere;
+    color: var(--kp-text);
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.kp-activity-card__body p {
+    margin: 5px 0;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.kp-activity-card__body small {
+    color: var(--kp-text-muted);
+    font-size: 11px;
+}
+
+/* =========================================================
+   11. EMPTY STATE
+   ========================================================= */
+
+.kp-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 230px;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.kp-empty-state__icon {
+    display: grid;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 15px;
+    place-items: center;
+    color: var(--kp-gold-dark);
+    background: var(--kp-gold-soft);
+    border: 1px solid #e9dcc0;
+    border-radius: 20px;
+}
+
+.kp-empty-state h3 {
+    margin: 0;
+    color: var(--kp-text);
+    font-size: 15px;
+    font-weight: 750;
+}
+
+.kp-empty-state p {
+    max-width: 330px;
+    margin: 8px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+    line-height: 1.75;
+}
+
+/* =========================================================
+   12. SIDEBAR NAVIGATION
+   ========================================================= */
+
+.kp-nav-list,
+.kp-profile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.kp-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+    color: var(--kp-text);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 13px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background var(--kp-transition),
+        border-color var(--kp-transition);
+}
+
+.kp-nav-item:hover {
+    background: var(--kp-surface-soft);
+    border-color: var(--kp-border);
+}
+
+.kp-nav-item__icon {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    place-items: center;
+    color: #696a61;
+    background: #f1f0eb;
+    border-radius: 12px;
+}
+
+.kp-nav-item__copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.kp-nav-item__copy strong {
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.kp-nav-item__copy small {
+    color: var(--kp-text-secondary);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.kp-nav-item > svg:last-child {
+    color: var(--kp-text-muted);
+}
+
+.kp-settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kp-settings-row {
+    padding: 15px 0;
+    border-bottom: 1px solid var(--kp-border);
+}
+
+.kp-settings-row:last-child {
+    border-bottom: 0;
+}
+
+.kp-settings-row strong {
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.kp-settings-row p {
+    margin: 5px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   13. DIALOG OVERLAY
+   ========================================================= */
+
+.kp-profile-dialog-host,
+[data-profile-dialog-host] {
+    position: relative;
+    z-index: 1000;
+}
+
+.kp-dialog-backdrop {
+    position: fixed;
+    z-index: 99999;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 24px;
+    background: rgba(24, 25, 22, 0.54);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    animation: kp-fade-in 180ms ease both;
+}
+
+.kp-edit-dialog,
+.kp-auth-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 470px;
+    max-height: min(88dvh, 850px);
+    overflow-y: auto;
+    padding: 30px;
+    color: var(--kp-text);
+    background: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 25px;
+    box-shadow: var(--kp-shadow-lg);
+    animation: kp-dialog-in 220ms ease both;
+    overscroll-behavior: contain;
+}
+
+.kp-edit-dialog {
+    max-width: 570px;
+}
+
+.kp-dialog-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 24px;
+}
+
+.kp-dialog-header h2 {
+    margin: 0;
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+}
+
+.kp-dialog-header p {
+    margin: 6px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.kp-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+@keyframes kp-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes kp-dialog-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* =========================================================
+   14. AUTH BRANDING
+   ========================================================= */
+
+.kp-auth-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.kp-auth-brand__logo {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 14px;
+    place-items: center;
+    color: #fff;
+    background: linear-gradient(145deg, #252720, #4c4b3f);
+    border: 1px solid rgba(184, 150, 83, 0.45);
+    border-radius: 17px;
+    box-shadow: 0 8px 20px rgba(36, 36, 29, 0.12);
+    font-size: 23px;
+    font-weight: 850;
+}
+
+.kp-auth-brand__name {
+    margin: 0;
+    color: var(--kp-text);
+    font-size: 21px;
+    font-weight: 850;
+    letter-spacing: -0.75px;
+}
+
+.kp-auth-brand__tagline {
+    max-width: 290px;
+    margin: 7px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.kp-auth-heading {
+    margin-bottom: 22px;
+    text-align: center;
+}
+
+.kp-auth-heading h2 {
+    margin: 0;
+    color: var(--kp-text);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.9px;
+}
+
+.kp-auth-heading p {
+    margin: 8px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+    line-height: 1.75;
+}
+
+/* =========================================================
+   15. OAUTH PROVIDERS
+   ========================================================= */
+
+.kp-auth-providers {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.kp-auth-provider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    width: 100%;
+    min-height: 47px;
+    padding: 12px 16px;
+    color: #292a25;
+    background: #fff;
+    border: 1px solid #deddd6;
+    border-radius: 13px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background var(--kp-transition),
+        border-color var(--kp-transition),
+        box-shadow var(--kp-transition),
+        transform var(--kp-transition);
+}
+
+.kp-auth-provider:hover {
+    background: #faf9f6;
+    border-color: #c9c5b8;
+    box-shadow: var(--kp-shadow-sm);
+}
+
+.kp-auth-provider:active {
+    transform: scale(0.99);
+}
+
+.kp-auth-provider svg,
+.kp-auth-provider img {
+    width: 19px;
+    height: 19px;
+    object-fit: contain;
+}
+
+.kp-auth-provider--google {
+    color: #292a25;
+    background: #fff;
+}
+
+.kp-auth-provider--microsoft {
+    color: #292a25;
+    background: #fff;
+}
+
+.kp-auth-provider--apple {
+    color: #fff;
+    background: #20211e;
+    border-color: #20211e;
+}
+
+.kp-auth-provider--apple:hover {
+    background: #3a3b36;
+    border-color: #3a3b36;
+}
+
+.kp-auth-provider__icon {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    place-items: center;
+}
+
+.kp-auth-provider__icon svg {
+    width: 19px;
+    height: 19px;
+}
+
+.kp-auth-provider:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+/* =========================================================
+   16. AUTH DIVIDER
+   ========================================================= */
+
+.kp-auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 21px 0;
+    color: var(--kp-text-muted);
+    font-size: 11px;
+    text-align: center;
+}
+
+.kp-auth-divider::before,
+.kp-auth-divider::after {
+    height: 1px;
+    flex: 1;
+    background: var(--kp-border);
+    content: "";
+}
+
+/* =========================================================
+   17. FORMS & INPUTS
+   ========================================================= */
+
+.kp-auth-form,
+.kp-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+}
+
+.kp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.kp-field > span {
+    color: #393a34;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.kp-field input,
+.kp-field textarea,
+.kp-field select {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    padding: 12px 14px;
+    color: var(--kp-text);
+    background: #fff;
+    border: 1px solid #deddd6;
+    border-radius: 12px;
+    outline: none;
+    font-size: 13px;
+    transition:
+        border-color var(--kp-transition),
+        box-shadow var(--kp-transition),
+        background var(--kp-transition);
+}
+
+.kp-field input::placeholder,
+.kp-field textarea::placeholder {
+    color: #a1a198;
+}
+
+.kp-field input:hover,
+.kp-field textarea:hover,
+.kp-field select:hover {
+    border-color: #c9c5b8;
+}
+
+.kp-field input:focus,
+.kp-field textarea:focus,
+.kp-field select:focus {
+    background: #fff;
+    border-color: var(--kp-gold);
+    box-shadow: 0 0 0 3px rgba(184, 150, 83, 0.12);
+}
+
+.kp-field input:disabled,
+.kp-field textarea:disabled,
+.kp-field select:disabled {
+    color: var(--kp-text-muted);
+    background: #f5f4f0;
+    cursor: not-allowed;
+}
+
+.kp-field textarea {
+    min-height: 105px;
+    resize: vertical;
+    line-height: 1.7;
+}
+
+.kp-field small {
+    color: var(--kp-text-secondary);
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.kp-field__error {
+    color: var(--kp-danger);
+    font-size: 11px;
+}
+
+.kp-field--error input,
+.kp-field--error textarea {
+    border-color: var(--kp-danger);
+}
+
+.kp-auth-form__options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.kp-auth-form__options label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--kp-text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.kp-auth-form__options input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--kp-gold-dark);
+}
+
+.kp-auth-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 48px;
+    padding: 13px 16px;
+    color: #fff;
+    background: #292b25;
+    border: 1px solid #292b25;
+    border-radius: 13px;
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+    transition:
+        background var(--kp-transition),
+        transform var(--kp-transition);
+}
+
+.kp-auth-submit:hover {
+    background: #42433b;
+}
+
+.kp-auth-submit:active {
+    transform: scale(0.99);
+}
+
+.kp-auth-submit:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+/* =========================================================
+   18. AUTH LINKS & STATUS MESSAGES
+   ========================================================= */
+
+.kp-auth-link {
+    padding: 0;
+    color: var(--kp-gold-dark);
+    background: transparent;
+    border: 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.kp-auth-link:hover {
+    color: #715529;
+    text-decoration: underline;
+}
+
+.kp-auth-switch {
+    margin: 21px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+    line-height: 1.8;
+    text-align: center;
+}
+
+.kp-auth-switch button {
+    padding: 0;
+    color: var(--kp-gold-dark);
+    background: transparent;
+    border: 0;
+    font-size: inherit;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.kp-auth-switch button:hover {
+    text-decoration: underline;
+}
+
+.kp-auth-message {
+    margin-top: 12px;
+    padding: 12px 14px;
+    color: #755d2f;
+    background: #fbf5e8;
+    border: 1px solid #eadbbd;
+    border-radius: 11px;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.kp-auth-message[data-type="error"] {
+    color: #a63838;
+    background: var(--kp-danger-soft);
+    border-color: #f2d1cf;
+}
+
+.kp-auth-message[data-type="success"] {
+    color: #216c50;
+    background: #eaf7ef;
+    border-color: #d0ead9;
+}
+
+.kp-auth-message[data-type="info"] {
+    color: #386c76;
+    background: #eef7f8;
+    border-color: #d7e9eb;
+}
+
+/* =========================================================
+   19. EDIT PROFILE FORM
+   ========================================================= */
+
+.kp-edit-avatar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0 20px;
+    border-bottom: 1px solid var(--kp-border);
+}
+
+.kp-edit-avatar .kp-button {
+    min-height: 38px;
+}
+
+.kp-privacy-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 15px;
+    background: var(--kp-surface-soft);
+    border: 1px solid var(--kp-border);
+    border-radius: 13px;
+    cursor: pointer;
+}
+
+.kp-privacy-toggle > span {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.kp-privacy-toggle strong {
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.kp-privacy-toggle small {
+    color: var(--kp-text-secondary);
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.kp-privacy-toggle input[type="checkbox"] {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    flex: 0 0 auto;
+    appearance: none;
+    -webkit-appearance: none;
+    background: #d9d8d1;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background var(--kp-transition);
+}
+
+.kp-privacy-toggle input[type="checkbox"]::after {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+    content: "";
+    transition: transform var(--kp-transition);
+}
+
+.kp-privacy-toggle input[type="checkbox"]:checked {
+    background: var(--kp-teal);
+}
+
+.kp-privacy-toggle input[type="checkbox"]:checked::after {
+    transform: translateX(18px);
+}
+
+/* =========================================================
+   20. DANGER ZONE / DELETE ACCOUNT
+   ========================================================= */
+
+.kp-danger-dialog {
+    max-width: 450px;
+    text-align: center;
+}
+
+.kp-danger-icon {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 18px;
+    place-items: center;
+    color: var(--kp-danger);
+    background: var(--kp-danger-soft);
+    border: 1px solid #f1d4d1;
+    border-radius: 18px;
+}
+
+.kp-danger-dialog h2 {
+    margin: 0;
+    color: var(--kp-text);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.65px;
+}
+
+.kp-danger-dialog > p {
+    margin: 12px 0 0;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+.kp-danger-dialog .kp-dialog-actions {
+    justify-content: center;
+}
+
+.kp-danger-zone {
+    padding: 20px;
+    background: #fffafa;
+    border: 1px solid #f1d8d5;
+    border-radius: var(--kp-radius-md);
+}
+
+.kp-danger-zone h3 {
+    margin: 0;
+    color: var(--kp-danger);
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.kp-danger-zone p {
+    margin: 7px 0 15px;
+    color: var(--kp-text-secondary);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+/* =========================================================
+   21. PROFILE FOOTER
+   ========================================================= */
+
+.kp-profile-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 20px 3px 0;
+    color: var(--kp-text-muted);
+    font-size: 11px;
+}
+
+.kp-profile-footer a {
+    color: var(--kp-text-secondary);
+    text-decoration: none;
+}
+
+.kp-profile-footer a:hover {
+    color: var(--kp-gold-dark);
+}
+
+/* =========================================================
+   22. LOADING / SKELETON
+   ========================================================= */
+
+.kp-skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #eeede7;
+    border-radius: 9px;
+}
+
+.kp-skeleton::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.72),
+        transparent
+    );
+    content: "";
+    transform: translateX(-100%);
+    animation: kp-shimmer 1.5s infinite;
+}
+
+.kp-skeleton--text {
+    width: 65%;
+    height: 12px;
+}
+
+.kp-skeleton--title {
+    width: 45%;
+    height: 20px;
+}
+
+.kp-skeleton--avatar {
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+}
+
+@keyframes kp-shimmer {
+    to { transform: translateX(100%); }
+}
+
+/* =========================================================
+   23. SCROLLBARS
+   ========================================================= */
+
+.kp-dialog-backdrop,
+.kp-edit-dialog,
+.kp-auth-dialog {
+    scrollbar-width: thin;
+    scrollbar-color: #d6d2c7 transparent;
+}
+
+.kp-dialog-backdrop::-webkit-scrollbar,
+.kp-edit-dialog::-webkit-scrollbar,
+.kp-auth-dialog::-webkit-scrollbar {
+    width: 6px;
+}
+
+.kp-dialog-backdrop::-webkit-scrollbar-thumb,
+.kp-edit-dialog::-webkit-scrollbar-thumb,
+.kp-auth-dialog::-webkit-scrollbar-thumb {
+    background: #d6d2c7;
+    border-radius: 999px;
+}
+
+/* =========================================================
+   24. RESPONSIVE — TABLET
+   ========================================================= */
+
+@media (max-width: 1050px) {
+    .kp-profile {
+        padding: 20px;
+    }
+
+    .kp-profile__layout,
+    .kp-profile-layout {
+        grid-template-columns: minmax(0, 1fr) 255px;
+        gap: 18px;
+    }
+
+    .kp-profile-stats,
+    .kp-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .kp-profile__section,
+    .kp-section {
+        padding: 20px;
+    }
+
+    .kp-profile-hero__body,
+    .kp-profile__hero-body {
+        padding-right: 22px;
+        padding-bottom: 23px;
+        padding-left: 22px;
+    }
+}
+
+/* =========================================================
+   25. RESPONSIVE — MOBILE
+   ========================================================= */
+
+@media (max-width: 760px) {
+    .kp-profile {
+        padding: 12px;
+        border-radius: 18px;
+    }
+
+    .kp-header,
+    .kp-profile-header {
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .kp-header__logo,
+    .kp-profile-header__logo {
+        width: 39px;
+        height: 39px;
+        border-radius: 12px;
+    }
+
+    .kp-header__title,
+    .kp-profile-header__title {
+        font-size: 16px;
+    }
+
+    .kp-profile__layout,
+    .kp-profile-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .kp-profile__main,
+    .kp-profile-main,
+    .kp-profile__sidebar,
+    .kp-profile-sidebar {
+        width: 100%;
+        gap: 15px;
+    }
+
+    .kp-profile__sidebar,
+    .kp-profile-sidebar {
+        order: 2;
+    }
+
+    .kp-profile__section,
+    .kp-section {
+        padding: 17px;
+        border-radius: 19px;
+    }
+
+    .kp-profile-hero,
+    .kp-profile__hero {
+        border-radius: 22px;
+    }
+
+    .kp-profile-hero__cover,
+    .kp-profile__cover {
+        height: 112px;
+    }
+
+    .kp-profile-hero__body,
+    .kp-profile__hero-body {
+        padding: 0 17px 19px;
+    }
+
+    .kp-profile-hero__identity,
+    .kp-profile__identity {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: -37px;
+    }
+
+    .kp-profile-hero__user,
+    .kp-profile__user {
+        align-items: flex-end;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .kp-avatar,
+    .kp-profile-avatar {
+        width: 78px;
+        height: 78px;
+        border-width: 4px;
+        font-size: 31px;
+    }
+
+    .kp-avatar--large,
+    .kp-profile-avatar--large {
+        width: 100px;
+        height: 100px;
+        font-size: 38px;
+    }
+
+    .kp-profile-hero__details,
+    .kp-profile__details {
+        padding-bottom: 4px;
+    }
+
+    .kp-profile-hero__name,
+    .kp-profile__name {
+        font-size: 22px;
+        letter-spacing: -0.7px;
+    }
+
+    .kp-profile-hero__username,
+    .kp-profile__username {
+        font-size: 12px;
+    }
+
+    .kp-profile-hero__actions,
+    .kp-profile__actions {
+        width: 100%;
+    }
+
+    .kp-profile-hero__actions .kp-button,
+    .kp-profile__actions .kp-button {
+        flex: 1;
+    }
+
+    .kp-profile-hero__bio,
+    .kp-profile__bio {
+        margin-top: 15px;
+        font-size: 13px;
+    }
+
+    .kp-profile-stats,
+    .kp-stats-grid {
+        gap: 9px;
+        margin-top: 18px;
+    }
+
+    .kp-stat-card,
+    .kp-profile-stat {
+        padding: 13px;
+        border-radius: 13px;
+    }
+
+    .kp-stat-card__value,
+    .kp-profile-stat__value {
+        font-size: 23px;
+    }
+
+    .kp-stat-card__label,
+    .kp-profile-stat__label {
+        font-size: 10px;
+    }
+
+    .kp-profile-tabs,
+    .kp-activity-tabs {
+        gap: 3px;
+        margin-right: -3px;
+        padding: 3px;
+    }
+
+    .kp-profile-tab,
+    .kp-tab {
+        min-height: 37px;
+        padding: 9px 12px;
+        font-size: 11px;
+    }
+
+    .kp-activity-card {
+        gap: 10px;
+        padding: 13px;
+    }
+
+    .kp-activity-card__icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .kp-nav-item {
+        padding: 10px;
+    }
+
+    .kp-dialog-backdrop {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .kp-edit-dialog,
+    .kp-auth-dialog {
+        width: 100%;
+        max-width: none;
+        max-height: 92dvh;
+        padding: 24px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+        border-radius: 25px 25px 0 0;
+        animation: kp-sheet-in 220ms ease both;
+    }
+
+    .kp-dialog-header h2 {
+        font-size: 21px;
+    }
+
+    .kp-auth-heading h2 {
+        font-size: 22px;
+    }
+
+    .kp-dialog-actions {
+        gap: 8px;
+    }
+
+    .kp-dialog-actions .kp-button {
+        flex: 1;
+    }
+
+    .kp-profile-footer {
+        padding-top: 13px;
+    }
+}
+
+@keyframes kp-sheet-in {
+    from {
+        opacity: 0;
+        transform: translateY(35px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================================
+   26. RESPONSIVE — SMALL PHONE
+   ========================================================= */
+
+@media (max-width: 380px) {
+    .kp-profile {
+        padding: 8px;
+    }
+
+    .kp-profile__section,
+    .kp-section {
+        padding: 13px;
+    }
+
+    .kp-profile-hero__body,
+    .kp-profile__hero-body {
+        padding-right: 13px;
+        padding-left: 13px;
+    }
+
+    .kp-profile-hero__user,
+    .kp-profile__user {
+        gap: 8px;
+    }
+
+    .kp-avatar,
+    .kp-profile-avatar {
+        width: 66px;
+        height: 66px;
+        font-size: 26px;
+    }
+
+    .kp-profile-hero__name,
+    .kp-profile__name {
+        font-size: 19px;
+    }
+
+    .kp-stat-card,
+    .kp-profile-stat {
+        padding: 11px;
+    }
+
+    .kp-stat-card__value,
+    .kp-profile-stat__value {
+        font-size: 20px;
+    }
+
+    .kp-button {
+        gap: 5px;
+        padding: 9px 11px;
+        font-size: 11px;
+    }
+
+    .kp-auth-dialog,
+    .kp-edit-dialog {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+}
+
+/* =========================================================
+   27. REDUCED MOTION & DARK HOST PROTECTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .kp-mount *,
+    .kp-mount *::before,
+    .kp-mount *::after,
+    [data-kantoong-profile] *,
+    [data-kantoong-profile] *::before,
+    [data-kantoong-profile] *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dialog tetap terang meskipun halaman induk menggunakan dark mode. */
+.kp-dialog-backdrop .kp-edit-dialog,
+.kp-dialog-backdrop .kp-auth-dialog {
+    color-scheme: light;
+}
+
+/* =========================================================
+   AKHIR — KANTOONG PROFILE STYLESHEET
+   ========================================================= */

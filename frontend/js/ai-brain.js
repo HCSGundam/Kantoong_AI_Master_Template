@@ -1,418 +1,1046 @@
-// ============================================================
-// ai-brain.js - Kantoong AI Brain
-// Tugas: tampilkan percakapan, pahami permintaan user, cocokkan
-// dengan katalog, lalu kabari engine.js lewat event agar etalase
-// di atas berganti otomatis.
-//
-// Saat ini pencocokan berjalan LOKAL (kata kunci, budget, terlaris,
-// termurah, nama produk) sehingga template langsung hidup tanpa
-// biaya. Jika client-config.js diberi `ai_endpoint` (mis. Netlify
-// Function ke Gemini), pesan dikirim ke sana lebih dulu dan
-// pencarian lokal menjadi cadangan.
-//   POST ai_endpoint  {business_id, message, history}
-//   balasan           {reply, product_ids: [], suggestions: []}
-//
-// SARAN CHAT (3 tombol lonjong): hanya muncul di awal hari. Setelah user
-// mengirim pesan pertama hari itu (ketik sendiri ATAU pilih saran), saran
-// hilang dan tidak muncul lagi sampai pukul 00:00. Pukul 00:00 chat dimulai
-// lagi dari sapaan + 3 saran baru (diacak dari ai_suggestions), sedangkan
-// riwayat tetap tersimpan sesuai history_days.
-//
-// EVENT MASUK : kantoong:consult {text}, supabase-data-ready
-// EVENT KELUAR: kantoong:matched {ids}, kantoong:show-catalog,
-//               kantoong:collapse (panel.js mengecilkan chat)
-// ============================================================
+
+ // ============================================================
+ // KANTOONG AI
+ // File: js/ai-brain.js
+ // AI Conversation, Product Matching & Chat History
+ //
+ // Tanggung jawab:
+ // 1. Menampilkan percakapan AI.
+ // 2. Menyimpan riwayat percakapan.
+ // 3. Menampilkan saran chat harian.
+ // 4. Mencocokkan kebutuhan user dengan katalog produk.
+ // 5. Menggunakan AI server jika tersedia.
+ // 6. Mengirim hasil pencocokan ke engine.js.
+ //
+ // Integrasi:
+ //   engine.js  -> KantoongState
+ //   panel.js   -> kantoong:consult / kantoong:collapse
+ //   engine.js  <- kantoong:matched { ids: [] }
+ //
+ // Konfigurasi opsional di client-config.js:
+ //   business_id
+ //   history_days
+ //   ai_title
+ //   ai_greetings
+ //   ai_suggestions
+ //   ai_endpoint
+ //
+ // Catatan:
+ // Modul ini tidak mengambil alih pengaturan gestur panel
+ // dan tidak menggantikan fungsi engine.js.
+ // ============================================================
 
 import { KantoongState as S } from './engine.js';
 
-const CFG = (typeof KantoongConfig !== 'undefined') ? KantoongConfig : {};
+// ------------------------------------------------------------
+// 1. KONFIGURASI DAN ELEMEN DOM
+// ------------------------------------------------------------
+
+const CFG =
+    typeof KantoongConfig !== 'undefined'
+        ? KantoongConfig
+        : {};
 
 const chatBox = document.getElementById('chatBox');
 const suggestBox = document.getElementById('chatSuggestions');
 const sendBtn = document.getElementById('tombolKirim');
 const input = document.getElementById('kolomKetik');
 
-// ------------------------------------------------------------
-// Helper
-// ------------------------------------------------------------
-const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const hhmm = (d) => d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-const rupiah = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(n) || 0);
-const findProduct = (id) => S.products.find(p => String(p.id) === String(id));
+const BUSINESS_ID = String(CFG.business_id || 'default');
 
-function el(tag, className, text) {
+const HISTORY_KEY = `kantoong:chat:${BUSINESS_ID}`;
+const USED_KEY = `kantoong:chat-used:${BUSINESS_ID}`;
+
+const HISTORY_DAYS = Math.max(
+    1,
+    Number(CFG.history_days) || 30
+);
+
+const HISTORY_MS = HISTORY_DAYS * 24 * 60 * 60 * 1000;
+const MAX_SAVED_MESSAGES = 60;
+const MAX_CONTEXT_MESSAGES = 12;
+const MAX_PRODUCTS_IN_CHAT = 4;
+
+// ------------------------------------------------------------
+// 2. HELPER UMUM
+// ------------------------------------------------------------
+
+const emit = (name, detail = {}) => {
+    window.dispatchEvent(
+        new CustomEvent(name, { detail })
+    );
+};
+
+const sleep = (ms) =>
+    new Promise(resolve => setTimeout(resolve, ms));
+
+const hhmm = (date) =>
+    `${String(date.getHours()).padStart(2, '0')}:` +
+    `${String(date.getMinutes()).padStart(2, '0')}`;
+
+const rupiah = (value) =>
+    new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0
+    }).format(Number(value) || 0);
+
+const getProducts = () =>
+    Array.isArray(S.products) ? S.products : [];
+
+const findProduct = (id) =>
+    getProducts().find(
+        product => String(product.id) === String(id)
+    );
+
+const getPrice = (product) =>
+    Number(product?.price) || 0;
+
+function el(tag, className = '', text = null) {
     const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text != null) node.textContent = text; // textContent: aman dari injeksi HTML
+
+    if (className) {
+        node.className = className;
+    }
+
+    if (text !== null && text !== undefined) {
+        node.textContent = String(text);
+    }
+
     return node;
 }
 
+function safeArray(value) {
+    return Array.isArray(value) ? value : [];
+}
+
+function normalize(text) {
+    return String(text ?? '')
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/(\d)\.(?=\d{3}\b)/g, '$1')
+        .replace(/(\d),(\d)/g, '$1.$2')
+        .trim();
+}
+
+function getDayKey(date = new Date()) {
+    return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+    ].join('-');
+}
+
 // ------------------------------------------------------------
-// Riwayat chat: disimpan di browser user, otomatis hilang setelah X hari
+// 3. PENYIMPANAN RIWAYAT CHAT
 // ------------------------------------------------------------
-const HISTORY_KEY = `kantoong:chat:${CFG.business_id || 'default'}`;
-const HISTORY_MS = (Number(CFG.history_days) || 30) * 24 * 60 * 60 * 1000;
 
 const history = {
     read() {
         try {
-            return (JSON.parse(localStorage.getItem(HISTORY_KEY)) || []).filter(m => Date.now() - m.t < HISTORY_MS);
-        } catch { return []; }
+            const raw = JSON.parse(
+                localStorage.getItem(HISTORY_KEY) || '[]'
+            );
+
+            if (!Array.isArray(raw)) {
+                return [];
+            }
+
+            const now = Date.now();
+
+            return raw.filter(message => {
+                if (!message || typeof message !== 'object') {
+                    return false;
+                }
+
+                if (!Number.isFinite(Number(message.t))) {
+                    return false;
+                }
+
+                if (now - Number(message.t) > HISTORY_MS) {
+                    return false;
+                }
+
+                if (!['user', 'ai'].includes(message.who)) {
+                    return false;
+                }
+
+                return typeof message.text === 'string';
+            }).slice(-MAX_SAVED_MESSAGES);
+        } catch {
+            return [];
+        }
     },
-    write(list) {
-        try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(-60))); } catch { /* storage penuh/diblokir */ }
+
+    write(messages) {
+        try {
+            localStorage.setItem(
+                HISTORY_KEY,
+                JSON.stringify(
+                    messages.slice(-MAX_SAVED_MESSAGES)
+                )
+            );
+        } catch (error) {
+            console.warn(
+                '[Kantoong AI] Riwayat tidak dapat disimpan:',
+                error
+            );
+        }
     }
 };
+
 let saved = history.read();
-const convo = []; // konteks percakapan untuk AI jarak jauh: {role, text}
+
+// Format konteks untuk AI server: { role, text }
+const convo = [];
+
+function rebuildConversationContext(messages) {
+    convo.length = 0;
+
+    messages.slice(-MAX_CONTEXT_MESSAGES).forEach(message => {
+        convo.push({
+            role: message.who === 'user' ? 'user' : 'assistant',
+            text: message.text
+        });
+    });
+}
+
+function persistMessage(message) {
+    saved.push(message);
+
+    // Buang pesan yang sudah melewati batas retensi.
+    const now = Date.now();
+
+    saved = saved.filter(item =>
+        Number.isFinite(Number(item.t)) &&
+        now - Number(item.t) <= HISTORY_MS
+    );
+
+    saved = saved.slice(-MAX_SAVED_MESSAGES);
+
+    history.write(saved);
+}
 
 // ------------------------------------------------------------
-// Tampilan chat
+// 4. RENDER PESAN CHAT
 // ------------------------------------------------------------
-export function addMessageToChat(text, sender = 'ai', opts = {}) {
+
+export function addMessageToChat(
+    text,
+    sender = 'ai',
+    options = {}
+) {
     if (!chatBox) return;
-    const { ids = [], persist = true } = opts;
+
+    const ids = safeArray(options.ids);
+    const persist = options.persist !== false;
     const now = new Date();
 
-    const wrapper = el('div', `message-wrapper ${sender}`);
-    const bubble = el('div', 'bubble');
-    bubble.append(el('span', 'bubble-text', text));
+    const wrapper = el(
+        'div',
+        `message-wrapper ${sender === 'user' ? 'user' : 'ai'}`
+    );
 
-    const products = ids.map(findProduct).filter(Boolean);
+    const bubble = el('div', 'bubble');
+
+    bubble.append(
+        el('span', 'bubble-text', text)
+    );
+
+    // Kartu produk yang cocok dengan pesan AI.
+    const products = ids
+        .map(findProduct)
+        .filter(Boolean)
+        .slice(0, MAX_PRODUCTS_IN_CHAT);
+
     if (products.length) {
         const row = el('div', 'chat-products');
-        products.forEach(p => {
+
+        products.forEach(product => {
             const item = el('button', 'chat-product');
+
             item.type = 'button';
-            item.dataset.id = p.id;
+            item.dataset.id = String(product.id);
+            item.setAttribute(
+                'aria-label',
+                `Tanyakan tentang ${product.name || 'produk'}`
+            );
+
             const thumb = el('div', 'chat-product-thumb');
-            if (p.image_url) {
+
+            if (product.image_url) {
                 const img = el('img');
-                img.src = p.image_url; img.alt = p.name; img.loading = 'lazy';
+
+                img.src = product.image_url;
+                img.alt = product.name || 'Foto produk';
+                img.loading = 'lazy';
+
                 thumb.append(img);
             } else {
-                thumb.textContent = (p.name || '?').trim().charAt(0).toUpperCase();
+                thumb.textContent =
+                    String(product.name || '?')
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase();
             }
-            item.append(thumb, el('div', 'chat-product-name', p.name));
+
+            item.append(
+                thumb,
+                el('div', 'chat-product-name', product.name || 'Produk')
+            );
+
             row.append(item);
         });
-        const link = el('button', 'chat-catalog-link', 'Lengkapnya bisa lihat di katalog ↑');
-        link.type = 'button';
-        bubble.append(row, link);
+
+        const catalogLink = el(
+            'button',
+            'chat-catalog-link',
+            'Lihat produk di katalog ↑'
+        );
+
+        catalogLink.type = 'button';
+
+        bubble.append(row, catalogLink);
     }
 
-    bubble.append(el('span', 'time-stamp', hhmm(now)));
-    wrapper.append(el('div', 'avatar', sender === 'ai' ? 'AI' : 'ANDA'), bubble);
+    bubble.append(
+        el('span', 'time-stamp', hhmm(now))
+    );
+
+    wrapper.append(
+        el('div', 'avatar', sender === 'user' ? 'ANDA' : 'AI'),
+        bubble
+    );
+
     chatBox.append(wrapper);
     chatBox.scrollTop = chatBox.scrollHeight;
 
     if (persist) {
-        saved.push({ t: now.getTime(), who: sender, text, ids });
-        history.write(saved);
+        persistMessage({
+            t: now.getTime(),
+            who: sender === 'user' ? 'user' : 'ai',
+            text: String(text),
+            ids
+        });
     }
 }
 
 function showTyping() {
+    if (!chatBox) return null;
+
     const wrapper = el('div', 'message-wrapper ai');
     const bubble = el('div', 'bubble is-typing');
-    bubble.append(el('span', 'typing-dot'), el('span', 'typing-dot'), el('span', 'typing-dot'));
-    wrapper.append(el('div', 'avatar', 'AI'), bubble);
+
+    bubble.append(
+        el('span', 'typing-dot'),
+        el('span', 'typing-dot'),
+        el('span', 'typing-dot')
+    );
+
+    wrapper.append(
+        el('div', 'avatar', 'AI'),
+        bubble
+    );
+
     chatBox.append(wrapper);
     chatBox.scrollTop = chatBox.scrollHeight;
+
     return wrapper;
+}
+
+// ------------------------------------------------------------
+// 5. SARAN CHAT HARIAN
+// ------------------------------------------------------------
+
+let todayKey = getDayKey();
+let usedToday = false;
+let todaysChips = [];
+
+try {
+    usedToday = localStorage.getItem(USED_KEY) === todayKey;
+} catch {
+    usedToday = false;
+}
+
+function markSuggestionsUsed() {
+    usedToday = true;
+
+    try {
+        localStorage.setItem(USED_KEY, todayKey);
+    } catch {
+        // Status tetap berlaku selama halaman masih aktif.
+    }
+
+    setSuggestions([]);
+}
+
+function pickSuggestions() {
+    const pool = safeArray(CFG.ai_suggestions)
+        .filter(value => typeof value === 'string' && value.trim())
+        .map(value => value.trim());
+
+    // Fisher-Yates shuffle.
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    return pool.slice(0, 3);
 }
 
 function setSuggestions(list = []) {
     if (!suggestBox) return;
-    suggestBox.replaceChildren(...list.slice(0, 3).map(text => {
-        const chip = el('button', 'suggestion-chip', text);
-        chip.type = 'button';
-        return chip;
-    }));
+
+    const chips = safeArray(list)
+        .filter(value => typeof value === 'string' && value.trim())
+        .slice(0, 3)
+        .map(text => {
+            const chip = el('button', 'suggestion-chip', text);
+
+            chip.type = 'button';
+            return chip;
+        });
+
+    suggestBox.replaceChildren(...chips);
 }
 
-// ---- Saran chat harian ----
-const USED_KEY = `kantoong:chat-used:${CFG.business_id || 'default'}`;
-const dayKey = (d = new Date()) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-let todayKey = dayKey();
-let usedToday = false;   // true setelah user mengirim pesan hari ini
-let todaysChips = [];    // 3 saran hasil acak untuk kunjungan ini
-
-try { usedToday = localStorage.getItem(USED_KEY) === todayKey; } catch { /* storage diblokir */ }
-
-function markSuggestionsUsed() {
-    usedToday = true;
-    try { localStorage.setItem(USED_KEY, todayKey); } catch { /* tetap tersimpan di memori halaman */ }
-}
-
-// Acak daftar ai_suggestions lalu ambil 3 (Fisher-Yates)
-function pickSuggestions() {
-    const pool = [...(CFG.ai_suggestions || [])];
-    for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    return pool.slice(0, 3);
-}
-
-// Tampilkan chat untuk HARI INI: pesan hari ini jika ada, jika tidak sapaan pembuka.
-// Pesan hari-hari sebelumnya tetap ada di penyimpanan (riwayat), hanya tidak ditampilkan di sini.
 function renderToday() {
     if (!chatBox) return;
-    chatBox.replaceChildren();
-    const startOfDay = new Date().setHours(0, 0, 0, 0);
-    const todays = saved.filter(m => m.t >= startOfDay);
 
-    if (todays.length) {
-        todays.forEach(m => addMessageToChat(m.text, m.who, { ids: m.ids || [], persist: false }));
-        if (todays.some(m => m.who === 'user')) usedToday = true;
+    chatBox.replaceChildren();
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const todaysMessages = saved.filter(
+        message => Number(message.t) >= startOfDay.getTime()
+    );
+
+    rebuildConversationContext(todaysMessages);
+
+    if (todaysMessages.length) {
+        todaysMessages.forEach(message => {
+            addMessageToChat(
+                message.text,
+                message.who,
+                {
+                    ids: safeArray(message.ids),
+                    persist: false
+                }
+            );
+        });
+
+        if (todaysMessages.some(message => message.who === 'user')) {
+            usedToday = true;
+
+            try {
+                localStorage.setItem(USED_KEY, todayKey);
+            } catch {
+                // Tetap gunakan status di memori.
+            }
+        }
     } else {
-        const greetings = CFG.ai_greetings || [];
-        const line = greetings.length ? greetings[Math.floor(Math.random() * greetings.length)] : 'Ada yang bisa aku bantu cari?';
-        addMessageToChat(`${CFG.ai_title || 'Halo Kak!'} ${line}`, 'ai', { persist: false });
+        const greetings = safeArray(CFG.ai_greetings)
+            .filter(value => typeof value === 'string' && value.trim());
+
+        const greeting = greetings.length
+            ? greetings[Math.floor(Math.random() * greetings.length)]
+            : 'Ada yang bisa aku bantu cari?';
+
+        const title = CFG.ai_title || 'Halo Kak!';
+
+        addMessageToChat(
+            `${title} ${greeting}`,
+            'ai',
+            { persist: false }
+        );
     }
 
     todaysChips = pickSuggestions();
-    setSuggestions(usedToday ? [] : todaysChips);
+
+    setSuggestions(
+        usedToday ? [] : todaysChips
+    );
 }
 
-// Pergantian hari (00:00): mulai lagi dari awal, saran kembali muncul
+let busy = false;
+
 function onNewDay() {
-    todayKey = dayKey();
+    const nextDay = getDayKey();
+
+    if (nextDay === todayKey) return;
+
+    todayKey = nextDay;
     usedToday = false;
     convo.length = 0;
-    if (!busy) renderToday();
+    todaysChips = pickSuggestions();
+
+    try {
+        localStorage.removeItem(USED_KEY);
+    } catch {
+        // Tidak mengganggu sesi aktif.
+    }
+
+    if (!busy) {
+        renderToday();
+    } else {
+        setSuggestions([]);
+    }
 }
+
+let midnightTimer = null;
 
 function scheduleMidnight() {
+    if (midnightTimer !== null) {
+        clearTimeout(midnightTimer);
+    }
+
     const now = new Date();
-    const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 1);
-    setTimeout(() => { onNewDay(); scheduleMidnight(); }, next - now);
+
+    const nextMidnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+        0, 0, 1
+    );
+
+    midnightTimer = setTimeout(() => {
+        onNewDay();
+        scheduleMidnight();
+    }, Math.max(1000, nextMidnight.getTime() - now.getTime()));
 }
 
-// Tab/HP yang tertidur melewati tengah malam: cek lagi saat dibuka kembali
 document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && dayKey() !== todayKey) onNewDay();
-});
-
-// ------------------------------------------------------------
-// Otak lokal: memahami kata kunci, budget, dan niat user
-// ------------------------------------------------------------
-const STOP = new Set(['yang', 'dan', 'untuk', 'dengan', 'saya', 'aku', 'mau', 'ingin', 'cari', 'carikan', 'tolong', 'bantu', 'dong', 'kak',
-    'nya', 'ada', 'apa', 'buat', 'sesuai', 'kebutuhan', 'produk', 'rekomendasi', 'pilihkan', 'pilih', 'bawah', 'atas', 'budget', 'harga',
-    'maksimal', 'minimal', 'sekitar', 'sampai', 'juta', 'ribu', 'bisa', 'lebih', 'paling', 'tentang', 'ceritakan', 'jelaskan',
-    'halo', 'hai', 'hello', 'selamat', 'pagi', 'siang', 'sore', 'malam', 'kamu', 'anda']);
-
-const norm = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/(\d)\.(?=\d{3}\b)/g, '$1');
-const tokens = (s) => norm(s).split(/[^a-z0-9]+/).filter(w => w.length > 2 && !STOP.has(w) && !/^\d+$/.test(w));
-
-// "500 ribu", "2jt", "1.500.000" -> angka rupiah. Mengembalikan {value, mode} atau null.
-function parseBudget(text) {
-    const t = norm(text);
-    for (const m of t.matchAll(/(\d+(?:,\d+)?)\s*(juta|jt|ribu|rb|k)?\b/g)) {
-        let n = parseFloat(m[1].replace(',', '.'));
-        const unit = m[2] || '';
-        if (unit === 'juta' || unit === 'jt') n *= 1e6;
-        else if (unit) n *= 1e3;
-        else if (n < 1000) continue; // angka kecil tanpa satuan (mis. "2 lantai") bukan harga
-        const mode = /(di atas|lebih dari|minimal|min )/.test(t) ? 'min' : 'max';
-        return { value: n, mode };
+    if (!document.hidden && getDayKey() !== todayKey) {
+        onNewDay();
     }
+);
+
+// ------------------------------------------------------------
+// 6. PENCARIAN PRODUK LOKAL
+// ------------------------------------------------------------
+
+const STOP_WORDS = new Set([
+    'yang', 'dan', 'untuk', 'dengan', 'saya', 'aku',
+    'mau', 'ingin', 'cari', 'carikan', 'tolong', 'bantu',
+    'dong', 'kak', 'nya', 'ada', 'apa', 'buat', 'sesuai',
+    'kebutuhan', 'produk', 'rekomendasi', 'pilihkan', 'pilih',
+    'bawah', 'atas', 'budget', 'harga', 'maksimal', 'minimal',
+    'sekitar', 'sampai', 'juta', 'ribu', 'bisa', 'lebih',
+    'paling', 'tentang', 'ceritakan', 'jelaskan', 'halo',
+    'hai', 'hello', 'selamat', 'pagi', 'siang', 'sore',
+    'malam', 'kamu', 'anda', 'dong', 'nih', 'itu', 'ini'
+]);
+
+function tokenize(text) {
+    return normalize(text)
+        .split(/[^a-z0-9]+/)
+        .filter(word =>
+            word.length > 2 &&
+            !STOP_WORDS.has(word) &&
+            !/^\d+$/.test(word)
+        );
+}
+
+// Memahami contoh:
+// "500 ribu", "2jt", "1.500.000", "maksimal 750rb".
+function parseBudget(text) {
+    const normalized = normalize(text);
+
+    const matches = [
+        ...normalized.matchAll(
+            /(\d+(?:\.\d+)?)\s*(juta|jt|miliar|m|ribu|rb|k)?\b/g
+        )
+    ];
+
+    for (const match of matches) {
+        let amount = Number(match[1]);
+
+        if (!Number.isFinite(amount)) continue;
+
+        const unit = match[2] || '';
+
+        if (['juta', 'jt', 'miliar', 'm'].includes(unit)) {
+            amount *= unit === 'miliar' || unit === 'm'
+                ? 1_000_000_000
+                : 1_000_000;
+        } else if (['ribu', 'rb', 'k'].includes(unit)) {
+            amount *= 1000;
+        } else if (amount < 1000) {
+            // Hindari menganggap angka kecil sebagai harga.
+            continue;
+        }
+
+        const minimumIntent =
+            /\b(di atas|lebih dari|minimal|paling sedikit|setidaknya)\b/
+                .test(normalized);
+
+        const maximumIntent =
+            /\b(di bawah|kurang dari|maksimal|paling banyak|hingga|sampai)\b/
+                .test(normalized);
+
+        const mode =
+            minimumIntent && !maximumIntent
+                ? 'min'
+                : 'max';
+
+        return { value: amount, mode };
+    }
+
     return null;
 }
 
-function scoreProduct(p, toks) {
-    const name = norm(p.name), cat = norm(p.category), rest = norm(`${p.caption || ''} ${p.description || ''}`);
-    return toks.reduce((sum, w) => sum + (name.includes(w) ? 3 : 0) + (cat.includes(w) ? 2 : 0) + (rest.includes(w) ? 1 : 0), 0);
+function productSearchText(product) {
+    return normalize([
+        product.name,
+        product.category,
+        product.caption,
+        product.description
+    ].filter(Boolean).join(' '));
 }
 
-const bySales = (a, b) => (Number(b.sales_count) || 0) - (Number(a.sales_count) || 0);
-const memory = { lastCategory: '' };
+function scoreProduct(product, words) {
+    const name = normalize(product.name);
+    const category = normalize(product.category);
+    const description = normalize(
+        `${product.caption || ''} ${product.description || ''}`
+    );
 
-function reply(text, products = []) {
-    if (products[0]?.category) memory.lastCategory = products[0].category;
-    return { text, ids: products.map(p => p.id) };
+    return words.reduce((score, word) => {
+        return score +
+            (name.includes(word) ? 3 : 0) +
+            (category.includes(word) ? 2 : 0) +
+            (description.includes(word) ? 1 : 0);
+    }, 0);
+}
+
+const bySales = (a, b) =>
+    (Number(b.sales_count) || 0) -
+    (Number(a.sales_count) || 0);
+
+const memory = {
+    lastCategory: ''
+};
+
+function makeReply(text, products = []) {
+    const validProducts = safeArray(products).filter(Boolean);
+
+    if (validProducts[0]?.category) {
+        memory.lastCategory = validProducts[0].category;
+    }
+
+    return {
+        text,
+        ids: validProducts.map(product => product.id)
+    };
 }
 
 function generateLocalReply(userText) {
-    const t = norm(userText);
+    const text = normalize(userText);
+    const products = getProducts();
 
-    if (S.isLoading) return reply('Sebentar ya Kak, katalog sedang dimuat. Coba kirim lagi beberapa detik lagi.');
-    if (!S.products.length) return reply('Katalog toko belum terisi. Pemilik toko bisa menambahkan produk lewat dashboard admin.');
-
-    if (/(terima kasih|makasih|thanks|thank you)/.test(t)) {
-        return reply('Sama-sama Kak! Kalau masih bingung memilih, tanya saja lagi ya.');
-    }
-    if (/^(hai|halo|hi|hello|selamat|pagi|siang|sore|malam)\b/.test(t) && tokens(t).length === 0) {
-        return reply('Halo Kak! Ceritakan kebutuhan atau budget-mu, nanti aku carikan yang paling cocok.');
+    if (S.isLoading) {
+        return makeReply(
+            'Sebentar ya Kak, katalog sedang dimuat. Coba kirim lagi beberapa detik lagi.'
+        );
     }
 
-    // 1. Menyebut nama produk -> jelaskan produk itu
-    const named = S.products.find(p => t.includes(norm(p.name)));
+    if (!products.length) {
+        return makeReply(
+            'Katalog toko belum tersedia. Coba lagi setelah produk toko dimuat.'
+        );
+    }
+
+    if (/(terima kasih|makasih|thanks|thank you)/.test(text)) {
+        return makeReply(
+            'Sama-sama Kak! Kalau masih bingung memilih, tanya saja lagi ya.'
+        );
+    }
+
+    if (
+        /^(hai|halo|hi|hello|selamat|pagi|siang|sore|malam)\b/.test(text) &&
+        tokenize(text).length === 0
+    ) {
+        return makeReply(
+            'Halo Kak! Ceritakan kebutuhan atau budget-mu, nanti aku bantu carikan produk yang cocok.'
+        );
+    }
+
+    // A. Pencarian nama produk.
+    const named = products.find(product => {
+        const name = normalize(product.name);
+        return name.length > 0 && text.includes(name);
+    });
+
     if (named) {
         const detail = named.description || named.caption || '';
-        return reply(
-            `${named.name} harganya ${rupiah(named.price)}.${detail ? ' ' + detail : ''} Aku tampilkan di etalase ya. Mau aku carikan yang lebih murah atau pembandingnya?`,
+
+        return makeReply(
+            `${named.name} harganya ${rupiah(getPrice(named))}.` +
+            (detail ? ` ${detail}` : '') +
+            ' Aku tampilkan produknya di etalase ya.',
             [named]
         );
     }
 
-    // 2. Terlaris
-    if (/(terlaris|paling laris|populer|best ?seller|favorit|paling banyak)/.test(t)) {
-        const top = [...S.products].sort(bySales).slice(0, 4);
-        return reply(`Ini produk yang paling banyak dipilih: ${top.map(p => p.name).join(', ')}. Mau aku bantu sesuaikan dengan budget?`, top);
-    }
+    // B. Produk terlaris.
+    if (
+        /(terlaris|paling laris|populer|best ?seller|favorit|paling banyak)/.test(text)
+    ) {
+        const top = [...products]
+            .sort(bySales)
+            .slice(0, MAX_PRODUCTS_IN_CHAT);
 
-    // 3. Termurah / hemat
-    if (/(murah|hemat|termurah)/.test(t)) {
-        const pool = memory.lastCategory ? S.products.filter(p => p.category === memory.lastCategory) : S.products;
-        const cheap = [...(pool.length > 1 ? pool : S.products)].sort((a, b) => a.price - b.price).slice(0, 4);
-        return reply(`Pilihan paling terjangkau: ${cheap[0].name} di ${rupiah(cheap[0].price)}. Sisanya sudah aku tampilkan di etalase.`, cheap);
-    }
-
-    // 4. Pencarian umum: kata kunci + budget
-    const budget = parseBudget(userText);
-    const toks = tokens(userText);
-    let pool = S.products.filter(p =>
-        !budget || (budget.mode === 'max' ? Number(p.price) <= budget.value : Number(p.price) >= budget.value));
-
-    let hits;
-    if (toks.length) {
-        hits = pool.map(p => ({ p, s: scoreProduct(p, toks) })).filter(x => x.s > 0)
-            .sort((a, b) => b.s - a.s || bySales(a.p, b.p)).map(x => x.p);
-    } else if (budget) {
-        hits = pool.sort(bySales);
-    } else {
-        return reply('Boleh ceritakan lebih detail? Misalnya untuk apa produknya, dan kira-kira berapa budget-mu?');
-    }
-
-    if (!hits.length) {
-        return reply(
-            budget
-                ? `Belum ada yang pas di sekitar ${rupiah(budget.value)} untuk permintaan itu. Mau coba budget lain, atau lihat produk terlaris dulu?`
-                : 'Aku belum menemukan yang pas dengan itu. Coba ceritakan fungsi yang kamu butuhkan, atau lihat produk terlaris dulu.',
-            []
+        return makeReply(
+            `Ini beberapa produk terlaris: ${top.map(p => p.name).join(', ')}. Mau aku bantu pilih sesuai budget?`,
+            top
         );
     }
 
-    const top = hits.slice(0, 4);
-    const budgetNote = budget ? ` ${budget.mode === 'max' ? 'di bawah' : 'di atas'} ${rupiah(budget.value)}` : '';
-    return reply(
-        `Ada ${hits.length} pilihan yang cocok${budgetNote}. Yang paling pas menurutku ${top[0].name} (${rupiah(top[0].price)}). Etalase di atas sudah aku sesuaikan, geser untuk melihat semuanya. Ada preferensi lain?`,
+    // C. Produk termurah atau hemat.
+    if (/(murah|hemat|termurah|paling terjangkau)/.test(text)) {
+        const categoryProducts = memory.lastCategory
+            ? products.filter(
+                product => product.category === memory.lastCategory
+            )
+            : [];
+
+        const pool = categoryProducts.length
+            ? categoryProducts
+            : products;
+
+        const cheapest = [...pool]
+            .sort((a, b) => getPrice(a) - getPrice(b))
+            .slice(0, MAX_PRODUCTS_IN_CHAT);
+
+        if (!cheapest.length) {
+            return makeReply('Belum ada produk yang bisa dibandingkan.');
+        }
+
+        return makeReply(
+            `Pilihan paling terjangkau adalah ${cheapest[0].name} seharga ${rupiah(getPrice(cheapest[0]))}. Aku tampilkan beberapa pilihan untuk dibandingkan.`,
+            cheapest
+        );
+    }
+
+    // D. Pencarian berdasarkan kata kunci dan budget.
+    const budget = parseBudget(userText);
+    const words = tokenize(userText);
+
+    let pool = [...products];
+
+    if (budget) {
+        pool = pool.filter(product => {
+            const price = getPrice(product);
+
+            return budget.mode === 'min'
+                ? price >= budget.value
+                : price <= budget.value;
+        });
+    }
+
+    let hits = [];
+
+    if (words.length) {
+        hits = pool
+            .map(product => ({
+                product,
+                score: scoreProduct(product, words)
+            }))
+            .filter(item => item.score > 0)
+            .sort((a, b) =>
+                b.score - a.score ||
+                bySales(a.product, b.product)
+            )
+            .map(item => item.product);
+    } else if (budget) {
+        hits = pool.sort(bySales);
+    } else {
+        return makeReply(
+            'Boleh ceritakan lebih detail, Kak? Misalnya produk yang dicari, kegunaannya, atau kisaran budget-mu.'
+        );
+    }
+
+    if (!hits.length) {
+        return makeReply(
+            budget
+                ? `Belum ada produk yang cocok dengan kata kunci dan batas harga ${rupiah(budget.value)}. Mau coba budget lain atau melihat produk terlaris?`
+                : 'Aku belum menemukan produk yang cocok. Coba sebutkan kegunaan atau kategori produk yang kamu butuhkan.'
+        );
+    }
+
+    const top = hits.slice(0, MAX_PRODUCTS_IN_CHAT);
+
+    const budgetNote = budget
+        ? ` sesuai batas harga ${rupiah(budget.value)}`
+        : '';
+
+    return makeReply(
+        `Aku menemukan ${hits.length} pilihan${budgetNote}. Salah satu yang cocok adalah ${top[0].name} (${rupiah(getPrice(top[0]))}). Aku sudah menyesuaikan etalase di atas. Ada preferensi lain?`,
         top
     );
 }
 
-// Opsional: AI jarak jauh (Gemini lewat server milikmu). Gagal -> pakai otak lokal.
+// ------------------------------------------------------------
+// 7. AI SERVER OPSIONAL
+// ------------------------------------------------------------
+
 async function generateRemoteReply(userText) {
-    const res = await fetch(CFG.ai_endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(20000),
-        body: JSON.stringify({ business_id: CFG.business_id, message: userText, history: convo.slice(-8) })
-    });
-    if (!res.ok) throw new Error('AI server ' + res.status);
-    const d = await res.json();
-    const products = (d.product_ids || []).map(findProduct).filter(Boolean);
-    return { text: String(d.reply || ''), ids: products.map(p => p.id) };
-}
+    if (!CFG.ai_endpoint) {
+        throw new Error('ai_endpoint belum dikonfigurasi.');
+    }
 
-// ------------------------------------------------------------
-// Alur kirim pesan
-// ------------------------------------------------------------
-let busy = false;
+    const controller = new AbortController();
 
-async function handleUserMessage(rawText) {
-    const text = String(rawText || '').trim();
-    if (!text || busy) return;
-    busy = true;
-
-    markSuggestionsUsed();   // sekali kirim (ketik sendiri / pilih saran) -> saran hilang sampai 00:00
-    setSuggestions([]);
-    addMessageToChat(text, 'user');
-    const typing = showTyping();
-    const started = Date.now();
+    const timeoutId = setTimeout(
+        () => controller.abort(),
+        20000
+    );
 
     try {
-        let answer;
-        if (CFG.ai_endpoint && !S.usingDemo) {
-            try { answer = await generateRemoteReply(text); }
-            catch (err) { console.warn('⚠️ [AI Brain] Server AI gagal, memakai otak lokal:', err.message); }
+        const response = await fetch(CFG.ai_endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            signal: controller.signal,
+            body: JSON.stringify({
+                business_id: CFG.business_id || null,
+                message: userText,
+                history: convo.slice(-MAX_CONTEXT_MESSAGES)
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`AI server merespons ${response.status}.`);
         }
-        answer = answer?.text ? answer : generateLocalReply(text);
 
-        await sleep(Math.max(0, 700 - (Date.now() - started))); // jeda agar terasa natural
-        typing.remove();
+        const data = await response.json();
 
-        addMessageToChat(answer.text, 'ai', { ids: answer.ids });
-        convo.push({ role: 'user', text }, { role: 'ai', text: answer.text });
-        if (answer.ids.length) emit('kantoong:matched', { ids: answer.ids });
-    } catch (err) {
-        console.error('❌ [AI Brain]', err);
-        typing.remove();
-        addMessageToChat('Maaf Kak, ada kendala sebentar. Coba kirim lagi ya.', 'ai', { persist: false });
+        const replyText = String(data.reply || '').trim();
+
+        if (!replyText) {
+            throw new Error('AI server tidak memberikan balasan.');
+        }
+
+        const ids = safeArray(data.product_ids)
+            .map(id => findProduct(id))
+            .filter(Boolean)
+            .map(product => product.id);
+
+        return {
+            text: replyText,
+            ids
+        };
     } finally {
-        busy = false;
-        if (dayKey() !== todayKey) onNewDay();
+        clearTimeout(timeoutId);
     }
 }
 
 // ------------------------------------------------------------
-// Pendengar
+// 8. ALUR KIRIM PESAN
 // ------------------------------------------------------------
+
+async function handleUserMessage(rawText) {
+    const text = String(rawText || '').trim();
+
+    if (!text || busy) return;
+
+    busy = true;
+
+    markSuggestionsUsed();
+
+    addMessageToChat(text, 'user');
+
+    convo.push({
+        role: 'user',
+        text
+    });
+
+    const typing = showTyping();
+    const startedAt = Date.now();
+
+    try {
+        let answer = null;
+
+        // AI server dipakai hanya jika endpoint tersedia.
+        // Saat memakai katalog demo, pencarian lokal tetap dipakai.
+        if (CFG.ai_endpoint && !S.usingDemo) {
+            try {
+                answer = await generateRemoteReply(text);
+            } catch (error) {
+                console.warn(
+                    '[Kantoong AI] AI server gagal; beralih ke pencarian lokal:',
+                    error.message
+                );
+            }
+        }
+
+        if (!answer || !answer.text) {
+            answer = generateLocalReply(text);
+        }
+
+        // Jeda minimum agar indikator mengetik tidak berkedip terlalu cepat.
+        const elapsed = Date.now() - startedAt;
+        const minimumDelay = Math.max(0, 500 - elapsed);
+
+        if (minimumDelay) {
+            await sleep(minimumDelay);
+        }
+
+        typing?.remove();
+
+        const replyText = String(
+            answer.text || 'Maaf Kak, aku belum bisa menemukan jawaban yang sesuai.'
+        );
+
+        const ids = safeArray(answer.ids);
+
+        addMessageToChat(replyText, 'ai', { ids });
+
+        convo.push({
+            role: 'assistant',
+            text: replyText
+        });
+
+        // Batasi konteks yang dikirim ke AI server.
+        if (convo.length > MAX_CONTEXT_MESSAGES) {
+            convo.splice(
+                0,
+                convo.length - MAX_CONTEXT_MESSAGES
+            );
+        }
+
+        // Sinkronkan produk yang cocok dengan engine.js.
+        if (ids.length) {
+            emit('kantoong:matched', { ids });
+        }
+    } catch (error) {
+        console.error('[Kantoong AI] Gagal memproses pesan:', error);
+
+        typing?.remove();
+
+        addMessageToChat(
+            'Maaf Kak, ada kendala saat memproses pesan. Coba kirim lagi ya.',
+            'ai',
+            { persist: false }
+        );
+    } finally {
+        busy = false;
+
+        if (getDayKey() !== todayKey) {
+            onNewDay();
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// 9. INPUT CHAT DAN TOMBOL KIRIM
+// ------------------------------------------------------------
+
 function submitFromInput() {
-    if (!input) return;
-    const text = input.value;
+    if (!input || busy) return;
+
+    const text = input.value.trim();
+
+    if (!text) return;
+
     input.value = '';
     input.style.height = '20px';
+    input.style.overflowY = 'hidden';
+
+    // Kembalikan ukuran input sebelum pesan diproses.
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+
     handleUserMessage(text);
 }
 
-if (sendBtn) sendBtn.addEventListener('click', submitFromInput);
-if (input) {
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-            e.preventDefault();
-            submitFromInput();
-        }
-    });
-}
+sendBtn?.addEventListener('click', submitFromInput);
 
-if (suggestBox) {
-    suggestBox.addEventListener('click', (e) => {
-        const chip = e.target.closest('.suggestion-chip');
-        if (chip) handleUserMessage(chip.textContent);
-    });
-}
+input?.addEventListener('keydown', event => {
+    if (
+        event.key === 'Enter' &&
+        !event.shiftKey &&
+        !event.isComposing
+    ) {
+        event.preventDefault();
+        submitFromInput();
+    }
+});
 
-if (chatBox) {
-    chatBox.addEventListener('click', (e) => {
-        const product = e.target.closest('.chat-product');
+// ------------------------------------------------------------
+// 10. KLIK SARAN CHAT
+// ------------------------------------------------------------
+
+suggestBox?.addEventListener('click', event => {
+    const chip = event.target.closest('.suggestion-chip');
+
+    if (!chip || !suggestBox.contains(chip)) return;
+
+    handleUserMessage(chip.textContent);
+});
+
+// ------------------------------------------------------------
+// 11. INTERAKSI KARTU PRODUK DI DALAM CHAT
+// ------------------------------------------------------------
+
+chatBox?.addEventListener('click', event => {
+    const productButton = event.target.closest('.chat-product');
+
+    if (productButton) {
+        const product = findProduct(productButton.dataset.id);
+
         if (product) {
-            const p = findProduct(product.dataset.id);
-            if (p) handleUserMessage(`Ceritakan tentang ${p.name}`);
-            return;
+            handleUserMessage(
+                `Ceritakan lebih lanjut tentang ${product.name}`
+            );
         }
-        if (e.target.closest('.chat-catalog-link')) {
-            emit('kantoong:collapse');
-            emit('kantoong:show-catalog');
-        }
-    });
-}
 
-// Tombol "Konsultasi AI" / "Tanyakan produk ini" dari etalase
-window.addEventListener('kantoong:consult', (e) => {
-    const text = e.detail?.text;
-    if (text) handleUserMessage(text);
+        return;
+    }
+
+    if (event.target.closest('.chat-catalog-link')) {
+        emit('kantoong:collapse');
+        emit('kantoong:show-catalog');
+    }
 });
 
-// Data siap: tampilkan chat hari ini (atau sapaan + saran untuk awal hari)
+// ------------------------------------------------------------
+// 12. INTEGRASI EVENT KONSULTASI DARI ENGINE
+// ------------------------------------------------------------
+
+// panel.js menangani pembukaan panel.
+// Modul ini menangani pengiriman teks jika event membawa pesan.
+window.addEventListener('kantoong:consult', event => {
+    const text = event.detail?.text;
+
+    if (typeof text === 'string' && text.trim()) {
+        handleUserMessage(text);
+    }
+});
+
+// ------------------------------------------------------------
+// 13. DATA KATALOG SIAP
+// ------------------------------------------------------------
+
 window.addEventListener('supabase-data-ready', () => {
-    if (!chatBox || chatBox.childElementCount) return;
-    renderToday();
+    // Render hanya jika area chat masih kosong agar pesan yang
+    // sedang dilihat user tidak terhapus ketika katalog diperbarui.
+    if (chatBox && chatBox.childElementCount === 0) {
+        renderToday();
+    }
 });
 
+// ------------------------------------------------------------
+// 14. INISIALISASI
+// ------------------------------------------------------------
+
+// Tampilkan sapaan dan saran ketika halaman siap.
+renderToday();
+
+// Pantau pergantian hari agar saran dapat muncul kembali.
 scheduleMidnight();
+
+console.info('[Kantoong AI] Chat brain siap.');

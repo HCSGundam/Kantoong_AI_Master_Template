@@ -1,57 +1,95 @@
-/* ========================================= */
-/* BAB 5: BAR KETIK PESAN                    */
-/* Mikrofon + kotak ketik oval + tombol      */
-/* kirim bulat. Padding kiri-kanan diatur    */
-/* oleh .chat-panel, jadi tidak ditambah di  */
-/* sini. Floating input bar sudah dihapus.   */
-/* ========================================= */
+/* =========================================================
+   KANTOONG AI
+   File: css/input-bar.css
+   Section: Chat Input · Microphone · Send Button
+   Responsive · Light/Dark Theme · Mobile First
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   1. INPUT BAR CONTAINER
+   --------------------------------------------------------- */
 
 .input-bar-container {
+    flex: 0 0 auto;
+    min-width: 0;
     margin-top: auto;
-    flex-shrink: 0;
+    padding-top: 8px;
+
     display: flex;
     align-items: flex-end;
     gap: 10px;
-    padding-top: 8px;
 }
 
-/* Kotak oval tempat mengetik */
+/* ---------------------------------------------------------
+   2. KOTAK INPUT OVAL
+   --------------------------------------------------------- */
+
 .input-box {
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
+    min-height: 46px;
+
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 16px 6px 8px;
-    min-height: 46px;
+
+    padding: 6px 12px 6px 8px;
+
+    color: var(--text-primary);
     background: var(--surface);
     border: 1.5px solid var(--line-strong);
     border-radius: 24px;
-    transition: box-shadow 0.2s var(--ease);
+
+    transition:
+        border-color 0.2s var(--ease),
+        box-shadow 0.2s var(--ease),
+        background-color 0.2s var(--ease);
 }
 
 .input-box:focus-within {
-    box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12);
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 3px color-mix(
+        in srgb,
+        var(--text-primary) 12%,
+        transparent
+    );
 }
 
+/* ---------------------------------------------------------
+   3. TEXTAREA / KOLOM KETIK
+   --------------------------------------------------------- */
+
 .input-box textarea {
-    flex: 1;
+    flex: 1 1 auto;
+    align-self: center;
+
     min-width: 0;
-    height: 20px;          /* tinggi awal 1 baris, diperbesar otomatis oleh panel.js */
+    min-height: 20px;
+    height: 20px;
     max-height: 90px;
-    padding: 0;
+
     margin: 0;
-    background: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    color: var(--text-primary) !important;
+    padding: 0;
+
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    outline: none;
+    box-shadow: none;
+
     font-family: inherit;
     font-size: 14px;
+    font-weight: 400;
     line-height: 20px;
+
     resize: none;
+    overflow-x: hidden;
     overflow-y: auto;
+    overflow-wrap: anywhere;
     scrollbar-width: none;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
 .input-box textarea::-webkit-scrollbar {
@@ -59,57 +97,158 @@
 }
 
 .input-box textarea::placeholder {
-    color: #8e8e93 !important;
-    opacity: 1;
+    color: var(--text-muted);
+    opacity: 0.85;
 }
 
-/* Tombol mikrofon (disiapkan, belum aktif) */
+/* ---------------------------------------------------------
+   4. TOMBOL MIKROFON
+   --------------------------------------------------------- */
+
 .mic-btn {
+    flex: 0 0 34px;
     width: 34px;
     height: 34px;
-    flex-shrink: 0;
+    padding: 0;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+
     color: var(--text-primary);
-    transition: background 0.2s var(--ease);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+
+    font: inherit;
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s var(--ease),
+        color 0.2s var(--ease),
+        transform 0.15s var(--ease);
+}
+
+.mic-btn:active:not(:disabled) {
+    transform: scale(0.94);
 }
 
 .mic-btn:disabled {
-    color: #b4b4ba;
+    color: var(--text-muted);
+    opacity: 0.45;
     cursor: not-allowed;
 }
 
-.mic-btn:not(:disabled):hover {
-    background: var(--surface-soft);
+@media (hover: hover) {
+    .mic-btn:not(:disabled):hover {
+        background: var(--surface-soft);
+    }
 }
 
-/* Tombol kirim bulat. Dipakai juga di kartu sambutan AI (panah di kanan) */
+/* ---------------------------------------------------------
+   5. TOMBOL KIRIM
+   --------------------------------------------------------- */
+
 .send-btn {
+    flex: 0 0 46px;
     width: 46px;
     height: 46px;
-    flex-shrink: 0;
+    padding: 0;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    background: var(--text-primary);
+
     color: var(--text-light);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-    transition: transform 0.15s var(--ease), background 0.2s var(--ease);
+    background: var(--text-primary);
+    border: 1px solid var(--text-primary);
+    border-radius: 50%;
+
+    font: inherit;
+    cursor: pointer;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+
+    transition:
+        transform 0.15s var(--ease),
+        background-color 0.2s var(--ease),
+        border-color 0.2s var(--ease),
+        opacity 0.2s var(--ease);
 }
 
 .send-btn svg {
+    display: block;
+    flex: 0 0 auto;
     stroke: currentColor;
 }
 
-.send-btn:active {
+.send-btn:active:not(:disabled) {
     transform: scale(0.92);
 }
 
+.send-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
 @media (hover: hover) {
-    .send-btn:hover {
-        background: #2a2a2d;
+    .send-btn:hover:not(:disabled) {
+        background: var(--text-muted);
+        border-color: var(--text-muted);
+    }
+}
+
+/* ---------------------------------------------------------
+   6. RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 360px) {
+    .input-bar-container {
+        gap: 7px;
+        padding-top: 6px;
+    }
+
+    .input-box {
+        gap: 6px;
+        padding-right: 9px;
+    }
+
+    .input-box textarea {
+        font-size: 13px;
+    }
+
+    .mic-btn {
+        flex-basis: 30px;
+        width: 30px;
+        height: 30px;
+    }
+
+    .send-btn {
+        flex-basis: 42px;
+        width: 42px;
+        height: 42px;
+    }
+}
+
+/* ---------------------------------------------------------
+   7. AKSESIBILITAS
+   --------------------------------------------------------- */
+
+.mic-btn:focus-visible,
+.send-btn:focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 3px;
+}
+
+.input-box:focus-within {
+    scroll-margin-bottom: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .input-box,
+    .mic-btn,
+    .send-btn {
+        transition: none;
     }
 }

@@ -1,174 +1,362 @@
+```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
     <meta name="theme-color" content="#ffffff">
+
     <title id="pageTitle">Kantoong AI - Master Template</title>
 
-    <!-- CSS Modular (urutan penting: global dulu, komponen sesudahnya) -->
+    <!-- CSS GLOBAL -->
     <link rel="stylesheet" href="css/global.css">
+
+    <!-- CSS STOREFRONT -->
     <link rel="stylesheet" href="css/header.css">
     <link rel="stylesheet" href="css/storefront.css">
+
+    <!-- CSS CHAT AI -->
     <link rel="stylesheet" href="css/chat-bubble.css">
     <link rel="stylesheet" href="css/chat-panel.css">
     <link rel="stylesheet" href="css/input-bar.css">
     <link rel="stylesheet" href="css/animation.css">
+
+    <!-- CSS MENU KANTOONG CORE -->
     <link rel="stylesheet" href="menu/menu.css">
 
-    <!-- Google Identity Services (Google OAuth / Sign-In Resmi) -->
+    <!-- CSS DASHBOARD BENTO -->
+    <link rel="stylesheet" href="menu/dashboard/dashboard.css">
+    <link rel="stylesheet" href="menu/dashboard/sections/feature-grid.css">
+    <link rel="stylesheet" href="menu/dashboard/sections/welcome-card.css">
+
+    <!-- CSS FITUR -->
+    <link rel="stylesheet" href="menu/features/profile/profile.css">
+
+    <!-- GOOGLE IDENTITY SERVICES -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
+
 <body>
     <div class="mobile-container" id="appRoot">
 
-        <!-- ===================================== -->
-        <!-- HEADER: menu | nama brand | cari + keranjang -->
-        <!-- ===================================== -->
+        <!-- HEADER UTAMA -->
         <header class="app-header">
-            <button class="header-icon" id="showcaseMenuBtn" aria-label="Buka menu">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            <button
+                class="header-icon"
+                id="showcaseMenuBtn"
+                type="button"
+                aria-label="Buka menu"
+                aria-controls="sampleDrawer"
+                aria-expanded="false"
+            >
+                <svg width="22" height="22" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
             </button>
 
             <h1 class="header-title" id="brandTitle">BUSINESS NAME</h1>
 
             <div class="header-right">
-                <button class="header-icon" id="btnSearch" aria-label="Cari produk lewat AI">
-                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <button
+                    class="header-icon"
+                    id="btnSearch"
+                    type="button"
+                    aria-label="Cari produk lewat AI"
+                >
+                    <svg width="21" height="21" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
                 </button>
-                <button class="header-icon" id="btnCart" aria-label="Keranjang">
-                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"></path><path d="M9 8a3 3 0 0 1 6 0"></path></svg>
+
+                <button
+                    class="header-icon"
+                    id="btnCart"
+                    type="button"
+                    aria-label="Keranjang"
+                >
+                    <svg width="21" height="21" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 8h12l-1 12H7L6 8z"></path>
+                        <path d="M9 8a3 3 0 0 1 6 0"></path>
+                    </svg>
                     <span class="cart-badge" id="cartCount" hidden>0</span>
                 </button>
             </div>
         </header>
 
-        <!-- ===================================== -->
-        <!-- HALAMAN UTAMA (bisa di-scroll)          -->
-        <!-- Semua isi di bawah diisi oleh engine.js -->
-        <!-- dari client-config.js & Supabase        -->
-        <!-- ===================================== -->
+        <!-- HOMEPAGE / STOREFRONT -->
         <main class="page-scroll" id="pageScroll">
 
-            <!-- 1. HERO: foto/video yang geser otomatis. Isi tiap slide: caption, nama, penjelasan, 2 tombol -->
-            <section class="hero" id="heroSection" aria-label="Sorotan toko">
+            <!-- HERO -->
+            <section
+                class="hero"
+                id="heroSection"
+                aria-label="Sorotan toko"
+            >
                 <div class="hero-track scroll-x" id="heroTrack"></div>
-                <div class="hero-dots" id="heroDots" aria-hidden="true"></div>
+                <div
+                    class="hero-dots"
+                    id="heroDots"
+                    aria-hidden="true"
+                ></div>
             </section>
 
-            <!-- 2. AREA BEBAS: pemilik brand mengisi sponsor, iklan, spesifikasi, dll -->
-            <section class="brand-slot" id="brandSlot" aria-label="Informasi brand"></section>
+            <!-- AREA INFORMASI BRAND -->
+            <section
+                class="brand-slot"
+                id="brandSlot"
+                aria-label="Informasi brand"
+            ></section>
 
-            <!-- 3. PRODUK UNGGULAN: terlaris, geser ke kanan. Berganti otomatis saat AI mencocokkan produk -->
+            <!-- PRODUK UNGGULAN -->
             <section class="page-section" id="featuredSection">
                 <div class="section-head">
                     <h2 id="featuredTitle">Produk Unggulan</h2>
-                    <button class="section-link" id="resetCatalogBtn" hidden>Kembali ke awal</button>
+                    <button
+                        class="section-link"
+                        id="resetCatalogBtn"
+                        type="button"
+                        hidden
+                    >
+                        Kembali ke awal
+                    </button>
                 </div>
+
                 <div class="rail scroll-x" id="featuredRail"></div>
             </section>
 
-            <!-- 4. KATEGORI LAIN: satu baris geser per kategori -->
-            <section class="page-section" id="categorySection" aria-label="Kategori lain">
+            <!-- KATEGORI PRODUK -->
+            <section
+                class="page-section"
+                id="categorySection"
+                aria-label="Kategori lain"
+            >
                 <div id="categoryList"></div>
             </section>
         </main>
 
-        <!-- ===================================== -->
-        <!-- LACI MENU UTAMA                         -->
-        <!-- ===================================== -->
-        <div id="sampleDrawer" class="sample-drawer" style="display: none;" role="dialog" aria-label="Menu utama">
+        <!-- MENU UTAMA KANTOONG CORE -->
+        <div
+            id="sampleDrawer"
+            class="sample-drawer kantoong-core-menu"
+            role="dialog"
+            aria-label="Menu utama"
+            aria-modal="true"
+            aria-hidden="true"
+            hidden
+        >
             <div class="drawer-header">
                 <h3>Menu</h3>
-                <button id="closeDrawer" class="btn-close-drawer" aria-label="Tutup menu">✕</button>
+                <button
+                    id="closeDrawer"
+                    class="btn-close-drawer"
+                    type="button"
+                    aria-label="Tutup menu"
+                >
+                    ✕
+                </button>
             </div>
-            <p class="drawer-desc" style="color: #6b6b70; font-size: 13px;">Pilih modul atau fitur toko:</p>
 
-            <!-- Tombol Admin (muncul jika email admin cocok) -->
-            <button class="sample-item-btn" id="drawerAdminBtn" style="display: none; background: #111; color: #fff; border-color: #111; font-weight: bold;">
+            <p class="drawer-desc">
+                Pilih modul atau fitur toko:
+            </p>
+
+            <!-- TOMBOL ADMIN -->
+            <button
+                class="sample-item-btn"
+                id="drawerAdminBtn"
+                type="button"
+                hidden
+            >
                 Masuk ke Dashboard Admin
             </button>
 
-            <!-- Login Customer (Google Sign-In) -->
-            <div id="customerAuthContainer" style="margin: 10px 0; padding: 5px 0;">
-                <div id="customerGoogleSignInDiv" style="display: flex; justify-content: center; width: 100%;"></div>
-                <button class="sample-item-btn" id="drawerCustomerLogoutBtn" style="display: none; background: #fff; color: #d93025; border-color: #d93025; font-weight: 600;">
+            <!-- AUTENTIKASI CUSTOMER -->
+            <div id="customerAuthContainer">
+                <div id="customerGoogleSignInDiv"></div>
+
+                <button
+                    class="sample-item-btn"
+                    id="drawerCustomerLogoutBtn"
+                    type="button"
+                    hidden
+                >
                     Keluar dari Akun
                 </button>
             </div>
 
-            <button class="sample-item-btn" id="btnOpenCatalog">Katalog Produk Toko</button>
+            <!-- AKSES KATALOG -->
+            <button
+                class="sample-item-btn"
+                id="btnOpenCatalog"
+                type="button"
+            >
+                Katalog Produk Toko
+            </button>
 
-            <button class="sample-item-btn" data-component="gold-price-modal.html">
+            <!-- KOMPONEN HARGA EMAS -->
+            <button
+                class="sample-item-btn"
+                type="button"
+                data-component="gold-price-modal.html"
+            >
                 Harga Emas &amp; Perak Real-Time
             </button>
         </div>
 
-        <!-- ===================================== -->
-        <!-- PANEL CHAT AI (bottom sheet)            -->
-        <!-- data-state: peek (kartu sambutan) | half | full -->
-        <!-- Tinggi tiap posisi diatur chat-panel.css & panel.js -->
-        <!-- ===================================== -->
-        <aside class="chat-panel" id="chatPanel" data-state="peek" aria-label="Konsultasi AI">
-
-            <!-- Bagian atas yang bisa ditarik naik-turun -->
+        <!-- PANEL CHAT AI -->
+        <aside
+            class="chat-panel"
+            id="chatPanel"
+            data-state="peek"
+            aria-label="Konsultasi AI"
+        >
             <div class="panel-head" id="panelHead">
                 <div class="drag-handle" id="dragHandle"></div>
 
-                <!-- Tampil saat posisi kecil (kartu sambutan) -->
+                <!-- TAMPILAN CHAT SAAT PEEK -->
                 <div class="peek-row" id="peekRow">
                     <div class="ai-avatar" aria-hidden="true">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7L12 2z"></path></svg>
+                        <svg width="22" height="22" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7L12 2z"></path>
+                        </svg>
                     </div>
+
                     <div class="peek-text">
                         <strong id="peekTitle">Halo Kak!</strong>
-                        <p id="peekGreeting">Mau cari produk yang cocok untuk kebutuhanmu?</p>
+                        <p id="peekGreeting">
+                            Mau cari produk yang cocok untuk kebutuhanmu?
+                        </p>
                     </div>
-                    <button class="send-btn" id="peekSendBtn" aria-label="Mulai konsultasi">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+                    <button
+                        class="send-btn"
+                        id="peekSendBtn"
+                        type="button"
+                        aria-label="Mulai konsultasi"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                            <polyline points="5 12 12 5 19 12"></polyline>
+                        </svg>
                     </button>
                 </div>
 
-                <!-- Tampil saat panel terbuka -->
+                <!-- HEADER CHAT SAAT TERBUKA -->
                 <div class="chat-header" id="chatHeader">
                     <h2 id="chatHeading">Konsultasi AI</h2>
-                    <button class="chat-close" id="chatCloseBtn" aria-label="Kecilkan chat">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    <button
+                        class="chat-close"
+                        id="chatCloseBtn"
+                        type="button"
+                        aria-label="Kecilkan chat"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                     </button>
                 </div>
             </div>
 
-            <!-- Isi percakapan -->
+            <!-- PERCAKAPAN -->
             <div class="chat-box" id="chatBox" aria-live="polite"></div>
 
-            <!-- Saran pertanyaan untuk user yang bingung -->
-            <div class="chat-suggestions" id="chatSuggestions"></div>
+            <!-- SARAN PERTANYAAN -->
+            <div
+                class="chat-suggestions"
+                id="chatSuggestions"
+            ></div>
 
-            <!-- Kotak ketik -->
+            <!-- INPUT CHAT -->
             <div class="input-bar-container">
                 <div class="input-box">
-                    <button class="mic-btn" id="btnMic" type="button" aria-label="Suara (segera hadir)" disabled>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0"></path><line x1="12" y1="18" x2="12" y2="22"></line></svg>
+                    <button
+                        class="mic-btn"
+                        id="btnMic"
+                        type="button"
+                        aria-label="Suara (segera hadir)"
+                        disabled
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="1.8"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+                            <path d="M5 11a7 7 0 0 0 14 0"></path>
+                            <line x1="12" y1="18" x2="12" y2="22"></line>
+                        </svg>
                     </button>
-                    <textarea id="kolomKetik" rows="1" placeholder="Ketik pesan..." aria-label="Ketik pesan"></textarea>
+
+                    <textarea
+                        id="kolomKetik"
+                        rows="1"
+                        placeholder="Ketik pesan..."
+                        aria-label="Ketik pesan"
+                    ></textarea>
                 </div>
-                <button class="send-btn" id="tombolKirim" aria-label="Kirim pesan">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+
+                <button
+                    class="send-btn"
+                    id="tombolKirim"
+                    type="button"
+                    aria-label="Kirim pesan"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                        <polyline points="5 12 12 5 19 12"></polyline>
+                    </svg>
                 </button>
             </div>
         </aside>
 
-        <!-- Kontainer Dinamis Komponen (modal harga emas, dashboard admin, dll) -->
+        <!-- HOST DASHBOARD BENTO -->
+        <div id="kantoongDashboardHost" hidden></div>
+
+        <!-- HOST KOMPONEN DINAMIS -->
         <div id="dynamicComponentContainer"></div>
     </div>
 
-    <!-- Script Utama Terintegrasi Modular -->
+    <!-- KONFIGURASI APLIKASI -->
     <script src="client-config.js"></script>
+
+    <!-- MESIN AI, CHAT, DAN STOREFRONT -->
     <script type="module" src="js/ai-brain.js"></script>
     <script type="module" src="js/panel.js"></script>
     <script type="module" src="js/engine.js"></script>
+
+    <!-- SISTEM MENU -->
+    <script src="menu/menu-state.js"></script>
     <script src="menu/menu-controller.js"></script>
+    <script src="menu/menu-router.js"></script>
     <script src="menu/menu.js"></script>
+
+    <!-- DASHBOARD BENTO -->
+    <script src="menu/dashboard/dashboard.js"></script>
+    <script src="menu/dashboard/sections/welcome-card.js"></script>
+    <script src="menu/dashboard/sections/feature-grid.js"></script>
+
+    <!-- FITUR PROFIL -->
+    <script src="menu/features/profile/profile.js"></script>
+
+    <!-- KERANJANG -->
     <script type="module" src="cart/cart.js"></script>
 </body>
 </html>
+```
