@@ -41,9 +41,9 @@
     border-radius: 24px;
 
     transition:
-        border-color 0.2s var(--ease),
-        box-shadow 0.2s var(--ease),
-        background-color 0.2s var(--ease);
+        border-color 0.2s var(--ease, ease),
+        box-shadow 0.2s var(--ease, ease),
+        background-color 0.2s var(--ease, ease);
 }
 
 .input-box:focus-within {
@@ -122,11 +122,12 @@
 
     font: inherit;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 
     transition:
-        background-color 0.2s var(--ease),
-        color 0.2s var(--ease),
-        transform 0.15s var(--ease);
+    background-color 0.2s var(--ease, ease),
+    color 0.2s var(--ease, ease),
+    transform 0.15s var(--ease, ease);
 }
 
 .mic-btn:active:not(:disabled) {
@@ -166,14 +167,15 @@
 
     font: inherit;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
 
     transition:
-        transform 0.15s var(--ease),
-        background-color 0.2s var(--ease),
-        border-color 0.2s var(--ease),
-        opacity 0.2s var(--ease);
+        transform 0.15s var(--ease, ease),
+        background-color 0.2s var(--ease, ease),
+        border-color 0.2s var(--ease, ease),
+        opacity 0.2s var(--ease, ease);
 }
 
 .send-btn svg {

@@ -1,0 +1,268 @@
+
+/* =========================================================
+   KANTOONG CORE
+   File: frontend/css/dashboard-host.css
+
+   DASHBOARD USER — HOST CONTAINER
+   Design: Neutral Gray · Minimal · Responsive
+
+   Tanggung jawab:
+   1. Mengatur wadah utama Dashboard User.
+   2. Menjaga posisi dan lapisan dashboard.
+   3. Mendukung tampilan desktop, tablet, dan mobile.
+   4. Menjaga konten dashboard tidak meluber.
+   5. Memisahkan host dari panel chat AI dan storefront.
+
+   Catatan:
+   - Tidak mengatur desain internal kartu fitur.
+   - Tidak mengatur logika pembukaan dashboard.
+   - JavaScript tetap mengendalikan visibilitas dashboard.
+   ========================================================= */
+
+
+/* =========================================================
+   01. DESIGN TOKENS
+   ========================================================= */
+
+:root {
+    --dashboard-host-bg: #e5e5e5;
+    --dashboard-host-surface: #ededed;
+    --dashboard-host-border: #d0d0d0;
+    --dashboard-host-text: #202020;
+
+    --dashboard-host-radius: 24px;
+    --dashboard-host-padding: 20px;
+
+    --dashboard-host-z-index: 100;
+}
+
+
+/* =========================================================
+   02. HOST ROOT
+   ========================================================= */
+
+/*
+ * Mendukung ID host yang digunakan oleh integrasi dashboard.
+ * Jangan menambahkan display:none secara permanen karena
+ * JavaScript mungkin mengatur visibilitas host.
+ */
+
+#kantoongDashboardHost {
+    position: fixed;
+    inset: 0;
+    z-index: var(--dashboard-host-z-index);
+
+    box-sizing: border-box;
+
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+
+    min-width: 0;
+    min-height: 0;
+
+    padding:
+        max(var(--dashboard-host-padding), env(safe-area-inset-top, 0px))
+        max(var(--dashboard-host-padding), env(safe-area-inset-right, 0px))
+        max(var(--dashboard-host-padding), env(safe-area-inset-bottom, 0px))
+        max(var(--dashboard-host-padding), env(safe-area-inset-left, 0px));
+
+    overflow: hidden;
+
+    color: var(--dashboard-host-text);
+    background: var(--dashboard-host-bg);
+
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+
+    isolation: isolate;
+}
+
+
+/* =========================================================
+   03. HIDDEN STATE
+   ========================================================= */
+
+/*
+ * Pastikan atribut hidden benar-benar menyembunyikan host,
+ * meskipun aturan display lain ditambahkan di kemudian hari.
+ */
+
+#kantoongDashboardHost[hidden] {
+    display: none !important;
+}
+
+
+/* =========================================================
+   04. DASHBOARD VIEWPORT
+   ========================================================= */
+
+/*
+ * Mendukung beberapa nama class untuk kompatibilitas.
+ * Gunakan class yang benar-benar tersedia pada HTML dashboard.
+ */
+
+#kantoongDashboardHost .dashboard-viewport,
+#kantoongDashboardHost .dashboard-host-content {
+    position: relative;
+
+    box-sizing: border-box;
+
+    width: 100%;
+    height: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    color: inherit;
+    background: transparent;
+
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: thin;
+    scrollbar-color: #b8b8b8 transparent;
+}
+
+
+/* =========================================================
+   05. OPTIONAL INNER FRAME
+   ========================================================= */
+
+/*
+ * Jika HTML menggunakan frame internal, frame ini membatasi
+ * konten tanpa memaksakan ukuran perangkat tertentu.
+ */
+
+#kantoongDashboardHost .dashboard-host-frame {
+    position: relative;
+
+    box-sizing: border-box;
+
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+
+    margin-inline: auto;
+
+    color: inherit;
+    background: var(--dashboard-host-surface);
+
+    border: 1px solid var(--dashboard-host-border);
+    border-radius: var(--dashboard-host-radius);
+
+    overflow: clip;
+}
+
+
+/* =========================================================
+   06. SCROLLBAR
+   ========================================================= */
+
+#kantoongDashboardHost .dashboard-viewport::-webkit-scrollbar,
+#kantoongDashboardHost .dashboard-host-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+#kantoongDashboardHost .dashboard-viewport::-webkit-scrollbar-track,
+#kantoongDashboardHost .dashboard-host-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#kantoongDashboardHost .dashboard-viewport::-webkit-scrollbar-thumb,
+#kantoongDashboardHost .dashboard-host-content::-webkit-scrollbar-thumb {
+    background: #b8b8b8;
+    border-radius: 999px;
+}
+
+#kantoongDashboardHost .dashboard-viewport::-webkit-scrollbar-thumb:hover,
+#kantoongDashboardHost .dashboard-host-content::-webkit-scrollbar-thumb:hover {
+    background: #929292;
+}
+
+
+/* =========================================================
+   07. RESPONSIVE — TABLET
+   ========================================================= */
+
+@media (min-width: 600px) {
+    #kantoongDashboardHost {
+        --dashboard-host-padding: 24px;
+        --dashboard-host-radius: 28px;
+    }
+
+    #kantoongDashboardHost .dashboard-host-frame {
+        max-width: 1200px;
+    }
+}
+
+
+/* =========================================================
+   08. RESPONSIVE — DESKTOP
+   ========================================================= */
+
+@media (min-width: 1024px) {
+    #kantoongDashboardHost {
+        --dashboard-host-padding: 28px;
+    }
+
+    #kantoongDashboardHost .dashboard-host-frame {
+        max-width: 1440px;
+    }
+}
+
+
+/* =========================================================
+   09. RESPONSIVE — SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+    #kantoongDashboardHost {
+        --dashboard-host-padding: 0px;
+        --dashboard-host-radius: 0px;
+
+        padding:
+            env(safe-area-inset-top, 0px)
+            env(safe-area-inset-right, 0px)
+            env(safe-area-inset-bottom, 0px)
+            env(safe-area-inset-left, 0px);
+    }
+
+    #kantoongDashboardHost .dashboard-host-frame {
+        width: 100%;
+        min-height: 100%;
+
+        border: 0;
+        border-radius: 0;
+    }
+}
+
+
+/* =========================================================
+   10. LANDSCAPE MOBILE
+   ========================================================= */
+
+@media (max-height: 500px) and (orientation: landscape) {
+    #kantoongDashboardHost {
+        --dashboard-host-padding: 8px;
+    }
+}
+
+
+/* =========================================================
+   11. ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    #kantoongDashboardHost *,
+    #kantoongDashboardHost *::before,
+    #kantoongDashboardHost *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

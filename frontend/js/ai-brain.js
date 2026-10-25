@@ -1,1046 +1,1885 @@
+/**
+ * ============================================================
+ * KANTOONG CORE — AI BRAIN
+ * File: frontend/js/ai-brain.js
+ *
+ * Arsitektur:
+ * - ES Modules
+ * - Konfigurasi dari client-config.js
+ * - State produk dibaca dari window.KantoongState
+ * - Integrasi AI backend melalui API
+ * - Fallback pencarian produk lokal
+ * - Riwayat percakapan per business/tenant
+ * - Rekomendasi produk berdasarkan relevansi dan anggaran
+ * - Event bridge untuk panel AI dan katalog
+ *
+ * KEAMANAN:
+ * - Jangan menaruh API key LLM di frontend.
+ * - Backend wajib memverifikasi identitas pengguna,
+ *   business/tenant, izin akses, dan rate limit.
+ * ============================================================
+ */
 
- // ============================================================
- // KANTOONG AI
- // File: js/ai-brain.js
- // AI Conversation, Product Matching & Chat History
- //
- // Tanggung jawab:
- // 1. Menampilkan percakapan AI.
- // 2. Menyimpan riwayat percakapan.
- // 3. Menampilkan saran chat harian.
- // 4. Mencocokkan kebutuhan user dengan katalog produk.
- // 5. Menggunakan AI server jika tersedia.
- // 6. Mengirim hasil pencocokan ke engine.js.
- //
- // Integrasi:
- //   engine.js  -> KantoongState
- //   panel.js   -> kantoong:consult / kantoong:collapse
- //   engine.js  <- kantoong:matched { ids: [] }
- //
- // Konfigurasi opsional di client-config.js:
- //   business_id
- //   history_days
- //   ai_title
- //   ai_greetings
- //   ai_suggestions
- //   ai_endpoint
- //
- // Catatan:
- // Modul ini tidak mengambil alih pengaturan gestur panel
- // dan tidak menggantikan fungsi engine.js.
- // ============================================================
+import CFG from "../client-config.js";
 
-import { KantoongState as S } from './engine.js';
+/* ============================================================
+   01. KONFIGURASI
+   ============================================================ */
 
-// ------------------------------------------------------------
-// 1. KONFIGURASI DAN ELEMEN DOM
-// ------------------------------------------------------------
+const AI_CONFIG = Object.freeze({
+    businessId: String(
+        CFG?.business_id ||
+        CFG?.businessId ||
+        "default"
+    ),
 
-const CFG =
-    typeof KantoongConfig !== 'undefined'
-        ? KantoongConfig
-        : {};
+    endpoint: String(
+        CFG?.ai_endpoint ||
+        CFG?.aiEndpoint ||
+        ""
+    ).trim(),
 
-const chatBox = document.getElementById('chatBox');
-const suggestBox = document.getElementById('chatSuggestions');
-const sendBtn = document.getElementById('tombolKirim');
-const input = document.getElementById('kolomKetik');
+    title: String(
+        CFG?.ai_title ||
+        CFG?.aiTitle ||
+        "KANTOONG AI"
+    ),
 
-const BUSINESS_ID = String(CFG.business_id || 'default');
+    greetings: Array.isArray(CFG?.ai_greetings)
+        ? CFG.ai_greetings
+        : Array.isArray(CFG?.aiGreetings)
+            ? CFG.aiGreetings
+            : [
+                "Halo! Ada yang bisa aku bantu hari ini?",
+                "Hai! Mau mencari produk atau bertanya sesuatu?",
+                "Selamat datang! Aku siap membantumu."
+            ],
 
-const HISTORY_KEY = `kantoong:chat:${BUSINESS_ID}`;
-const USED_KEY = `kantoong:chat-used:${BUSINESS_ID}`;
+    suggestions: Array.isArray(CFG?.ai_suggestions)
+        ? CFG.ai_suggestions
+        : Array.isArray(CFG?.aiSuggestions)
+            ? CFG.aiSuggestions
+            : [
+                "Tampilkan produk populer",
+                "Cari produk termurah",
+                "Bantu aku memilih produk",
+                "Apa saja produk yang tersedia?"
+            ],
 
-const HISTORY_DAYS = Math.max(
-    1,
-    Number(CFG.history_days) || 30
-);
+    historyDays: clampNumber(
+        CFG?.ai_history_days ?? CFG?.aiHistoryDays,
+        30,
+        1,
+        365
+    ),
 
-const HISTORY_MS = HISTORY_DAYS * 24 * 60 * 60 * 1000;
-const MAX_SAVED_MESSAGES = 60;
-const MAX_CONTEXT_MESSAGES = 12;
-const MAX_PRODUCTS_IN_CHAT = 4;
+    maxHistoryMessages: clampNumber(
+        CFG?.ai_max_history_messages ??
+        CFG?.aiMaxHistoryMessages,
+        60,
+        10,
+        200
+    ),
 
-// ------------------------------------------------------------
-// 2. HELPER UMUM
-// ------------------------------------------------------------
+    maxContextMessages: clampNumber(
+        CFG?.ai_max_context_messages ??
+        CFG?.aiMaxContextMessages,
+        12,
+        2,
+        40
+    ),
 
-const emit = (name, detail = {}) => {
-    window.dispatchEvent(
-        new CustomEvent(name, { detail })
-    );
+    maxProductsInReply: clampNumber(
+        CFG?.ai_max_products ??
+        CFG?.aiMaxProducts,
+        4,
+        1,
+        8
+    ),
+
+    requestTimeoutMs: clampNumber(
+        CFG?.ai_timeout_ms ?? CFG?.aiTimeoutMs,
+        20000,
+        3000,
+        60000
+    ),
+
+    currency: String(CFG?.currency || "IDR"),
+
+    locale: String(CFG?.locale || "id-ID"),
+
+    allowLocalFallback: CFG?.ai_local_fallback !== false
+});
+
+/* ============================================================
+   02. STATE INTERNAL
+   ============================================================ */
+
+const AIState = {
+    initialized: false,
+    busy: false,
+    history: [],
+    lastSuggestionsDate: "",
+    requestController: null,
+    requestSequence: 0,
+    boundElements: null
 };
 
-const sleep = (ms) =>
-    new Promise(resolve => setTimeout(resolve, ms));
+const STORAGE_PREFIX = "kantoong:chat:";
 
-const hhmm = (date) =>
-    `${String(date.getHours()).padStart(2, '0')}:` +
-    `${String(date.getMinutes()).padStart(2, '0')}`;
+const HISTORY_KEY =
+    `${STORAGE_PREFIX}${AI_CONFIG.businessId}`;
 
-const rupiah = (value) =>
-    new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        maximumFractionDigits: 0
-    }).format(Number(value) || 0);
+const SUGGESTIONS_KEY =
+    `kantoong:chat-used:${AI_CONFIG.businessId}`;
 
-const getProducts = () =>
-    Array.isArray(S.products) ? S.products : [];
+const MAX_MESSAGE_LENGTH = 3000;
 
-const findProduct = (id) =>
-    getProducts().find(
-        product => String(product.id) === String(id)
-    );
+/* ============================================================
+   03. UTILITAS UMUM
+   ============================================================ */
 
-const getPrice = (product) =>
-    Number(product?.price) || 0;
+function clampNumber(value, fallback, min, max) {
+    const number = Number(value);
 
-function el(tag, className = '', text = null) {
-    const node = document.createElement(tag);
-
-    if (className) {
-        node.className = className;
+    if (!Number.isFinite(number)) {
+        return fallback;
     }
 
-    if (text !== null && text !== undefined) {
-        node.textContent = String(text);
-    }
-
-    return node;
+    return Math.min(max, Math.max(min, Math.floor(number)));
 }
 
-function safeArray(value) {
-    return Array.isArray(value) ? value : [];
-}
-
-function normalize(text) {
-    return String(text ?? '')
+function normalizeText(value) {
+    return String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
-        .normalize('NFKD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/(\d)\.(?=\d{3}\b)/g, '$1')
-        .replace(/(\d),(\d)/g, '$1.$2')
+        .replace(/[^\p{L}\p{N}\s.,-]/gu, " ")
+        .replace(/\s+/g, " ")
         .trim();
 }
 
-function getDayKey(date = new Date()) {
-    return [
-        date.getFullYear(),
-        String(date.getMonth() + 1).padStart(2, '0'),
-        String(date.getDate()).padStart(2, '0')
-    ].join('-');
-}
-
-// ------------------------------------------------------------
-// 3. PENYIMPANAN RIWAYAT CHAT
-// ------------------------------------------------------------
-
-const history = {
-    read() {
-        try {
-            const raw = JSON.parse(
-                localStorage.getItem(HISTORY_KEY) || '[]'
-            );
-
-            if (!Array.isArray(raw)) {
-                return [];
-            }
-
-            const now = Date.now();
-
-            return raw.filter(message => {
-                if (!message || typeof message !== 'object') {
-                    return false;
-                }
-
-                if (!Number.isFinite(Number(message.t))) {
-                    return false;
-                }
-
-                if (now - Number(message.t) > HISTORY_MS) {
-                    return false;
-                }
-
-                if (!['user', 'ai'].includes(message.who)) {
-                    return false;
-                }
-
-                return typeof message.text === 'string';
-            }).slice(-MAX_SAVED_MESSAGES);
-        } catch {
-            return [];
-        }
-    },
-
-    write(messages) {
-        try {
-            localStorage.setItem(
-                HISTORY_KEY,
-                JSON.stringify(
-                    messages.slice(-MAX_SAVED_MESSAGES)
-                )
-            );
-        } catch (error) {
-            console.warn(
-                '[Kantoong AI] Riwayat tidak dapat disimpan:',
-                error
-            );
-        }
-    }
-};
-
-let saved = history.read();
-
-// Format konteks untuk AI server: { role, text }
-const convo = [];
-
-function rebuildConversationContext(messages) {
-    convo.length = 0;
-
-    messages.slice(-MAX_CONTEXT_MESSAGES).forEach(message => {
-        convo.push({
-            role: message.who === 'user' ? 'user' : 'assistant',
-            text: message.text
-        });
-    });
-}
-
-function persistMessage(message) {
-    saved.push(message);
-
-    // Buang pesan yang sudah melewati batas retensi.
-    const now = Date.now();
-
-    saved = saved.filter(item =>
-        Number.isFinite(Number(item.t)) &&
-        now - Number(item.t) <= HISTORY_MS
+function escapeRegExp(value) {
+    return String(value).replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
     );
-
-    saved = saved.slice(-MAX_SAVED_MESSAGES);
-
-    history.write(saved);
 }
 
-// ------------------------------------------------------------
-// 4. RENDER PESAN CHAT
-// ------------------------------------------------------------
+function getTimestamp() {
+    return Date.now();
+}
 
-export function addMessageToChat(
-    text,
-    sender = 'ai',
-    options = {}
-) {
-    if (!chatBox) return;
-
-    const ids = safeArray(options.ids);
-    const persist = options.persist !== false;
+function getTodayKey() {
     const now = new Date();
 
-    const wrapper = el(
-        'div',
-        `message-wrapper ${sender === 'user' ? 'user' : 'ai'}`
-    );
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
 
-    const bubble = el('div', 'bubble');
+    return `${year}-${month}-${day}`;
+}
 
-    bubble.append(
-        el('span', 'bubble-text', text)
-    );
+function formatTime(timestamp = Date.now()) {
+    return new Intl.DateTimeFormat(AI_CONFIG.locale, {
+        hour: "2-digit",
+        minute: "2-digit"
+    }).format(new Date(timestamp));
+}
 
-    // Kartu produk yang cocok dengan pesan AI.
-    const products = ids
-        .map(findProduct)
-        .filter(Boolean)
-        .slice(0, MAX_PRODUCTS_IN_CHAT);
+function formatRupiah(value) {
+    const number = Number(value);
 
-    if (products.length) {
-        const row = el('div', 'chat-products');
-
-        products.forEach(product => {
-            const item = el('button', 'chat-product');
-
-            item.type = 'button';
-            item.dataset.id = String(product.id);
-            item.setAttribute(
-                'aria-label',
-                `Tanyakan tentang ${product.name || 'produk'}`
-            );
-
-            const thumb = el('div', 'chat-product-thumb');
-
-            if (product.image_url) {
-                const img = el('img');
-
-                img.src = product.image_url;
-                img.alt = product.name || 'Foto produk';
-                img.loading = 'lazy';
-
-                thumb.append(img);
-            } else {
-                thumb.textContent =
-                    String(product.name || '?')
-                        .trim()
-                        .charAt(0)
-                        .toUpperCase();
-            }
-
-            item.append(
-                thumb,
-                el('div', 'chat-product-name', product.name || 'Produk')
-            );
-
-            row.append(item);
-        });
-
-        const catalogLink = el(
-            'button',
-            'chat-catalog-link',
-            'Lihat produk di katalog ↑'
-        );
-
-        catalogLink.type = 'button';
-
-        bubble.append(row, catalogLink);
+    if (!Number.isFinite(number)) {
+        return "Harga belum tersedia";
     }
 
-    bubble.append(
-        el('span', 'time-stamp', hhmm(now))
-    );
-
-    wrapper.append(
-        el('div', 'avatar', sender === 'user' ? 'ANDA' : 'AI'),
-        bubble
-    );
-
-    chatBox.append(wrapper);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    if (persist) {
-        persistMessage({
-            t: now.getTime(),
-            who: sender === 'user' ? 'user' : 'ai',
-            text: String(text),
-            ids
-        });
+    try {
+        return new Intl.NumberFormat(AI_CONFIG.locale, {
+            style: "currency",
+            currency: AI_CONFIG.currency,
+            maximumFractionDigits: 0
+        }).format(number);
+    } catch {
+        return `Rp${Math.round(number).toLocaleString("id-ID")}`;
     }
 }
 
-function showTyping() {
-    if (!chatBox) return null;
+function safeText(value, fallback = "") {
+    if (value === null || value === undefined) {
+        return fallback;
+    }
 
-    const wrapper = el('div', 'message-wrapper ai');
-    const bubble = el('div', 'bubble is-typing');
+    return String(value).trim() || fallback;
+}
 
-    bubble.append(
-        el('span', 'typing-dot'),
-        el('span', 'typing-dot'),
-        el('span', 'typing-dot')
+function createElement(tag, className, text) {
+    const element = document.createElement(tag);
+
+    if (className) {
+        element.className = className;
+    }
+
+    if (text !== undefined && text !== null) {
+        element.textContent = String(text);
+    }
+
+    return element;
+}
+
+/**
+ * Event convention:
+ *
+ * emit("matched", detail)
+ * -> window event "kantoong:matched"
+ *
+ * Jangan mengirim nama yang sudah diawali "kantoong:",
+ * karena akan menghasilkan prefix ganda.
+ */
+function emit(name, detail = {}) {
+    const eventName = String(name).replace(/^kantoong:/, "");
+
+    const eventDetail = {
+        ...detail,
+        business_id: AI_CONFIG.businessId,
+        source: "ai-brain"
+    };
+
+    document.dispatchEvent(
+        new CustomEvent(`kantoong:${eventName}`, {
+            detail: eventDetail
+        })
     );
 
-    wrapper.append(
-        el('div', 'avatar', 'AI'),
-        bubble
+    window.dispatchEvent(
+        new CustomEvent(`kantoong:${eventName}`, {
+            detail: eventDetail
+        })
     );
+}
 
-    chatBox.append(wrapper);
+function getElements() {
+    return {
+        chatBox: document.getElementById("chatBox"),
+        suggestions: document.getElementById("chatSuggestions"),
+        sendButton: document.getElementById("tombolKirim"),
+        input: document.getElementById("kolomKetik")
+    };
+}
+
+function getEngineState() {
+    const state = window.KantoongState;
+
+    if (!state || typeof state !== "object") {
+        return null;
+    }
+
+    return state;
+}
+
+/* ============================================================
+   04. AKSES DATA PRODUK
+   ============================================================ */
+
+function getProducts() {
+    const state = getEngineState();
+
+    if (!state) {
+        return [];
+    }
+
+    const products = Array.isArray(state.products)
+        ? state.products
+        : [];
+
+    return products.filter(product =>
+        product &&
+        typeof product === "object"
+    );
+}
+
+function getProductId(product) {
+    if (!product) {
+        return "";
+    }
+
+    return String(
+        product.id ??
+        product.product_id ??
+        product.productId ??
+        product.sku ??
+        ""
+    ).trim();
+}
+
+function getProductName(product) {
+    return safeText(
+        product?.name ??
+        product?.product_name ??
+        product?.productName ??
+        product?.title,
+        "Produk tanpa nama"
+    );
+}
+
+function getProductPrice(product) {
+    const rawPrice =
+        product?.price ??
+        product?.selling_price ??
+        product?.sellingPrice ??
+        product?.harga;
+
+    if (rawPrice === null || rawPrice === undefined || rawPrice === "") {
+        return null;
+    }
+
+    const price = Number(rawPrice);
+
+    return Number.isFinite(price) && price >= 0
+        ? price
+        : null;
+}
+
+function getProductImage(product) {
+    return safeText(
+        product?.image_url ??
+        product?.imageUrl ??
+        product?.image ??
+        product?.thumbnail ??
+        product?.photo_url,
+        ""
+    );
+}
+
+function getProductDescription(product) {
+    return safeText(
+        product?.description ??
+        product?.caption ??
+        product?.short_description ??
+        product?.shortDescription,
+        ""
+    );
+}
+
+function getProductCategory(product) {
+    const category = product?.category;
+
+    if (typeof category === "string") {
+        return category;
+    }
+
+    if (category && typeof category === "object") {
+        return safeText(
+            category.name ?? category.title,
+            ""
+        );
+    }
+
+    return safeText(
+        product?.category_name ??
+        product?.categoryName,
+        ""
+    );
+}
+
+function findProduct(productId) {
+    const id = String(productId ?? "").trim();
+
+    if (!id) {
+        return null;
+    }
+
+    return getProducts().find(product =>
+        getProductId(product) === id
+    ) || null;
+}
+
+function getProductSearchText(product) {
+    return normalizeText([
+        getProductName(product),
+        getProductDescription(product),
+        getProductCategory(product),
+        product?.brand,
+        product?.sku,
+        product?.tags
+    ].filter(Boolean).join(" "));
+}
+
+/* ============================================================
+   05. RIWAYAT CHAT
+   ============================================================ */
+
+function readHistory() {
+    try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+
+        if (!raw) {
+            return [];
+        }
+
+        const parsed = JSON.parse(raw);
+
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+
+        const minimumTimestamp =
+            getTimestamp() -
+            AI_CONFIG.historyDays * 24 * 60 * 60 * 1000;
+
+        return parsed
+            .filter(message => {
+                if (!message || typeof message !== "object") {
+                    return false;
+                }
+
+                const validRole = [
+                    "user",
+                    "ai",
+                    "system"
+                ].includes(message.who);
+
+                const validText =
+                    typeof message.text === "string";
+
+                const timestamp = Number(message.timestamp);
+
+                return (
+                    validRole &&
+                    validText &&
+                    Number.isFinite(timestamp) &&
+                    timestamp >= minimumTimestamp
+                );
+            })
+            .slice(-AI_CONFIG.maxHistoryMessages);
+    } catch (error) {
+        console.warn(
+            "[KANTOONG AI] Tidak dapat membaca riwayat chat:",
+            error
+        );
+
+        return [];
+    }
+}
+
+function saveHistory() {
+    AIState.history = AIState.history
+        .slice(-AI_CONFIG.maxHistoryMessages);
+
+    try {
+        localStorage.setItem(
+            HISTORY_KEY,
+            JSON.stringify(AIState.history)
+        );
+    } catch (error) {
+        console.warn(
+            "[KANTOONG AI] Riwayat chat tidak dapat disimpan:",
+            error
+        );
+    }
+}
+
+function addHistoryMessage(who, text, extra = {}) {
+    const message = {
+        id: (
+            typeof crypto !== "undefined" &&
+            typeof crypto.randomUUID === "function"
+        )
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+
+        who,
+        text: String(text ?? "").slice(0, MAX_MESSAGE_LENGTH),
+        timestamp: getTimestamp(),
+        ...extra
+    };
+
+    AIState.history.push(message);
+
+    saveHistory();
+
+    return message;
+}
+
+/**
+ * Hapus riwayat chat lokal untuk business yang sedang aktif.
+ * Fungsi ini tidak menghapus riwayat yang tersimpan di backend.
+ */
+export function clearAIChatHistory() {
+    AIState.history = [];
+
+    try {
+        localStorage.removeItem(HISTORY_KEY);
+    } catch (error) {
+        console.warn(
+            "[KANTOONG AI] Tidak dapat menghapus riwayat lokal:",
+            error
+        );
+    }
+
+    const { chatBox } = getElements();
+
+    if (chatBox) {
+        chatBox.replaceChildren();
+    }
+
+    renderInitialGreeting();
+
+    emit("chat-history-cleared");
+}
+
+/* ============================================================
+   06. RENDER PESAN CHAT
+   ============================================================ */
+
+function scrollChatToBottom() {
+    const { chatBox } = getElements();
+
+    if (!chatBox) {
+        return;
+    }
+
     chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function renderMessage(message, options = {}) {
+    const { chatBox } = getElements();
+
+    if (!chatBox || !message) {
+        return null;
+    }
+
+    const wrapper = createElement(
+        "div",
+        `ai-message ai-message--${message.who}`
+    );
+
+    wrapper.dataset.messageId = String(message.id || "");
+
+    const bubble = createElement(
+        "div",
+        "ai-message__bubble"
+    );
+
+    /*
+     * Menggunakan textContent agar pesan tidak diperlakukan
+     * sebagai HTML. Jangan menggunakan innerHTML untuk
+     * memasukkan pesan yang berasal dari pengguna atau API.
+     */
+    bubble.textContent = String(message.text ?? "");
+
+    wrapper.appendChild(bubble);
+
+    const timestamp = createElement(
+        "time",
+        "ai-message__time",
+        formatTime(message.timestamp || Date.now())
+    );
+
+    wrapper.appendChild(timestamp);
+
+    if (Array.isArray(message.productIds) && message.productIds.length) {
+        const products = message.productIds
+            .map(findProduct)
+            .filter(Boolean)
+            .slice(0, AI_CONFIG.maxProductsInReply);
+
+        if (products.length) {
+            wrapper.appendChild(renderProductCards(products));
+        }
+    }
+
+    chatBox.appendChild(wrapper);
+
+    if (!options.skipScroll) {
+        scrollChatToBottom();
+    }
 
     return wrapper;
 }
 
-// ------------------------------------------------------------
-// 5. SARAN CHAT HARIAN
-// ------------------------------------------------------------
+function renderProductCards(products) {
+    const container = createElement(
+        "div",
+        "ai-product-list"
+    );
 
-let todayKey = getDayKey();
-let usedToday = false;
-let todaysChips = [];
+    products.forEach(product => {
+        const id = getProductId(product);
 
-try {
-    usedToday = localStorage.getItem(USED_KEY) === todayKey;
-} catch {
-    usedToday = false;
+        if (!id) {
+            return;
+        }
+
+        const card = createElement(
+            "button",
+            "ai-product-card"
+        );
+
+        card.type = "button";
+        card.dataset.productId = id;
+        card.setAttribute(
+            "aria-label",
+            `Tanyakan tentang ${getProductName(product)}`
+        );
+
+        const imageURL = getProductImage(product);
+
+        if (imageURL && isSafeImageURL(imageURL)) {
+            const image = document.createElement("img");
+
+            image.src = imageURL;
+            image.alt = getProductName(product);
+            image.loading = "lazy";
+            image.referrerPolicy = "no-referrer";
+
+            image.addEventListener("error", () => {
+                image.remove();
+            }, { once: true });
+
+            card.appendChild(image);
+        }
+
+        const information = createElement(
+            "span",
+            "ai-product-card__info"
+        );
+
+        information.appendChild(
+            createElement(
+                "strong",
+                "ai-product-card__name",
+                getProductName(product)
+            )
+        );
+
+        const price = getProductPrice(product);
+
+        information.appendChild(
+            createElement(
+                "span",
+                "ai-product-card__price",
+                price === null
+                    ? "Harga belum tersedia"
+                    : formatRupiah(price)
+            )
+        );
+
+        card.appendChild(information);
+
+        container.appendChild(card);
+    });
+
+    return container;
 }
 
-function markSuggestionsUsed() {
-    usedToday = true;
-
+function isSafeImageURL(value) {
     try {
-        localStorage.setItem(USED_KEY, todayKey);
+        const url = new URL(
+            String(value),
+            window.location.origin
+        );
+
+        return [
+            "https:",
+            "http:"
+        ].includes(url.protocol);
     } catch {
-        // Status tetap berlaku selama halaman masih aktif.
+        return false;
+    }
+}
+
+function renderTypingIndicator() {
+    const { chatBox } = getElements();
+
+    if (!chatBox) {
+        return null;
     }
 
-    setSuggestions([]);
+    const indicator = createElement(
+        "div",
+        "ai-message ai-message--ai ai-message--typing"
+    );
+
+    indicator.dataset.aiTyping = "true";
+
+    const bubble = createElement(
+        "div",
+        "ai-message__bubble",
+        `${AI_CONFIG.title} sedang berpikir…`
+    );
+
+    indicator.appendChild(bubble);
+    chatBox.appendChild(indicator);
+
+    scrollChatToBottom();
+
+    return indicator;
 }
 
-function pickSuggestions() {
-    const pool = safeArray(CFG.ai_suggestions)
-        .filter(value => typeof value === 'string' && value.trim())
-        .map(value => value.trim());
-
-    // Fisher-Yates shuffle.
-    for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-
-        [pool[i], pool[j]] = [pool[j], pool[i]];
+function removeTypingIndicator(indicator) {
+    if (indicator?.parentNode) {
+        indicator.remove();
     }
 
-    return pool.slice(0, 3);
+    const { chatBox } = getElements();
+
+    if (chatBox) {
+        chatBox
+            .querySelectorAll('[data-ai-typing="true"]')
+            .forEach(element => element.remove());
+    }
 }
 
-function setSuggestions(list = []) {
-    if (!suggestBox) return;
+function renderInitialGreeting() {
+    const { chatBox } = getElements();
 
-    const chips = safeArray(list)
-        .filter(value => typeof value === 'string' && value.trim())
-        .slice(0, 3)
-        .map(text => {
-            const chip = el('button', 'suggestion-chip', text);
-
-            chip.type = 'button';
-            return chip;
-        });
-
-    suggestBox.replaceChildren(...chips);
-}
-
-function renderToday() {
-    if (!chatBox) return;
+    if (!chatBox) {
+        return;
+    }
 
     chatBox.replaceChildren();
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const todaysMessages = saved.filter(
-        message => Number(message.t) >= startOfDay.getTime()
-    );
-
-    rebuildConversationContext(todaysMessages);
-
-    if (todaysMessages.length) {
-        todaysMessages.forEach(message => {
-            addMessageToChat(
-                message.text,
-                message.who,
-                {
-                    ids: safeArray(message.ids),
-                    persist: false
-                }
-            );
+    if (AIState.history.length > 0) {
+        AIState.history.forEach(message => {
+            renderMessage(message, {
+                skipScroll: true
+            });
         });
 
-        if (todaysMessages.some(message => message.who === 'user')) {
-            usedToday = true;
+        scrollChatToBottom();
+        return;
+    }
 
-            try {
-                localStorage.setItem(USED_KEY, todayKey);
-            } catch {
-                // Tetap gunakan status di memori.
-            }
+    const greetings = AI_CONFIG.greetings;
+
+    const greeting = greetings.length
+        ? greetings[
+            Math.floor(Math.random() * greetings.length)
+        ]
+        : "Halo! Ada yang bisa aku bantu?";
+
+    const message = addHistoryMessage(
+        "ai",
+        greeting
+    );
+
+    renderMessage(message);
+}
+
+/* ============================================================
+   07. SARAN PERTANYAAN
+   ============================================================ */
+
+function getDailySuggestionState() {
+    try {
+        const raw = localStorage.getItem(SUGGESTIONS_KEY);
+
+        if (!raw) {
+            return {
+                date: getTodayKey(),
+                used: []
+            };
         }
-    } else {
-        const greetings = safeArray(CFG.ai_greetings)
-            .filter(value => typeof value === 'string' && value.trim());
 
-        const greeting = greetings.length
-            ? greetings[Math.floor(Math.random() * greetings.length)]
-            : 'Ada yang bisa aku bantu cari?';
+        const parsed = JSON.parse(raw);
 
-        const title = CFG.ai_title || 'Halo Kak!';
+        if (parsed.date !== getTodayKey()) {
+            return {
+                date: getTodayKey(),
+                used: []
+            };
+        }
 
-        addMessageToChat(
-            `${title} ${greeting}`,
-            'ai',
-            { persist: false }
+        return {
+            date: parsed.date,
+            used: Array.isArray(parsed.used)
+                ? parsed.used
+                : []
+        };
+    } catch {
+        return {
+            date: getTodayKey(),
+            used: []
+        };
+    }
+}
+
+function saveDailySuggestionState(state) {
+    try {
+        localStorage.setItem(
+            SUGGESTIONS_KEY,
+            JSON.stringify(state)
+        );
+    } catch (error) {
+        console.warn(
+            "[KANTOONG AI] Tidak dapat menyimpan status saran:",
+            error
         );
     }
-
-    todaysChips = pickSuggestions();
-
-    setSuggestions(
-        usedToday ? [] : todaysChips
-    );
 }
 
-let busy = false;
+function shuffleArray(items) {
+    const result = [...items];
 
-function onNewDay() {
-    const nextDay = getDayKey();
+    for (let index = result.length - 1; index > 0; index--) {
+        const randomIndex = Math.floor(
+            Math.random() * (index + 1)
+        );
 
-    if (nextDay === todayKey) return;
-
-    todayKey = nextDay;
-    usedToday = false;
-    convo.length = 0;
-    todaysChips = pickSuggestions();
-
-    try {
-        localStorage.removeItem(USED_KEY);
-    } catch {
-        // Tidak mengganggu sesi aktif.
+        [result[index], result[randomIndex]] = [
+            result[randomIndex],
+            result[index]
+        ];
     }
 
-    if (!busy) {
-        renderToday();
-    } else {
-        setSuggestions([]);
-    }
+    return result;
 }
 
-let midnightTimer = null;
+function renderSuggestions() {
+    const { suggestions } = getElements();
 
-function scheduleMidnight() {
-    if (midnightTimer !== null) {
-        clearTimeout(midnightTimer);
+    if (!suggestions) {
+        return;
     }
 
-    const now = new Date();
+    suggestions.replaceChildren();
 
-    const nextMidnight = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() + 1,
-        0, 0, 1
+    const availableSuggestions = AI_CONFIG.suggestions
+        .map(value => String(value).trim())
+        .filter(Boolean);
+
+    if (!availableSuggestions.length) {
+        return;
+    }
+
+    const state = getDailySuggestionState();
+
+    const unused = availableSuggestions.filter(
+        suggestion => !state.used.includes(suggestion)
     );
 
-    midnightTimer = setTimeout(() => {
-        onNewDay();
-        scheduleMidnight();
-    }, Math.max(1000, nextMidnight.getTime() - now.getTime()));
+    const pool = unused.length
+        ? unused
+        : availableSuggestions;
+
+    const selected = shuffleArray(pool).slice(0, 4);
+
+    selected.forEach(suggestion => {
+        const button = createElement(
+            "button",
+            "ai-suggestion",
+            suggestion
+        );
+
+        button.type = "button";
+
+        button.addEventListener("click", () => {
+            sendMessage(suggestion);
+        });
+
+        suggestions.appendChild(button);
+    });
 }
 
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && getDayKey() !== todayKey) {
-        onNewDay();
+function markSuggestionUsed(text) {
+    const suggestion = String(text).trim();
+
+    const state = getDailySuggestionState();
+
+    if (!state.used.includes(suggestion)) {
+        state.used.push(suggestion);
     }
-);
 
-// ------------------------------------------------------------
-// 6. PENCARIAN PRODUK LOKAL
-// ------------------------------------------------------------
+    saveDailySuggestionState(state);
+}
 
-const STOP_WORDS = new Set([
-    'yang', 'dan', 'untuk', 'dengan', 'saya', 'aku',
-    'mau', 'ingin', 'cari', 'carikan', 'tolong', 'bantu',
-    'dong', 'kak', 'nya', 'ada', 'apa', 'buat', 'sesuai',
-    'kebutuhan', 'produk', 'rekomendasi', 'pilihkan', 'pilih',
-    'bawah', 'atas', 'budget', 'harga', 'maksimal', 'minimal',
-    'sekitar', 'sampai', 'juta', 'ribu', 'bisa', 'lebih',
-    'paling', 'tentang', 'ceritakan', 'jelaskan', 'halo',
-    'hai', 'hello', 'selamat', 'pagi', 'siang', 'sore',
-    'malam', 'kamu', 'anda', 'dong', 'nih', 'itu', 'ini'
+/* ============================================================
+   08. PENCARIAN PRODUK LOKAL
+   ============================================================ */
+
+const STOPWORDS = new Set([
+    "aku", "saya", "kamu", "anda", "yang", "dan", "atau",
+    "di", "ke", "dari", "untuk", "dengan", "ini", "itu",
+    "ada", "apa", "bagaimana", "dong", "deh", "ya", "kah",
+    "tolong", "coba", "mau", "ingin", "carikan", "cari",
+    "produk", "barang", "jual", "menjual", "tampilkan",
+    "lihat", "dong", "nih", "aja", "saja", "paling"
 ]);
 
-function tokenize(text) {
-    return normalize(text)
-        .split(/[^a-z0-9]+/)
-        .filter(word =>
-            word.length > 2 &&
-            !STOP_WORDS.has(word) &&
-            !/^\d+$/.test(word)
+function tokenize(value) {
+    return normalizeText(value)
+        .split(/\s+/)
+        .filter(token =>
+            token.length > 1 &&
+            !STOPWORDS.has(token)
         );
 }
 
-// Memahami contoh:
-// "500 ribu", "2jt", "1.500.000", "maksimal 750rb".
 function parseBudget(text) {
-    const normalized = normalize(text);
+    const normalized = normalizeText(text);
 
-    const matches = [
-        ...normalized.matchAll(
-            /(\d+(?:\.\d+)?)\s*(juta|jt|miliar|m|ribu|rb|k)?\b/g
-        )
-    ];
-
-    for (const match of matches) {
-        let amount = Number(match[1]);
-
-        if (!Number.isFinite(amount)) continue;
-
-        const unit = match[2] || '';
-
-        if (['juta', 'jt', 'miliar', 'm'].includes(unit)) {
-            amount *= unit === 'miliar' || unit === 'm'
-                ? 1_000_000_000
-                : 1_000_000;
-        } else if (['ribu', 'rb', 'k'].includes(unit)) {
-            amount *= 1000;
-        } else if (amount < 1000) {
-            // Hindari menganggap angka kecil sebagai harga.
-            continue;
-        }
-
-        const minimumIntent =
-            /\b(di atas|lebih dari|minimal|paling sedikit|setidaknya)\b/
-                .test(normalized);
-
-        const maximumIntent =
-            /\b(di bawah|kurang dari|maksimal|paling banyak|hingga|sampai)\b/
-                .test(normalized);
-
-        const mode =
-            minimumIntent && !maximumIntent
-                ? 'min'
-                : 'max';
-
-        return { value: amount, mode };
-    }
-
-    return null;
-}
-
-function productSearchText(product) {
-    return normalize([
-        product.name,
-        product.category,
-        product.caption,
-        product.description
-    ].filter(Boolean).join(' '));
-}
-
-function scoreProduct(product, words) {
-    const name = normalize(product.name);
-    const category = normalize(product.category);
-    const description = normalize(
-        `${product.caption || ''} ${product.description || ''}`
+    const match = normalized.match(
+        /(?:di bawah|dibawah|kurang dari|maximal|maksimal|budget|anggaran|hingga|sampai|under)\s*(?:rp\s*)?(\d+(?:[.,]\d+)?)\s*(juta|jt|ribu|rb|k)?/
     );
 
-    return words.reduce((score, word) => {
-        return score +
-            (name.includes(word) ? 3 : 0) +
-            (category.includes(word) ? 2 : 0) +
-            (description.includes(word) ? 1 : 0);
-    }, 0);
+    if (!match) {
+        return null;
+    }
+
+    let amount = Number(
+        match[1].replace(",", ".")
+    );
+
+    if (!Number.isFinite(amount)) {
+        return null;
+    }
+
+    const unit = match[2] || "";
+
+    if (["juta", "jt"].includes(unit)) {
+        amount *= 1_000_000;
+    } else if (["ribu", "rb", "k"].includes(unit)) {
+        amount *= 1_000;
+    }
+
+    return amount;
 }
 
-const bySales = (a, b) =>
-    (Number(b.sales_count) || 0) -
-    (Number(a.sales_count) || 0);
+function scoreProduct(product, queryTokens) {
+    if (!queryTokens.length) {
+        return 0;
+    }
 
-const memory = {
-    lastCategory: ''
-};
+    const name = normalizeText(getProductName(product));
+    const category = normalizeText(getProductCategory(product));
+    const description = normalizeText(getProductDescription(product));
+    const fullText = getProductSearchText(product);
 
-function makeReply(text, products = []) {
-    const validProducts = safeArray(products).filter(Boolean);
+    let score = 0;
 
-    if (validProducts[0]?.category) {
-        memory.lastCategory = validProducts[0].category;
+    for (const token of queryTokens) {
+        if (name === token) {
+            score += 12;
+        } else if (name.includes(token)) {
+            score += 6;
+        }
+
+        if (category.includes(token)) {
+            score += 4;
+        }
+
+        if (description.includes(token)) {
+            score += 2;
+        }
+
+        if (
+            fullText.includes(token) &&
+            !name.includes(token) &&
+            !category.includes(token) &&
+            !description.includes(token)
+        ) {
+            score += 1;
+        }
+    }
+
+    const nameTokens = tokenize(name);
+
+    if (
+        queryTokens.length > 1 &&
+        queryTokens.every(token => nameTokens.includes(token))
+    ) {
+        score += 5;
+    }
+
+    return score;
+}
+
+function getAvailableProducts() {
+    return getProducts().filter(product => {
+        if (product.is_active === false) {
+            return false;
+        }
+
+        if (product.active === false) {
+            return false;
+        }
+
+        if (product.is_published === false) {
+            return false;
+        }
+
+        if (product.published === false) {
+            return false;
+        }
+
+        return Boolean(getProductId(product));
+    });
+}
+
+function searchLocalProducts(query, options = {}) {
+    const products = getAvailableProducts();
+
+    const tokens = tokenize(query);
+
+    const budget = parseBudget(query);
+
+    const ranked = products
+        .map(product => ({
+            product,
+            score: scoreProduct(product, tokens),
+            price: getProductPrice(product)
+        }))
+        .filter(item => item.score > 0);
+
+    if (budget !== null) {
+        return ranked
+            .filter(item =>
+                item.price !== null &&
+                item.price <= budget
+            )
+            .sort((a, b) =>
+                b.score - a.score ||
+                a.price - b.price
+            )
+            .slice(0, options.limit || AI_CONFIG.maxProductsInReply)
+            .map(item => item.product);
+    }
+
+    return ranked
+        .sort((a, b) =>
+            b.score - a.score ||
+            ((a.price ?? Infinity) - (b.price ?? Infinity))
+        )
+        .slice(0, options.limit || AI_CONFIG.maxProductsInReply)
+        .map(item => item.product);
+}
+
+function getCheapestProducts(limit = AI_CONFIG.maxProductsInReply) {
+    return getAvailableProducts()
+        .filter(product => getProductPrice(product) !== null)
+        .sort((a, b) =>
+            getProductPrice(a) - getProductPrice(b)
+        )
+        .slice(0, limit);
+}
+
+function getPopularProducts(limit = AI_CONFIG.maxProductsInReply) {
+    const products = getAvailableProducts();
+
+    const featuredIds = new Set(
+        Array.isArray(getEngineState()?.featured)
+            ? getEngineState().featured
+                .map(item => typeof item === "object"
+                    ? getProductId(item)
+                    : String(item))
+                .filter(Boolean)
+            : []
+    );
+
+    return products
+        .map(product => {
+            const score =
+                Number(product.sales_count ?? product.salesCount ?? 0) +
+                Number(product.order_count ?? product.orderCount ?? 0) +
+                (product.is_featured || product.featured ? 1000 : 0) +
+                (featuredIds.has(getProductId(product)) ? 1000 : 0);
+
+            return {
+                product,
+                score
+            };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map(item => item.product);
+}
+
+function detectIntent(text) {
+    const query = normalizeText(text);
+
+    if (
+        /\b(termurah|paling murah|harga terendah|murah sekali)\b/.test(query)
+    ) {
+        return "cheapest";
+    }
+
+    if (
+        /\b(populer|terlaris|best seller|bestseller|produk unggulan)\b/.test(query)
+    ) {
+        return "popular";
+    }
+
+    if (
+        /\b(katalog|semua produk|lihat produk|daftar produk)\b/.test(query)
+    ) {
+        return "catalog";
+    }
+
+    if (
+        /\b(halo|hai|hello|selamat pagi|selamat siang|selamat malam)\b/.test(query)
+    ) {
+        return "greeting";
+    }
+
+    return "search";
+}
+
+/* ============================================================
+   09. RESPONS AI LOKAL
+   ============================================================ */
+
+function buildLocalReply(text) {
+    const intent = detectIntent(text);
+
+    if (intent === "greeting") {
+        return {
+            reply: "Halo! Aku siap membantu. Kamu ingin mencari produk, melihat rekomendasi, atau mengecek produk berdasarkan anggaran?",
+            products: []
+        };
+    }
+
+    if (intent === "catalog") {
+        return {
+            reply: "Tentu! Aku akan membantumu melihat katalog produk yang tersedia.",
+            products: [],
+            action: "show-catalog"
+        };
+    }
+
+    if (intent === "cheapest") {
+        const products = getCheapestProducts();
+
+        return {
+            reply: products.length
+                ? "Berikut beberapa produk dengan harga paling rendah yang tersedia saat ini."
+                : "Aku belum menemukan produk dengan harga yang bisa ditampilkan. Coba periksa data harga produk terlebih dahulu.",
+            products
+        };
+    }
+
+    if (intent === "popular") {
+        const products = getPopularProducts();
+
+        return {
+            reply: products.length
+                ? "Berikut produk unggulan atau populer berdasarkan data yang tersedia di katalog."
+                : "Aku belum menemukan produk untuk ditampilkan. Pastikan katalog sudah berhasil dimuat.",
+            products
+        };
+    }
+
+    const budget = parseBudget(text);
+    const products = searchLocalProducts(text);
+
+    if (products.length) {
+        const reply = budget !== null
+            ? `Aku menemukan ${products.length} produk yang sesuai dengan pencarianmu dan anggaran hingga ${formatRupiah(budget)}.`
+            : `Aku menemukan ${products.length} produk yang paling relevan dengan pencarianmu.`;
+
+        return {
+            reply,
+            products
+        };
+    }
+
+    if (getAvailableProducts().length === 0) {
+        return {
+            reply: "Katalog produk belum tersedia atau masih dimuat. Coba lagi setelah data produk berhasil dimuat.",
+            products: []
+        };
     }
 
     return {
-        text,
-        ids: validProducts.map(product => product.id)
+        reply: "Aku belum menemukan produk yang cocok dengan kata kunci itu. Coba sebutkan nama produk, kategori, atau anggaran yang kamu inginkan.",
+        products: []
     };
 }
 
-function generateLocalReply(userText) {
-    const text = normalize(userText);
-    const products = getProducts();
+/* ============================================================
+   10. INTEGRASI API AI BACKEND
+   ============================================================ */
 
-    if (S.isLoading) {
-        return makeReply(
-            'Sebentar ya Kak, katalog sedang dimuat. Coba kirim lagi beberapa detik lagi.'
-        );
-    }
+/**
+ * Kontrak request yang digunakan frontend:
+ *
+ * POST CFG.ai_endpoint
+ * Content-Type: application/json
+ *
+ * {
+ *   "business_id": "...",
+ *   "message": "...",
+ *   "history": [
+ *     { "role": "user", "content": "..." },
+ *     { "role": "assistant", "content": "..." }
+ *   ],
+ *   "context": {
+ *     "products": [
+ *       { "id": "...", "name": "...", "price": 10000 }
+ *     ]
+ *   }
+ * }
+ *
+ * Backend harus mengautentikasi pengguna dan memvalidasi
+ * business_id. Jangan percaya business_id dari browser saja.
+ */
 
-    if (!products.length) {
-        return makeReply(
-            'Katalog toko belum tersedia. Coba lagi setelah produk toko dimuat.'
-        );
-    }
+function buildAPIHistory() {
+    return AIState.history
+        .filter(message =>
+            message.who === "user" ||
+            message.who === "ai"
+        )
+        .slice(-AI_CONFIG.maxContextMessages)
+        .map(message => ({
+            role: message.who === "ai"
+                ? "assistant"
+                : "user",
 
-    if (/(terima kasih|makasih|thanks|thank you)/.test(text)) {
-        return makeReply(
-            'Sama-sama Kak! Kalau masih bingung memilih, tanya saja lagi ya.'
-        );
-    }
-
-    if (
-        /^(hai|halo|hi|hello|selamat|pagi|siang|sore|malam)\b/.test(text) &&
-        tokenize(text).length === 0
-    ) {
-        return makeReply(
-            'Halo Kak! Ceritakan kebutuhan atau budget-mu, nanti aku bantu carikan produk yang cocok.'
-        );
-    }
-
-    // A. Pencarian nama produk.
-    const named = products.find(product => {
-        const name = normalize(product.name);
-        return name.length > 0 && text.includes(name);
-    });
-
-    if (named) {
-        const detail = named.description || named.caption || '';
-
-        return makeReply(
-            `${named.name} harganya ${rupiah(getPrice(named))}.` +
-            (detail ? ` ${detail}` : '') +
-            ' Aku tampilkan produknya di etalase ya.',
-            [named]
-        );
-    }
-
-    // B. Produk terlaris.
-    if (
-        /(terlaris|paling laris|populer|best ?seller|favorit|paling banyak)/.test(text)
-    ) {
-        const top = [...products]
-            .sort(bySales)
-            .slice(0, MAX_PRODUCTS_IN_CHAT);
-
-        return makeReply(
-            `Ini beberapa produk terlaris: ${top.map(p => p.name).join(', ')}. Mau aku bantu pilih sesuai budget?`,
-            top
-        );
-    }
-
-    // C. Produk termurah atau hemat.
-    if (/(murah|hemat|termurah|paling terjangkau)/.test(text)) {
-        const categoryProducts = memory.lastCategory
-            ? products.filter(
-                product => product.category === memory.lastCategory
-            )
-            : [];
-
-        const pool = categoryProducts.length
-            ? categoryProducts
-            : products;
-
-        const cheapest = [...pool]
-            .sort((a, b) => getPrice(a) - getPrice(b))
-            .slice(0, MAX_PRODUCTS_IN_CHAT);
-
-        if (!cheapest.length) {
-            return makeReply('Belum ada produk yang bisa dibandingkan.');
-        }
-
-        return makeReply(
-            `Pilihan paling terjangkau adalah ${cheapest[0].name} seharga ${rupiah(getPrice(cheapest[0]))}. Aku tampilkan beberapa pilihan untuk dibandingkan.`,
-            cheapest
-        );
-    }
-
-    // D. Pencarian berdasarkan kata kunci dan budget.
-    const budget = parseBudget(userText);
-    const words = tokenize(userText);
-
-    let pool = [...products];
-
-    if (budget) {
-        pool = pool.filter(product => {
-            const price = getPrice(product);
-
-            return budget.mode === 'min'
-                ? price >= budget.value
-                : price <= budget.value;
-        });
-    }
-
-    let hits = [];
-
-    if (words.length) {
-        hits = pool
-            .map(product => ({
-                product,
-                score: scoreProduct(product, words)
-            }))
-            .filter(item => item.score > 0)
-            .sort((a, b) =>
-                b.score - a.score ||
-                bySales(a.product, b.product)
-            )
-            .map(item => item.product);
-    } else if (budget) {
-        hits = pool.sort(bySales);
-    } else {
-        return makeReply(
-            'Boleh ceritakan lebih detail, Kak? Misalnya produk yang dicari, kegunaannya, atau kisaran budget-mu.'
-        );
-    }
-
-    if (!hits.length) {
-        return makeReply(
-            budget
-                ? `Belum ada produk yang cocok dengan kata kunci dan batas harga ${rupiah(budget.value)}. Mau coba budget lain atau melihat produk terlaris?`
-                : 'Aku belum menemukan produk yang cocok. Coba sebutkan kegunaan atau kategori produk yang kamu butuhkan.'
-        );
-    }
-
-    const top = hits.slice(0, MAX_PRODUCTS_IN_CHAT);
-
-    const budgetNote = budget
-        ? ` sesuai batas harga ${rupiah(budget.value)}`
-        : '';
-
-    return makeReply(
-        `Aku menemukan ${hits.length} pilihan${budgetNote}. Salah satu yang cocok adalah ${top[0].name} (${rupiah(getPrice(top[0]))}). Aku sudah menyesuaikan etalase di atas. Ada preferensi lain?`,
-        top
-    );
+            content: message.text
+        }));
 }
 
-// ------------------------------------------------------------
-// 7. AI SERVER OPSIONAL
-// ------------------------------------------------------------
+function buildProductContext() {
+    /*
+     * Hanya mengirim data ringkas untuk konteks.
+     * Data sensitif bisnis tidak boleh dimasukkan di sini.
+     */
+    return getAvailableProducts()
+        .slice(0, 30)
+        .map(product => ({
+            id: getProductId(product),
+            name: getProductName(product),
+            category: getProductCategory(product),
+            price: getProductPrice(product),
+            description: getProductDescription(product).slice(0, 250)
+        }));
+}
 
-async function generateRemoteReply(userText) {
-    if (!CFG.ai_endpoint) {
-        throw new Error('ai_endpoint belum dikonfigurasi.');
+async function requestRemoteAI(message, requestId) {
+    if (!AI_CONFIG.endpoint) {
+        return null;
     }
 
     const controller = new AbortController();
 
+    AIState.requestController = controller;
+
     const timeoutId = setTimeout(
         () => controller.abort(),
-        20000
+        AI_CONFIG.requestTimeoutMs
     );
 
     try {
-        const response = await fetch(CFG.ai_endpoint, {
-            method: 'POST',
+        const response = await fetch(AI_CONFIG.endpoint, {
+            method: "POST",
+
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
+                "Accept": "application/json"
             },
+
+            credentials: "same-origin",
+
             signal: controller.signal,
+
             body: JSON.stringify({
-                business_id: CFG.business_id || null,
-                message: userText,
-                history: convo.slice(-MAX_CONTEXT_MESSAGES)
+                business_id: AI_CONFIG.businessId,
+                message,
+                history: buildAPIHistory(),
+
+                context: {
+                    products: buildProductContext()
+                }
             })
         });
 
+        if (requestId !== AIState.requestSequence) {
+            return null;
+        }
+
         if (!response.ok) {
-            throw new Error(`AI server merespons ${response.status}.`);
+            throw new Error(
+                `AI backend mengembalikan HTTP ${response.status}`
+            );
         }
 
         const data = await response.json();
 
-        const replyText = String(data.reply || '').trim();
-
-        if (!replyText) {
-            throw new Error('AI server tidak memberikan balasan.');
+        if (!data || typeof data !== "object") {
+            throw new Error("Respons AI backend tidak valid.");
         }
 
-        const ids = safeArray(data.product_ids)
-            .map(id => findProduct(id))
+        /*
+         * Mendukung beberapa bentuk respons backend:
+         * { reply: "..." }
+         * { answer: "..." }
+         * { message: "..." }
+         *
+         * Backend disarankan menggunakan { reply, product_ids }.
+         */
+        const reply = safeText(
+            data.reply ??
+            data.answer ??
+            data.message,
+            ""
+        );
+
+        if (!reply) {
+            throw new Error("AI backend tidak mengirim teks jawaban.");
+        }
+
+        const productIds = Array.isArray(data.product_ids)
+            ? data.product_ids
+            : Array.isArray(data.productIds)
+                ? data.productIds
+                : [];
+
+        const products = productIds
+            .map(findProduct)
             .filter(Boolean)
-            .map(product => product.id);
+            .slice(0, AI_CONFIG.maxProductsInReply);
 
         return {
-            text: replyText,
-            ids
+            reply,
+            products,
+            action: typeof data.action === "string"
+                ? data.action
+                : null
         };
     } finally {
         clearTimeout(timeoutId);
+
+        if (AIState.requestController === controller) {
+            AIState.requestController = null;
+        }
     }
 }
 
-// ------------------------------------------------------------
-// 8. ALUR KIRIM PESAN
-// ------------------------------------------------------------
+/* ============================================================
+   11. PEMROSESAN PESAN
+   ============================================================ */
 
-async function handleUserMessage(rawText) {
-    const text = String(rawText || '').trim();
+function setBusy(busy) {
+    AIState.busy = Boolean(busy);
 
-    if (!text || busy) return;
+    const { sendButton, input } = getElements();
 
-    busy = true;
+    if (sendButton) {
+        sendButton.disabled = AIState.busy;
+        sendButton.setAttribute(
+            "aria-busy",
+            String(AIState.busy)
+        );
+    }
 
-    markSuggestionsUsed();
+    if (input) {
+        input.setAttribute(
+            "aria-busy",
+            String(AIState.busy)
+        );
+    }
+}
 
-    addMessageToChat(text, 'user');
+function normalizeAIResult(result) {
+    if (!result || typeof result !== "object") {
+        return {
+            reply: "Maaf, aku belum bisa memproses permintaan itu.",
+            products: [],
+            action: null
+        };
+    }
 
-    convo.push({
-        role: 'user',
-        text
+    return {
+        reply: safeText(
+            result.reply,
+            "Maaf, aku belum mendapatkan jawaban yang sesuai."
+        ),
+
+        products: Array.isArray(result.products)
+            ? result.products
+                .filter(Boolean)
+                .slice(0, AI_CONFIG.maxProductsInReply)
+            : [],
+
+        action: result.action || null
+    };
+}
+
+function publishMatchedProducts(products, query) {
+    const safeProducts = Array.isArray(products)
+        ? products
+        : [];
+
+    /*
+     * Mengikuti kontrak event engine:
+     * kantoong:matched -> { query, products, count }
+     */
+    emit("matched", {
+        query: String(query || ""),
+        products: safeProducts,
+        count: safeProducts.length,
+        ids: safeProducts
+            .map(getProductId)
+            .filter(Boolean)
     });
+}
 
-    const typing = showTyping();
-    const startedAt = Date.now();
+function performResultAction(action, result) {
+    if (!action) {
+        return;
+    }
+
+    switch (action) {
+        case "show-catalog":
+            emit("collapse", {
+                reason: "ai-show-catalog"
+            });
+
+            emit("show-catalog", {
+                source: "ai-brain"
+            });
+            break;
+
+        case "show-products":
+            publishMatchedProducts(
+                result.products,
+                "ai-recommendation"
+            );
+            break;
+
+        default:
+            /*
+             * Action dari backend tidak dieksekusi secara bebas.
+             * Hanya action yang masuk daftar allowlist di atas
+             * yang boleh memicu event frontend.
+             */
+            break;
+    }
+}
+
+export async function sendMessage(rawText) {
+    const text = String(rawText ?? "").trim();
+
+    if (!text || AIState.busy) {
+        return;
+    }
+
+    const message = text.slice(0, MAX_MESSAGE_LENGTH);
+
+    const { input } = getElements();
+
+    if (input) {
+        input.value = "";
+    }
+
+    markSuggestionUsed(message);
+
+    const userMessage = addHistoryMessage(
+        "user",
+        message
+    );
+
+    renderMessage(userMessage);
+
+    renderSuggestions();
+
+    const typingIndicator = renderTypingIndicator();
+
+    setBusy(true);
+
+    const requestId = ++AIState.requestSequence;
 
     try {
-        let answer = null;
+        let result = null;
 
-        // AI server dipakai hanya jika endpoint tersedia.
-        // Saat memakai katalog demo, pencarian lokal tetap dipakai.
-        if (CFG.ai_endpoint && !S.usingDemo) {
+        /*
+         * Gunakan AI backend bila endpoint tersedia.
+         * Jika gagal dan fallback diizinkan, gunakan pencarian lokal.
+         */
+        if (AI_CONFIG.endpoint) {
             try {
-                answer = await generateRemoteReply(text);
-            } catch (error) {
-                console.warn(
-                    '[Kantoong AI] AI server gagal; beralih ke pencarian lokal:',
-                    error.message
+                result = await requestRemoteAI(
+                    message,
+                    requestId
                 );
+            } catch (error) {
+                if (requestId !== AIState.requestSequence) {
+                    return;
+                }
+
+                console.error(
+                    "[KANTOONG AI] Permintaan ke backend gagal:",
+                    error
+                );
+
+                if (!AI_CONFIG.allowLocalFallback) {
+                    throw error;
+                }
             }
         }
 
-        if (!answer || !answer.text) {
-            answer = generateLocalReply(text);
+        if (requestId !== AIState.requestSequence) {
+            return;
         }
 
-        // Jeda minimum agar indikator mengetik tidak berkedip terlalu cepat.
-        const elapsed = Date.now() - startedAt;
-        const minimumDelay = Math.max(0, 500 - elapsed);
-
-        if (minimumDelay) {
-            await sleep(minimumDelay);
+        if (!result) {
+            result = buildLocalReply(message);
         }
 
-        typing?.remove();
+        result = normalizeAIResult(result);
 
-        const replyText = String(
-            answer.text || 'Maaf Kak, aku belum bisa menemukan jawaban yang sesuai.'
+        const productIds = result.products
+            .map(getProductId)
+            .filter(Boolean);
+
+        const aiMessage = addHistoryMessage(
+            "ai",
+            result.reply,
+            {
+                productIds
+            }
         );
 
-        const ids = safeArray(answer.ids);
+        removeTypingIndicator(typingIndicator);
 
-        addMessageToChat(replyText, 'ai', { ids });
+        renderMessage(aiMessage);
 
-        convo.push({
-            role: 'assistant',
-            text: replyText
+        if (result.products.length) {
+            publishMatchedProducts(
+                result.products,
+                message
+            );
+        }
+
+        performResultAction(result.action, result);
+
+        emit("ai-response", {
+            text: result.reply,
+            product_ids: productIds,
+            action: result.action
         });
-
-        // Batasi konteks yang dikirim ke AI server.
-        if (convo.length > MAX_CONTEXT_MESSAGES) {
-            convo.splice(
-                0,
-                convo.length - MAX_CONTEXT_MESSAGES
-            );
-        }
-
-        // Sinkronkan produk yang cocok dengan engine.js.
-        if (ids.length) {
-            emit('kantoong:matched', { ids });
-        }
     } catch (error) {
-        console.error('[Kantoong AI] Gagal memproses pesan:', error);
+        removeTypingIndicator(typingIndicator);
 
-        typing?.remove();
-
-        addMessageToChat(
-            'Maaf Kak, ada kendala saat memproses pesan. Coba kirim lagi ya.',
-            'ai',
-            { persist: false }
+        console.error(
+            "[KANTOONG AI] Gagal memproses pesan:",
+            error
         );
+
+        const fallbackMessage =
+            "Maaf, terjadi kendala saat memproses pesanmu. Silakan coba lagi sebentar.";
+
+        const errorMessage = addHistoryMessage(
+            "ai",
+            fallbackMessage
+        );
+
+        renderMessage(errorMessage);
+
+        emit("ai-error", {
+            message: "Gagal memproses pesan."
+        });
     } finally {
-        busy = false;
+        if (requestId === AIState.requestSequence) {
+            setBusy(false);
 
-        if (getDayKey() !== todayKey) {
-            onNewDay();
+            const elements = getElements();
+
+            if (elements.input) {
+                elements.input.focus();
+            }
         }
     }
 }
 
-// ------------------------------------------------------------
-// 9. INPUT CHAT DAN TOMBOL KIRIM
-// ------------------------------------------------------------
+/* ============================================================
+   12. EVENT HANDLERS
+   ============================================================ */
 
-function submitFromInput() {
-    if (!input || busy) return;
+function handleSendButtonClick() {
+    const { input } = getElements();
 
-    const text = input.value.trim();
-
-    if (!text) return;
-
-    input.value = '';
-    input.style.height = '20px';
-    input.style.overflowY = 'hidden';
-
-    // Kembalikan ukuran input sebelum pesan diproses.
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-
-    handleUserMessage(text);
+    if (input) {
+        sendMessage(input.value);
+    }
 }
 
-sendBtn?.addEventListener('click', submitFromInput);
-
-input?.addEventListener('keydown', event => {
-    if (
-        event.key === 'Enter' &&
-        !event.shiftKey &&
-        !event.isComposing
-    ) {
-        event.preventDefault();
-        submitFromInput();
+function handleInputKeydown(event) {
+    if (event.key !== "Enter") {
+        return;
     }
-});
 
-// ------------------------------------------------------------
-// 10. KLIK SARAN CHAT
-// ------------------------------------------------------------
+    if (event.shiftKey || event.isComposing) {
+        return;
+    }
 
-suggestBox?.addEventListener('click', event => {
-    const chip = event.target.closest('.suggestion-chip');
+    event.preventDefault();
 
-    if (!chip || !suggestBox.contains(chip)) return;
+    const { input } = getElements();
 
-    handleUserMessage(chip.textContent);
-});
+    if (input) {
+        sendMessage(input.value);
+    }
+}
 
-// ------------------------------------------------------------
-// 11. INTERAKSI KARTU PRODUK DI DALAM CHAT
-// ------------------------------------------------------------
+function handleProductCardClick(event) {
+    const button = event.target.closest(
+        "[data-product-id]"
+    );
 
-chatBox?.addEventListener('click', event => {
-    const productButton = event.target.closest('.chat-product');
+    if (!button) {
+        return;
+    }
 
-    if (productButton) {
-        const product = findProduct(productButton.dataset.id);
+    const product = findProduct(
+        button.dataset.productId
+    );
 
-        if (product) {
-            handleUserMessage(
-                `Ceritakan lebih lanjut tentang ${product.name}`
-            );
-        }
+    if (!product) {
+        return;
+    }
+
+    sendMessage(
+        `Tolong jelaskan produk ${getProductName(product)}`
+    );
+}
+
+function handleConsultEvent(event) {
+    const detail = event?.detail || {};
+
+    const text = safeText(
+        detail.text ??
+        detail.message ??
+        detail.query,
+        ""
+    );
+
+    if (text) {
+        sendMessage(text);
+    }
+}
+
+function handleProductsReady() {
+    renderSuggestions();
+}
+
+/* ============================================================
+   13. INISIALISASI
+   ============================================================ */
+
+export function initAIBrain() {
+    if (AIState.initialized) {
+        return;
+    }
+
+    const elements = getElements();
+
+    /*
+     * Jika elemen chat belum ada, modul tetap aman untuk diimpor.
+     * Panggil initAIBrain() kembali setelah panel dibuat.
+     */
+    if (!elements.chatBox) {
+        console.info(
+            "[KANTOONG AI] Elemen chat belum tersedia. Inisialisasi ditunda."
+        );
 
         return;
     }
 
-    if (event.target.closest('.chat-catalog-link')) {
-        emit('kantoong:collapse');
-        emit('kantoong:show-catalog');
+    AIState.initialized = true;
+    AIState.boundElements = elements;
+    AIState.history = readHistory();
+
+    if (elements.sendButton) {
+        elements.sendButton.addEventListener(
+            "click",
+            handleSendButtonClick
+        );
+    }
+
+    if (elements.input) {
+        elements.input.addEventListener(
+            "keydown",
+            handleInputKeydown
+        );
+    }
+
+    elements.chatBox.addEventListener(
+        "click",
+        handleProductCardClick
+    );
+
+    /*
+     * Event ini kompatibel dengan panel yang mengirim:
+     * window.dispatchEvent(
+     *   new CustomEvent("kantoong:consult", {
+     *     detail: { text: "..." }
+     *   })
+     * )
+     */
+    window.addEventListener(
+        "kantoong:consult",
+        handleConsultEvent
+    );
+
+    document.addEventListener(
+        "kantoong:consult",
+        handleConsultEvent
+    );
+
+    window.addEventListener(
+        "kantoong:products-ready",
+        handleProductsReady
+    );
+
+    window.addEventListener(
+        "supabase-data-ready",
+        handleProductsReady
+    );
+
+    document.addEventListener(
+        "supabase-data-ready",
+        handleProductsReady
+    );
+
+    renderInitialGreeting();
+    renderSuggestions();
+
+    emit("ai-ready", {
+        title: AI_CONFIG.title,
+        endpointConfigured: Boolean(AI_CONFIG.endpoint)
+    });
+
+    console.info(
+        "[KANTOONG AI] AI Brain berhasil diinisialisasi."
+    );
+}
+
+/* ============================================================
+   14. PEMBERSIHAN EVENT
+   ============================================================ */
+
+export function destroyAIBrain() {
+    if (!AIState.initialized) {
+        return;
+    }
+
+    const elements = AIState.boundElements;
+
+    if (elements?.sendButton) {
+        elements.sendButton.removeEventListener(
+            "click",
+            handleSendButtonClick
+        );
+    }
+
+    if (elements?.input) {
+        elements.input.removeEventListener(
+            "keydown",
+            handleInputKeydown
+        );
+    }
+
+    if (elements?.chatBox) {
+        elements.chatBox.removeEventListener(
+            "click",
+            handleProductCardClick
+        );
+    }
+
+    window.removeEventListener(
+        "kantoong:consult",
+        handleConsultEvent
+    );
+
+    document.removeEventListener(
+        "kantoong:consult",
+        handleConsultEvent
+    );
+
+    window.removeEventListener(
+        "kantoong:products-ready",
+        handleProductsReady
+    );
+
+    window.removeEventListener(
+        "supabase-data-ready",
+        handleProductsReady
+    );
+
+    document.removeEventListener(
+        "supabase-data-ready",
+        handleProductsReady
+    );
+
+    if (AIState.requestController) {
+        AIState.requestController.abort();
+        AIState.requestController = null;
+    }
+
+    AIState.requestSequence += 1;
+    AIState.initialized = false;
+    AIState.busy = false;
+    AIState.boundElements = null;
+
+    console.info(
+        "[KANTOONG AI] Event listener AI Brain telah dibersihkan."
+    );
+}
+
+/* ============================================================
+   15. KOMPATIBILITAS GLOBAL
+   ============================================================ */
+
+/*
+ * Mempertahankan akses fungsi dari modul lain yang sebelumnya
+ * mungkin memanggil window.addMessageToChat(...).
+ */
+
+export function addMessageToChat(who, text, extra = {}) {
+    const message = addHistoryMessage(
+        who === "user" ? "user" : "ai",
+        text,
+        extra
+    );
+
+    renderMessage(message);
+
+    return message;
+}
+
+window.KantoongAIBrain = Object.freeze({
+    init: initAIBrain,
+    destroy: destroyAIBrain,
+    sendMessage,
+    addMessageToChat,
+    clearHistory: clearAIChatHistory,
+
+    searchProducts: searchLocalProducts,
+
+    getProducts,
+    findProduct,
+
+    getConfig() {
+        return {
+            businessId: AI_CONFIG.businessId,
+            endpointConfigured: Boolean(AI_CONFIG.endpoint),
+            historyDays: AI_CONFIG.historyDays
+        };
     }
 });
 
-// ------------------------------------------------------------
-// 12. INTEGRASI EVENT KONSULTASI DARI ENGINE
-// ------------------------------------------------------------
-
-// panel.js menangani pembukaan panel.
-// Modul ini menangani pengiriman teks jika event membawa pesan.
-window.addEventListener('kantoong:consult', event => {
-    const text = event.detail?.text;
-
-    if (typeof text === 'string' && text.trim()) {
-        handleUserMessage(text);
-    }
-});
-
-// ------------------------------------------------------------
-// 13. DATA KATALOG SIAP
-// ------------------------------------------------------------
-
-window.addEventListener('supabase-data-ready', () => {
-    // Render hanya jika area chat masih kosong agar pesan yang
-    // sedang dilihat user tidak terhapus ketika katalog diperbarui.
-    if (chatBox && chatBox.childElementCount === 0) {
-        renderToday();
-    }
-});
-
-// ------------------------------------------------------------
-// 14. INISIALISASI
-// ------------------------------------------------------------
-
-// Tampilkan sapaan dan saran ketika halaman siap.
-renderToday();
-
-// Pantau pergantian hari agar saran dapat muncul kembali.
-scheduleMidnight();
-
-console.info('[Kantoong AI] Chat brain siap.');
+/*
+ * Inisialisasi otomatis ketika DOM siap.
+ * Aman dipakai bersama script type="module".
+ */
+if (document.readyState === "loading") {
+    document.addEventListener(
+        "DOMContentLoaded",
+        initAIBrain,
+        { once: true }
+    );
+} else {
+    initAIBrain();
+}

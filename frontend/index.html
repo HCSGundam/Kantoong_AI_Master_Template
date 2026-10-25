@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -12,90 +12,130 @@
     <title id="pageTitle">Kantoong AI - Master Template</title>
 
     <!-- CSS GLOBAL -->
-    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="./css/global.css">
 
     <!-- CSS STOREFRONT -->
-    <link rel="stylesheet" href="css/header.css">
-    <link rel="stylesheet" href="css/storefront.css">
+    <link rel="stylesheet" href="./css/header.css">
+    <link rel="stylesheet" href="./css/store-front.css">
+    <link rel="stylesheet" href="./css/products.css">
+    <link rel="stylesheet" href="./css/modal-popup.css">
+
+    <!-- CSS HOST DASHBOARD USER -->
+    <link rel="stylesheet" href="./css/dashboard-host.css">
 
     <!-- CSS CHAT AI -->
-    <link rel="stylesheet" href="css/chat-bubble.css">
-    <link rel="stylesheet" href="css/chat-panel.css">
-    <link rel="stylesheet" href="css/input-bar.css">
-    <link rel="stylesheet" href="css/animation.css">
-
-    <!-- CSS MENU KANTOONG CORE -->
-    <link rel="stylesheet" href="menu/menu.css">
-
-    <!-- CSS DASHBOARD BENTO -->
-    <link rel="stylesheet" href="menu/dashboard/dashboard.css">
-    <link rel="stylesheet" href="menu/dashboard/sections/feature-grid.css">
-    <link rel="stylesheet" href="menu/dashboard/sections/welcome-card.css">
-
-    <!-- CSS FITUR -->
-    <link rel="stylesheet" href="menu/features/profile/profile.css">
+    <link rel="stylesheet" href="./css/chat-bubble.css">
+    <link rel="stylesheet" href="./css/chat-panel.css">
+    <link rel="stylesheet" href="./css/input-bar.css">
+    <link rel="stylesheet" href="./css/animation.css">
 
     <!-- GOOGLE IDENTITY SERVICES -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script
+        src="https://accounts.google.com/gsi/client"
+        async
+        defer
+    ></script>
 </head>
 
 <body>
     <div class="mobile-container" id="appRoot">
 
-        <!-- HEADER UTAMA -->
+        <!-- =========================================
+             HEADER UTAMA
+        ========================================== -->
         <header class="app-header">
+
+            <!-- HAMBURGER: MEMBUKA DASHBOARD USER -->
             <button
                 class="header-icon"
                 id="showcaseMenuBtn"
                 type="button"
-                aria-label="Buka menu"
-                aria-controls="sampleDrawer"
+                aria-label="Buka Dashboard User"
+                aria-controls="kantoongDashboardHost"
                 aria-expanded="false"
             >
-                <svg width="22" height="22" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round">
+                <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                >
                     <line x1="3" y1="12" x2="21" y2="12"></line>
                     <line x1="3" y1="6" x2="21" y2="6"></line>
                     <line x1="3" y1="18" x2="21" y2="18"></line>
                 </svg>
             </button>
 
-            <h1 class="header-title" id="brandTitle">BUSINESS NAME</h1>
+            <!-- NAMA BRAND -->
+            <h1 class="header-title" id="brandTitle">
+                BUSINESS NAME
+            </h1>
 
             <div class="header-right">
+
+                <!-- PENCARIAN -->
                 <button
                     class="header-icon"
                     id="btnSearch"
                     type="button"
                     aria-label="Cari produk lewat AI"
                 >
-                    <svg width="21" height="21" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round">
+                    <svg
+                        width="21"
+                        height="21"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                    >
                         <circle cx="11" cy="11" r="7"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line
+                            x1="21"
+                            y1="21"
+                            x2="16.65"
+                            y2="16.65"
+                        ></line>
                     </svg>
                 </button>
 
+                <!-- KERANJANG -->
                 <button
                     class="header-icon"
                     id="btnCart"
                     type="button"
                     aria-label="Keranjang"
                 >
-                    <svg width="21" height="21" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+                    <svg
+                        width="21"
+                        height="21"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
                         <path d="M6 8h12l-1 12H7L6 8z"></path>
                         <path d="M9 8a3 3 0 0 1 6 0"></path>
                     </svg>
-                    <span class="cart-badge" id="cartCount" hidden>0</span>
+
+                    <span
+                        class="cart-badge"
+                        id="cartCount"
+                        hidden
+                    >0</span>
                 </button>
+
             </div>
         </header>
 
-        <!-- HOMEPAGE / STOREFRONT -->
+        <!-- =========================================
+             HOMEPAGE / STOREFRONT
+        ========================================== -->
         <main class="page-scroll" id="pageScroll">
 
             <!-- HERO -->
@@ -104,7 +144,11 @@
                 id="heroSection"
                 aria-label="Sorotan toko"
             >
-                <div class="hero-track scroll-x" id="heroTrack"></div>
+                <div
+                    class="hero-track scroll-x"
+                    id="heroTrack"
+                ></div>
+
                 <div
                     class="hero-dots"
                     id="heroDots"
@@ -112,7 +156,7 @@
                 ></div>
             </section>
 
-            <!-- AREA INFORMASI BRAND -->
+            <!-- INFORMASI BRAND -->
             <section
                 class="brand-slot"
                 id="brandSlot"
@@ -120,9 +164,15 @@
             ></section>
 
             <!-- PRODUK UNGGULAN -->
-            <section class="page-section" id="featuredSection">
+            <section
+                class="page-section"
+                id="featuredSection"
+            >
                 <div class="section-head">
-                    <h2 id="featuredTitle">Produk Unggulan</h2>
+                    <h2 id="featuredTitle">
+                        Produk Unggulan
+                    </h2>
+
                     <button
                         class="section-link"
                         id="resetCatalogBtn"
@@ -133,109 +183,79 @@
                     </button>
                 </div>
 
-                <div class="rail scroll-x" id="featuredRail"></div>
+                <div
+                    class="rail scroll-x"
+                    id="featuredRail"
+                ></div>
             </section>
 
             <!-- KATEGORI PRODUK -->
             <section
                 class="page-section"
                 id="categorySection"
-                aria-label="Kategori lain"
+                aria-label="Kategori produk"
             >
                 <div id="categoryList"></div>
             </section>
+
         </main>
 
-        <!-- MENU UTAMA KANTOONG CORE -->
+        <!-- =========================================
+             HOST DASHBOARD USER
+             Dashboard dimuat oleh engine.js
+             melalui iframe dari folder dashboard-user.
+        ========================================== -->
         <div
-            id="sampleDrawer"
-            class="sample-drawer kantoong-core-menu"
-            role="dialog"
-            aria-label="Menu utama"
-            aria-modal="true"
-            aria-hidden="true"
+            id="kantoongDashboardHost"
             hidden
-        >
-            <div class="drawer-header">
-                <h3>Menu</h3>
-                <button
-                    id="closeDrawer"
-                    class="btn-close-drawer"
-                    type="button"
-                    aria-label="Tutup menu"
-                >
-                    ✕
-                </button>
-            </div>
+            aria-hidden="true"
+        ></div>
 
-            <p class="drawer-desc">
-                Pilih modul atau fitur toko:
-            </p>
+        <!-- =========================================
+             HOST KOMPONEN DINAMIS
+        ========================================== -->
+        <div id="dynamicComponentContainer"></div>
 
-            <!-- TOMBOL ADMIN -->
-            <button
-                class="sample-item-btn"
-                id="drawerAdminBtn"
-                type="button"
-                hidden
-            >
-                Masuk ke Dashboard Admin
-            </button>
-
-            <!-- AUTENTIKASI CUSTOMER -->
-            <div id="customerAuthContainer">
-                <div id="customerGoogleSignInDiv"></div>
-
-                <button
-                    class="sample-item-btn"
-                    id="drawerCustomerLogoutBtn"
-                    type="button"
-                    hidden
-                >
-                    Keluar dari Akun
-                </button>
-            </div>
-
-            <!-- AKSES KATALOG -->
-            <button
-                class="sample-item-btn"
-                id="btnOpenCatalog"
-                type="button"
-            >
-                Katalog Produk Toko
-            </button>
-
-            <!-- KOMPONEN HARGA EMAS -->
-            <button
-                class="sample-item-btn"
-                type="button"
-                data-component="gold-price-modal.html"
-            >
-                Harga Emas &amp; Perak Real-Time
-            </button>
-        </div>
-
-        <!-- PANEL CHAT AI -->
+        <!-- =========================================
+             PANEL CHAT AI
+        ========================================== -->
         <aside
             class="chat-panel"
             id="chatPanel"
             data-state="peek"
             aria-label="Konsultasi AI"
         >
+
+            <!-- HEADER PANEL -->
             <div class="panel-head" id="panelHead">
-                <div class="drag-handle" id="dragHandle"></div>
+
+                <div
+                    class="drag-handle"
+                    id="dragHandle"
+                ></div>
 
                 <!-- TAMPILAN CHAT SAAT PEEK -->
                 <div class="peek-row" id="peekRow">
-                    <div class="ai-avatar" aria-hidden="true">
-                        <svg width="22" height="22" viewBox="0 0 24 24"
-                            fill="currentColor">
+
+                    <div
+                        class="ai-avatar"
+                        aria-hidden="true"
+                    >
+                        <svg
+                            width="22"
+                            height="22"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
                             <path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7L12 2z"></path>
                         </svg>
                     </div>
 
                     <div class="peek-text">
-                        <strong id="peekTitle">Halo Kak!</strong>
+                        <strong id="peekTitle">
+                            Halo Kak!
+                        </strong>
+
                         <p id="peekGreeting">
                             Mau cari produk yang cocok untuk kebutuhanmu?
                         </p>
@@ -247,35 +267,58 @@
                         type="button"
                         aria-label="Mulai konsultasi"
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2.5"
-                            stroke-linecap="round" stroke-linejoin="round">
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
                             <line x1="12" y1="19" x2="12" y2="5"></line>
                             <polyline points="5 12 12 5 19 12"></polyline>
                         </svg>
                     </button>
+
                 </div>
 
                 <!-- HEADER CHAT SAAT TERBUKA -->
                 <div class="chat-header" id="chatHeader">
-                    <h2 id="chatHeading">Konsultasi AI</h2>
+                    <h2 id="chatHeading">
+                        Konsultasi AI
+                    </h2>
+
                     <button
                         class="chat-close"
                         id="chatCloseBtn"
                         type="button"
                         aria-label="Kecilkan chat"
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </button>
                 </div>
+
             </div>
 
-            <!-- PERCAKAPAN -->
-            <div class="chat-box" id="chatBox" aria-live="polite"></div>
+            <!-- RIWAYAT PERCAKAPAN -->
+            <div
+                class="chat-box"
+                id="chatBox"
+                aria-live="polite"
+            ></div>
 
             <!-- SARAN PERTANYAAN -->
             <div
@@ -283,80 +326,120 @@
                 id="chatSuggestions"
             ></div>
 
-            <!-- INPUT CHAT -->
+            <!-- INPUT PESAN -->
             <div class="input-bar-container">
+
                 <div class="input-box">
+
+                    <!-- MIKROFON: BELUM DIAKTIFKAN -->
                     <button
                         class="mic-btn"
                         id="btnMic"
                         type="button"
-                        aria-label="Suara (segera hadir)"
+                        aria-label="Fitur suara belum tersedia"
                         disabled
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="1.8"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <rect
+                                x="9"
+                                y="2"
+                                width="6"
+                                height="12"
+                                rx="3"
+                            ></rect>
+
                             <path d="M5 11a7 7 0 0 0 14 0"></path>
                             <line x1="12" y1="18" x2="12" y2="22"></line>
                         </svg>
                     </button>
 
+                    <!-- KOLOM PESAN -->
                     <textarea
                         id="kolomKetik"
                         rows="1"
                         placeholder="Ketik pesan..."
                         aria-label="Ketik pesan"
                     ></textarea>
+
                 </div>
 
+                <!-- KIRIM PESAN -->
                 <button
                     class="send-btn"
                     id="tombolKirim"
                     type="button"
                     aria-label="Kirim pesan"
                 >
-                    <svg width="18" height="18" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round" stroke-linejoin="round">
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
                         <line x1="12" y1="19" x2="12" y2="5"></line>
                         <polyline points="5 12 12 5 19 12"></polyline>
                     </svg>
                 </button>
+
             </div>
         </aside>
 
-        <!-- HOST DASHBOARD BENTO -->
-        <div id="kantoongDashboardHost" hidden></div>
-
-        <!-- HOST KOMPONEN DINAMIS -->
-        <div id="dynamicComponentContainer"></div>
     </div>
 
-    <!-- KONFIGURASI APLIKASI -->
-    <script src="client-config.js"></script>
+    <!-- =============================================
+         KONFIGURASI APLIKASI
+    ============================================== -->
+    <script
+        type="module"
+        src="./client-config.js"
+    ></script>
 
-    <!-- MESIN AI, CHAT, DAN STOREFRONT -->
-    <script type="module" src="js/ai-brain.js"></script>
-    <script type="module" src="js/panel.js"></script>
-    <script type="module" src="js/engine.js"></script>
+    <!-- =============================================
+         AI BRAIN
+    ============================================== -->
+    <script
+        type="module"
+        src="./js/ai-brain.js"
+    ></script>
 
-    <!-- SISTEM MENU -->
-    <script src="menu/menu-state.js"></script>
-    <script src="menu/menu-controller.js"></script>
-    <script src="menu/menu-router.js"></script>
-    <script src="menu/menu.js"></script>
+    <!-- =============================================
+         CHAT PANEL CONTROLLER
+    ============================================== -->
+    <script
+        type="module"
+        src="./js/panel.js"
+    ></script>
 
-    <!-- DASHBOARD BENTO -->
-    <script src="menu/dashboard/dashboard.js"></script>
-    <script src="menu/dashboard/sections/welcome-card.js"></script>
-    <script src="menu/dashboard/sections/feature-grid.js"></script>
+    <!-- =============================================
+         CORE ENGINE
+         Mengatur storefront, data, event, keranjang,
+         dan pembukaan Dashboard User.
+    ============================================== -->
+    <script
+        type="module"
+        src="./js/engine.js"
+    ></script>
 
-    <!-- FITUR PROFIL -->
-    <script src="menu/features/profile/profile.js"></script>
+    <!-- =============================================
+         KERANJANG
+    ============================================== -->
+    <script
+        type="module"
+        src="./cart/cart.js"
+    ></script>
 
-    <!-- KERANJANG -->
-    <script type="module" src="cart/cart.js"></script>
 </body>
 </html>
-```

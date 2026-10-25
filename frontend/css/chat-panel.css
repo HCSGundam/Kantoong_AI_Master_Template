@@ -1,73 +1,137 @@
+
 /* =========================================================
    KANTOONG AI
-   File: css/chat-panel.css
-   Section: AI Chat Panel + Main Menu Drawer
+   File: frontend/css/chat-panel.css
+
+   AI CHAT PANEL + LEGACY MAIN MENU DRAWER
    Responsive · Light/Dark Theme · Mobile First
+
+   Compatible with:
+   - frontend/js/panel.js
+   - AI Brain integration
+   - CSS theme tokens from the main stylesheet
+
+   Architecture:
+   - CSS controls visual appearance and state dimensions.
+   - panel.js controls interaction and state transitions.
    ========================================================= */
 
-/* ---------------------------------------------------------
-   1. PANEL CHAT UTAMA
-   --------------------------------------------------------- */
+
+/* =========================================================
+   01. CHAT PANEL
+   ========================================================= */
 
 .chat-panel {
     position: absolute;
     left: 10px;
     right: 10px;
-    bottom: calc(10px + var(--safe-bottom));
+    bottom: calc(10px + var(--safe-bottom, 0px));
     z-index: 40;
 
     display: flex;
     flex-direction: column;
+
+    box-sizing: border-box;
     min-width: 0;
     min-height: 0;
+
     overflow: hidden;
     padding: 8px 16px 14px;
 
     color: var(--text-primary);
-    background: color-mix(in srgb, var(--container-bg) 92%, transparent);
+    background: color-mix(
+        in srgb,
+        var(--container-bg) 92%,
+        transparent
+    );
+
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
+
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
 
     -webkit-backdrop-filter: blur(20px) saturate(1.2);
     backdrop-filter: blur(20px) saturate(1.2);
 
-    height: calc(var(--peek-h) - 40px);
-    max-height: calc(100% - var(--safe-top) - 20px);
+    /*
+     * Peek is the default state.
+     * The fallback keeps the panel usable if a safe-area token
+     * or a theme token is unavailable.
+     */
+    height: calc(var(--peek-h, 190px) - 40px);
+
+    max-height: calc(
+        100% - var(--safe-top, 0px) - 20px
+    );
 
     transition:
-        height 0.35s var(--ease),
-        box-shadow 0.35s var(--ease),
-        background-color 0.2s var(--ease);
+        height 0.35s var(--ease, ease),
+        box-shadow 0.35s var(--ease, ease),
+        background-color 0.2s var(--ease, ease);
+
+    /*
+     * Keep the panel's own dimensions predictable.
+     */
+    contain: layout;
 }
 
+/* Explicit initial state */
+
 .chat-panel[data-state="peek"] {
-    height: calc(var(--peek-h) - 40px);
+    height: calc(var(--peek-h, 190px) - 40px);
 }
+
+/* Intermediate conversation state */
 
 .chat-panel[data-state="half"] {
     height: 55%;
 }
 
+/* Expanded conversation state */
+
 .chat-panel[data-state="full"] {
     height: 88%;
 }
 
+/*
+ * The JavaScript controller updates inline height during a drag.
+ * Transitions are disabled during the drag itself.
+ */
+
 .chat-panel.is-dragging {
     transition: none;
+
     user-select: none;
     -webkit-user-select: none;
+
+    cursor: grabbing;
 }
 
-/* ---------------------------------------------------------
-   2. PANEL HEADER DAN DRAG HANDLE
-   --------------------------------------------------------- */
+/*
+ * Keep flex children from forcing the panel beyond its available
+ * height. This is especially important for the conversation area.
+ */
+
+.chat-panel > * {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   02. PANEL HEADER AND DRAG HANDLE
+   ========================================================= */
 
 .panel-head {
     flex: 0 0 auto;
+
+    display: block;
+
     min-width: 0;
+
     touch-action: none;
+
     cursor: grab;
+
     user-select: none;
     -webkit-user-select: none;
 }
@@ -79,35 +143,47 @@
 .drag-handle {
     width: 44px;
     height: 5px;
+
     margin: 0 auto 10px;
+
     border-radius: 999px;
+
     background: var(--line-strong);
+
     opacity: 0.28;
 }
 
-/* ---------------------------------------------------------
-   3. KARTU SAMBUTAN / PEEK ROW
-   --------------------------------------------------------- */
+
+/* =========================================================
+   03. WELCOME CARD / PEEK ROW
+   ========================================================= */
 
 .peek-row {
     display: flex;
     align-items: center;
+
     gap: 12px;
+
     min-width: 0;
+
     padding-bottom: 6px;
 }
 
 .ai-avatar {
     flex: 0 0 46px;
+
     width: 46px;
     height: 46px;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     border-radius: 50%;
 
     color: var(--text-light);
     background: var(--text-primary);
+
     box-shadow: 0 0 0 3px color-mix(
         in srgb,
         var(--text-primary) 8%,
@@ -117,60 +193,86 @@
 
 .peek-text {
     flex: 1 1 auto;
+
     min-width: 0;
 }
 
 .peek-text strong {
     display: block;
+
     color: var(--text-primary);
+
     font-size: 16px;
     font-weight: 700;
     line-height: 1.35;
+
+    overflow-wrap: anywhere;
 }
 
 .peek-text p {
     margin-top: 2px;
+    margin-bottom: 0;
+
     color: var(--text-muted);
+
     font-size: 13px;
     line-height: 1.4;
 
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+
+    line-clamp: 2;
+
     overflow: hidden;
     overflow-wrap: anywhere;
 }
 
-/* ---------------------------------------------------------
-   4. HEADER PERCAKAPAN
-   --------------------------------------------------------- */
+
+/* =========================================================
+   04. CONVERSATION HEADER
+   ========================================================= */
 
 .chat-header {
     flex: 0 0 auto;
+
     min-width: 0;
+
     display: none;
     align-items: center;
     justify-content: space-between;
+
     gap: 12px;
+
     padding-bottom: 8px;
+
     color: var(--text-primary);
 }
 
 .chat-header h2 {
+    flex: 1 1 auto;
+
     min-width: 0;
+
     margin: 0;
+
     color: var(--text-primary);
+
     font-size: 18px;
     font-weight: 700;
     line-height: 1.35;
+
     letter-spacing: -0.01em;
+
     overflow-wrap: anywhere;
 }
 
 .chat-close {
     flex: 0 0 36px;
+
     width: 36px;
     height: 36px;
+
     padding: 0;
 
     display: flex;
@@ -179,13 +281,15 @@
 
     color: var(--text-primary);
     background: transparent;
+
     border: 1px solid transparent;
     border-radius: 50%;
 
     cursor: pointer;
+
     transition:
-        background-color 0.2s var(--ease),
-        border-color 0.2s var(--ease);
+        background-color 0.2s var(--ease, ease),
+        border-color 0.2s var(--ease, ease);
 }
 
 .chat-close:active {
@@ -199,11 +303,16 @@
     }
 }
 
-/* ---------------------------------------------------------
-   5. TAMPILAN BERDASARKAN STATE PANEL
-   --------------------------------------------------------- */
 
-/* Peek: tampilkan kartu sambutan saja */
+/* =========================================================
+   05. STATE-BASED VISIBILITY
+   ========================================================= */
+
+/*
+ * PEEK
+ * Show the welcome card.
+ * Hide the conversation and its input controls.
+ */
 
 .chat-panel[data-state="peek"] .chat-box,
 .chat-panel[data-state="peek"] .chat-suggestions,
@@ -211,7 +320,10 @@
     display: none;
 }
 
-/* Half dan full: tampilkan percakapan */
+/*
+ * HALF / FULL
+ * Hide the welcome card and show the conversation header.
+ */
 
 .chat-panel[data-state="half"] .peek-row,
 .chat-panel[data-state="full"] .peek-row {
@@ -223,52 +335,105 @@
     display: flex;
 }
 
-/* Area percakapan mengisi ruang yang tersisa.
-   Aturan scroll tetap dapat disesuaikan oleh chat-bubble.css. */
+/*
+ * The conversation occupies the remaining space between the
+ * header and input area.
+ */
 
 .chat-panel[data-state="half"] .chat-box,
 .chat-panel[data-state="full"] .chat-box {
+    display: flex;
     flex: 1 1 auto;
+
+    min-width: 0;
     min-height: 0;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+/*
+ * The input area stays at the bottom of the flex layout.
+ */
+
+.chat-panel[data-state="half"] .input-bar-container,
+.chat-panel[data-state="full"] .input-bar-container {
+    display: block;
+    flex: 0 0 auto;
+
     min-width: 0;
 }
 
-/* ---------------------------------------------------------
-   6. LACI MENU UTAMA / HAMBURGER DRAWER
-   --------------------------------------------------------- */
+/*
+ * Suggestions remain hidden in peek. In conversation states,
+ * their own component stylesheet may control their layout.
+ */
+
+.chat-panel[data-state="half"] .chat-suggestions,
+.chat-panel[data-state="full"] .chat-suggestions {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   06. LEGACY MAIN MENU DRAWER
+   ========================================================= */
+
+/*
+ * Retained for compatibility with any existing legacy markup.
+ * The new Dashboard User is a separate system and should not
+ * depend on this drawer for its main interface.
+ */
 
 .sample-drawer {
     position: absolute;
     inset: 0;
+
     z-index: 99999;
+
+    box-sizing: border-box;
 
     min-width: 0;
     min-height: 0;
+
     padding:
-        calc(24px + var(--safe-top))
-        calc(24px + var(--safe-right))
-        calc(24px + var(--safe-bottom))
-        calc(24px + var(--safe-left));
+        calc(24px + var(--safe-top, 0px))
+        calc(24px + var(--safe-right, 0px))
+        calc(24px + var(--safe-bottom, 0px))
+        calc(24px + var(--safe-left, 0px));
 
     display: flex;
     flex-direction: column;
+
     gap: 14px;
 
     overflow-x: hidden;
     overflow-y: auto;
+
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
 
     color: var(--text-primary);
-    background: color-mix(in srgb, var(--container-bg) 98%, transparent);
+
+    background: color-mix(
+        in srgb,
+        var(--container-bg) 98%,
+        transparent
+    );
+
     border-radius: inherit;
 
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
 }
 
-/* Hormati atribut hidden dari HTML.
-   JavaScript harus menghapus hidden saat drawer dibuka. */
+/*
+ * The hidden attribute must always win over the drawer's
+ * display:flex declaration.
+ */
 
 .sample-drawer[hidden] {
     display: none !important;
@@ -276,27 +441,38 @@
 
 .drawer-header {
     flex: 0 0 auto;
+
     min-width: 0;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
+
     gap: 12px;
 }
 
 .drawer-header h3 {
+    flex: 1 1 auto;
+
     min-width: 0;
+
     margin: 0;
+
     color: var(--text-primary);
+
     font-size: 18px;
     font-weight: 700;
     line-height: 1.4;
+
     overflow-wrap: anywhere;
 }
 
 .btn-close-drawer {
     flex: 0 0 36px;
+
     width: 36px;
     height: 36px;
+
     padding: 0;
 
     display: flex;
@@ -305,25 +481,30 @@
 
     color: var(--text-primary);
     background: var(--surface);
+
     border: 1px solid var(--line);
     border-radius: 50%;
 
     font: inherit;
     font-weight: 700;
+
     cursor: pointer;
 
     transition:
-        background-color 0.2s var(--ease),
-        border-color 0.2s var(--ease);
+        background-color 0.2s var(--ease, ease),
+        border-color 0.2s var(--ease, ease);
 }
 
 .sample-item-btn {
     flex: 0 0 auto;
+
     min-width: 0;
+
     padding: 14px 16px;
 
     color: var(--text-primary);
     background: var(--surface-soft);
+
     border: 1px solid var(--line);
     border-radius: 14px;
 
@@ -331,13 +512,16 @@
     font-size: 14px;
     font-weight: 600;
     line-height: 1.45;
+
     text-align: left;
+
     overflow-wrap: anywhere;
 
     cursor: pointer;
+
     transition:
-        background-color 0.2s var(--ease),
-        border-color 0.2s var(--ease);
+        background-color 0.2s var(--ease, ease),
+        border-color 0.2s var(--ease, ease);
 }
 
 @media (hover: hover) {
@@ -352,14 +536,16 @@
     }
 }
 
-/* ---------------------------------------------------------
-   7. RESPONSIVE LAYOUT
-   --------------------------------------------------------- */
+
+/* =========================================================
+   07. RESPONSIVE: SMALL WIDTH
+   ========================================================= */
 
 @media (max-width: 360px) {
     .chat-panel {
         left: 6px;
         right: 6px;
+
         padding: 8px 12px 12px;
     }
 
@@ -369,6 +555,7 @@
 
     .ai-avatar {
         flex-basis: 40px;
+
         width: 40px;
         height: 40px;
     }
@@ -381,25 +568,48 @@
         font-size: 12px;
     }
 
+    .chat-header h2 {
+        font-size: 16px;
+    }
+
     .sample-drawer {
-        padding-right: calc(16px + var(--safe-right));
-        padding-left: calc(16px + var(--safe-left));
+        padding-right: calc(16px + var(--safe-right, 0px));
+        padding-left: calc(16px + var(--safe-left, 0px));
     }
 }
 
+
+/* =========================================================
+   08. RESPONSIVE: SHORT SCREENS
+   ========================================================= */
+
 @media (max-height: 600px) {
+    .chat-panel[data-state="half"] {
+        height: 62%;
+    }
+
     .chat-panel[data-state="full"] {
         height: 92%;
     }
 
-    .chat-panel[data-state="half"] {
-        height: 62%;
+    .chat-panel {
+        padding-top: 6px;
+        padding-bottom: 10px;
+    }
+
+    .drag-handle {
+        margin-bottom: 7px;
+    }
+
+    .chat-header {
+        padding-bottom: 5px;
     }
 }
 
-/* ---------------------------------------------------------
-   8. FOCUS DAN REDUCED MOTION
-   --------------------------------------------------------- */
+
+/* =========================================================
+   09. KEYBOARD FOCUS
+   ========================================================= */
 
 .chat-close:focus-visible,
 .btn-close-drawer:focus-visible,
@@ -407,6 +617,11 @@
     outline: 2px solid var(--text-primary);
     outline-offset: 3px;
 }
+
+
+/* =========================================================
+   10. REDUCED MOTION
+   ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
     .chat-panel,

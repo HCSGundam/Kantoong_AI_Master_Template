@@ -1,0 +1,518 @@
+
+/* =========================================================
+   KANTOONG CORE
+   File: frontend/css/store-front.css
+
+   PURPOSE:
+   - Storefront product catalog
+   - Product cards and product actions
+   - Featured product rail
+   - Category navigation
+   - Responsive product layout
+
+   PRINCIPLES:
+   - Neutral reusable design
+   - No client-specific branding
+   - No business logic inside CSS
+   ========================================================= */
+
+/* =========================================================
+   01. STOREFRONT TOKENS
+   ========================================================= */
+
+#appRoot {
+  --store-bg: #ffffff;
+  --store-surface: #ffffff;
+  --store-surface-soft: #f6f6f6;
+  --store-border: #e8e8e8;
+
+  --store-text: #171717;
+  --store-text-muted: #737373;
+
+  --store-accent: #171717;
+  --store-accent-contrast: #ffffff;
+
+  --store-radius-sm: 8px;
+  --store-radius-md: 14px;
+  --store-radius-lg: 20px;
+
+  --store-space-1: 4px;
+  --store-space-2: 8px;
+  --store-space-3: 12px;
+  --store-space-4: 16px;
+  --store-space-5: 24px;
+  --store-space-6: 32px;
+
+  --store-content-width: 1440px;
+
+  color: var(--store-text);
+  background: var(--store-bg);
+}
+
+/* =========================================================
+   02. CATALOG LAYOUT
+   ========================================================= */
+
+#pageScroll {
+  width: 100%;
+  min-width: 0;
+}
+
+#pageScroll > section {
+  width: 100%;
+  min-width: 0;
+}
+
+#featuredTitle {
+  color: var(--store-text);
+  font-size: clamp(1.15rem, 2vw, 1.65rem);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.035em;
+}
+
+#featuredRail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+
+/* =========================================================
+   03. PRODUCT CARD
+   ========================================================= */
+
+#appRoot .product-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+
+  color: var(--store-text);
+  background: var(--store-surface);
+
+  border: 1px solid var(--store-border);
+  border-radius: var(--store-radius-md);
+
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+#appRoot .product-card:hover {
+  border-color: #c9c9c9;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 5%);
+  transform: translateY(-2px);
+}
+
+/* =========================================================
+   04. PRODUCT IMAGE
+   ========================================================= */
+
+#appRoot .product-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+
+  overflow: hidden;
+  background: var(--store-surface-soft);
+}
+
+#appRoot .product-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  transition: transform 250ms ease;
+}
+
+#appRoot .product-card:hover .product-thumb img {
+  transform: scale(1.035);
+}
+
+/* =========================================================
+   05. PRODUCT INFORMATION
+   ========================================================= */
+
+#appRoot .product-name {
+  margin: 14px 14px 0;
+
+  color: var(--store-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+
+  overflow-wrap: anywhere;
+}
+
+#appRoot .product-price {
+  margin: 6px 14px 0;
+
+  color: var(--store-text);
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.5;
+
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   06. PRODUCT ACTIONS
+   ========================================================= */
+
+#appRoot .product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  margin: auto 14px 14px;
+  padding-top: 14px;
+}
+
+#appRoot .product-ask,
+#appRoot .product-cart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  min-height: 40px;
+  padding: 9px 12px;
+
+  border: 1px solid var(--store-accent);
+  border-radius: var(--store-radius-sm);
+
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.25;
+
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+#appRoot .product-ask {
+  color: var(--store-text);
+  background: var(--store-surface);
+}
+
+#appRoot .product-cart {
+  color: var(--store-accent-contrast);
+  background: var(--store-accent);
+}
+
+#appRoot .product-ask:hover {
+  background: var(--store-surface-soft);
+}
+
+#appRoot .product-cart:hover {
+  background: #383838;
+  border-color: #383838;
+}
+
+#appRoot .product-ask:focus-visible,
+#appRoot .product-cart:focus-visible {
+  outline: 2px solid var(--store-text);
+  outline-offset: 3px;
+}
+
+/* =========================================================
+   07. CATEGORY NAVIGATION
+   ========================================================= */
+
+#categoryList {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+
+  padding: 4px 0 10px;
+
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+#categoryList > * {
+  flex: 0 0 auto;
+}
+
+/* =========================================================
+   08. CATALOG CONTROLS
+   ========================================================= */
+
+#resetCatalogBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 38px;
+  padding: 8px 12px;
+
+  color: var(--store-text);
+  background: var(--store-surface);
+
+  border: 1px solid var(--store-border);
+  border-radius: var(--store-radius-sm);
+
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+#resetCatalogBtn:hover {
+  background: var(--store-surface-soft);
+}
+
+/* =========================================================
+   09. RESPONSIVE — TABLET
+   ========================================================= */
+
+@media (max-width: 1024px) {
+  #featuredRail {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  #appRoot .product-name {
+    margin-inline: 12px;
+  }
+
+  #appRoot .product-price {
+    margin-inline: 12px;
+  }
+
+  #appRoot .product-actions {
+    margin-inline: 12px;
+  }
+}
+
+/* =========================================================
+   10. RESPONSIVE — MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+  #featuredRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  #appRoot .product-card {
+    border-radius: 12px;
+  }
+
+  #appRoot .product-name {
+    margin: 10px 10px 0;
+    font-size: 0.85rem;
+  }
+
+  #appRoot .product-price {
+    margin: 5px 10px 0;
+    font-size: 0.92rem;
+  }
+
+  #appRoot .product-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    margin: auto 10px 10px;
+    padding-top: 12px;
+  }
+
+  #appRoot .product-ask,
+  #appRoot .product-cart {
+    width: 100%;
+    min-height: 38px;
+    padding-inline: 8px;
+  }
+}
+
+/* =========================================================
+   11. REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .product-card,
+  #appRoot .product-thumb img,
+  #appRoot .product-ask,
+  #appRoot .product-cart {
+    transition: none;
+  }
+
+  #appRoot .product-card:hover {
+    transform: none;
+  }
+
+  #appRoot .product-card:hover .product-thumb img {
+    transform: none;
+  }
+}
+
+
+/* =========================================================
+   KANTOONG CORE — COMPATIBILITY WITH ENGINE.JS
+   Class berikut mengikuti createProductCard() aktual.
+   ========================================================= */
+
+#appRoot #featuredRail {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+
+#appRoot .kantoong-product-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  color: #171717;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 14px;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+#appRoot .kantoong-product-card:hover {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 6%);
+  transform: translateY(-2px);
+}
+
+#appRoot .kantoong-product-card__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #f6f6f6;
+}
+
+#appRoot .kantoong-product-card__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 14px;
+  min-width: 0;
+}
+
+#appRoot .kantoong-product-card__name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+#appRoot .kantoong-product-card__category {
+  margin: 0;
+  color: #737373;
+  font-size: 0.8rem;
+}
+
+#appRoot .kantoong-product-card__price {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+#appRoot .kantoong-product-card__add {
+  width: 100%;
+  min-height: 40px;
+  margin-top: auto;
+  padding: 10px 12px;
+  color: #ffffff;
+  background: #171717;
+  border: 1px solid #171717;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#appRoot .kantoong-product-card__add:hover {
+  background: #383838;
+}
+
+#appRoot .kantoong-product-card__add:focus-visible {
+  outline: 2px solid #171717;
+  outline-offset: 3px;
+}
+
+#appRoot .kantoong-empty-state {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 24px 16px;
+  color: #737373;
+  text-align: center;
+  line-height: 1.6;
+  border: 1px dashed #d4d4d4;
+  border-radius: 12px;
+}
+
+#appRoot .kantoong-category-chip {
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  color: #171717;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+#appRoot .kantoong-category-chip[aria-pressed="true"] {
+  color: #ffffff;
+  background: #171717;
+  border-color: #171717;
+}
+
+@media (max-width: 1024px) {
+  #appRoot #featuredRail {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  #appRoot #featuredRail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  #appRoot .kantoong-product-card__content {
+    padding: 10px;
+  }
+
+  #appRoot .kantoong-product-card__name {
+    font-size: 0.85rem;
+  }
+
+  #appRoot .kantoong-product-card__price {
+    font-size: 0.92rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .kantoong-product-card {
+    transition: none;
+  }
+
+  #appRoot .kantoong-product-card:hover {
+    transform: none;
+  }
+}
