@@ -1,0 +1,241 @@
+/* =========================================================
+   KANTOONG CORE
+   File: frontend/css/homepage.css
+
+   PURPOSE:
+   - Hero slider (produk bertanda is_hero atau slide config)
+   - Brand highlights (Kualitas / Pengiriman / Layanan)
+   - Rail "Produk Unggulan" dan placeholder gambar produk
+   - Adaptif: satu kolom di mobile, lebih lega di desktop
+   ========================================================= */
+
+/* ---------- 01. HERO ---------- */
+
+#appRoot .hero {
+  position: relative;
+  padding: 0 var(--page-pad, 16px);
+}
+
+#appRoot .hero-track.scroll-x {
+  gap: 0;
+  border-radius: 24px;
+}
+
+#appRoot .hero-slide {
+  flex: 0 0 100%;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+#appRoot .hero-media {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+
+  background: repeating-linear-gradient(
+    135deg,
+    #f4f4f4 0 12px,
+    #ececec 12px 13px
+  );
+  border: 1px solid var(--store-border, #e8e8e8);
+  border-radius: 24px;
+}
+
+#appRoot .hero-media img,
+#appRoot .hero-media video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#appRoot .hero-media__label {
+  color: #7a7a7a;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+#appRoot .hero-body {
+  display: grid;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+#appRoot .hero-eyebrow {
+  margin: 0;
+  color: var(--store-text-muted, #737373);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+#appRoot .hero-title {
+  margin: 0;
+  color: var(--store-text, #171717);
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+#appRoot .hero-text {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--store-text-muted, #737373);
+  font-size: 0.95rem;
+  line-height: 1.5;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+#appRoot .hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+#appRoot .hero-cta {
+  min-height: 46px;
+  padding: 10px 18px;
+
+  color: var(--store-text, #171717);
+  background: var(--store-surface, #fff);
+  border: 1px solid var(--store-accent, #171717);
+  border-radius: 14px;
+
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#appRoot .hero-cta--primary {
+  color: var(--store-accent-contrast, #fff);
+  background: var(--store-accent, #171717);
+}
+
+#appRoot .hero-cta:focus-visible {
+  outline: 2px solid var(--store-text, #171717);
+  outline-offset: 3px;
+}
+
+#appRoot .hero-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 0 4px;
+}
+
+#appRoot .hero-dots[hidden] {
+  display: none;
+}
+
+#appRoot .hero-dot {
+  width: 6px;
+  height: 6px;
+  background: #d2d2d2;
+  border-radius: 999px;
+  transition: width 200ms ease, background 200ms ease;
+}
+
+#appRoot .hero-dot.is-active {
+  width: 22px;
+  background: var(--store-accent, #171717);
+}
+
+/* ---------- 02. BRAND HIGHLIGHTS ---------- */
+
+#appRoot .brand-slot {
+  padding: 4px var(--page-pad, 16px);
+}
+
+#appRoot .brand-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  border: 1px solid var(--store-border, #e8e8e8);
+  border-radius: 18px;
+}
+
+#appRoot .brand-highlight {
+  display: grid;
+  gap: 2px;
+  padding: 14px 8px;
+  text-align: center;
+}
+
+#appRoot .brand-highlight + .brand-highlight {
+  border-left: 1px solid var(--store-border, #e8e8e8);
+}
+
+#appRoot .brand-highlight__title {
+  color: var(--store-text, #171717);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+#appRoot .brand-highlight__sub {
+  color: var(--store-text-muted, #737373);
+  font-size: 0.75rem;
+}
+
+/* ---------- 03. RAIL PRODUK UNGGULAN ---------- */
+
+#appRoot .rail.scroll-x {
+  gap: 14px;
+  padding-bottom: 6px;
+}
+
+#appRoot .rail.scroll-x > .product-card {
+  flex: 0 0 clamp(168px, 46%, 240px);
+}
+
+#appRoot .product-thumb {
+  display: grid;
+  place-items: center;
+}
+
+#appRoot .product-thumb__placeholder {
+  color: #c9c9c9;
+  font-size: 2.6rem;
+  font-weight: 800;
+}
+
+#appRoot .product-ask {
+  flex: 1 1 auto;
+}
+
+#appRoot .product-cart {
+  flex: 0 0 44px;
+  padding-inline: 0;
+  font-size: 1.1rem;
+}
+
+/* ---------- 04. DESKTOP ---------- */
+
+@media (min-width: 900px) {
+  #appRoot .hero-slide {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 28px;
+  }
+
+  #appRoot .hero-media {
+    aspect-ratio: 16 / 9;
+    max-height: 420px;
+  }
+
+  #appRoot .rail.scroll-x > .product-card {
+    flex-basis: 230px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .hero-dot {
+    transition: none;
+  }
+}

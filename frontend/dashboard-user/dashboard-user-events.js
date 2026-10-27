@@ -87,6 +87,8 @@ const ACTIONS = Object.freeze({
     openFeature: "open-feature",
     addFeature: "add-feature",
     archiveFeature: "archive-feature",
+    toggleLayoutEdit: "toggle-layout-edit",
+    setCardSize: "set-card-size",
 });
 
 const LONG_PRESS_DURATION =
@@ -304,12 +306,23 @@ function suppressCardClickBriefly() {
 }
 
 function safelyCall(callback, ...args) {
-    try {
-        return callback(...args);
-    } catch (error) {
+    const handleError = (error) => {
         console.error("[KANTOONG Dashboard Events]", error);
         announce("Terjadi kesalahan saat menjalankan aksi.");
         return undefined;
+    };
+
+    try {
+        const result = callback(...args);
+
+        // Fungsi async: tangkap juga error yang muncul setelah await.
+        if (result && typeof result.then === "function") {
+            return result.catch(handleError);
+        }
+
+        return result;
+    } catch (error) {
+        return handleError(error);
     }
 }
 
@@ -486,12 +499,18 @@ function handlePointerDown(event) {
         return;
     }
 
-    // Long press hanya dimulai dari area kartu yang tidak interaktif.
-    if (
-        event.target instanceof Element &&
-        event.target.closest(INTERACTIVE_SELECTOR)
-    ) {
-        return;
+    // Tombol "buka fitur" membungkus seluruh kartu, jadi tekan lama HARUS
+    // boleh dimulai dari sana (sebelumnya selalu terblokir). Kontrol lain
+    // (input, tautan, pegangan) tetap dikecualikan.
+    if (event.target instanceof Element) {
+        const interactive = event.target.closest(INTERACTIVE_SELECTOR);
+
+        if (
+            interactive &&
+            !interactive.matches('[data-action="open-feature"]')
+        ) {
+            return;
+        }
     }
 
     cancelLongPress();
@@ -618,6 +637,12 @@ function handlePointerUp(event) {
     pointerSession = null;
 
     if (session.type === "long-press") {
+        // Jari diangkat setelah tekan lama: abaikan klik susulan agar
+        // kartu tidak langsung terbuka atau batal terpilih.
+        if (session.activated) {
+            suppressCardClickBriefly();
+        }
+
         return;
     }
 
@@ -883,8 +908,11 @@ async function handleFeatureCardClick(event) {
 
     const action = getActionElement(event.target);
 
-    // Aksi tombol dalam kartu diproses oleh delegated action handler.
-    if (action) return;
+    // Tombol "open-feature" membungkus seluruh isi kartu, jadi klik pada
+    // kartu HARUS diproses di sini (sebelumnya dilewati oleh dua handler
+    // sekaligus sehingga kartu tidak bereaksi). Aksi tombol lain tetap
+    // diproses oleh delegated action handler.
+    if (action && action.dataset.action !== ACTIONS.openFeature) return;
 
     const featureId = getFeatureId(card);
     if (!featureId) return;
@@ -1102,6 +1130,39 @@ function handleAddFeature(featureId) {
     });
 }
 
+/** Mengubah ukuran kartu yang sedang dipilih (mode edit). */
+function handleSetCardSize(sizeText) {
+    const [width, height] = String(sizeText ?? "")
+        .split("x")
+        .map((part) => Number.parseInt(part, 10));
+
+    if (!width || !height) return;
+
+    const selected = root.querySelector(
+        '[data-feature-card][data-layout-selected="true"]'
+    );
+
+    if (!selected) {
+        announce("Pilih kartu dulu, lalu pilih ukurannya.");
+        return;
+    }
+
+    const featureId = selected.dataset.featureId;
+
+    safelyCall(resizeFeatureCard, featureId, { width, height });
+
+    // Kartu dibuat ulang setelah ukuran berubah: tandai lagi.
+    requestAnimationFrame(() => {
+        root
+            .querySelectorAll("[data-feature-card]")
+            .forEach((card) => {
+                if (card.dataset.featureId === featureId) {
+                    card.dataset.layoutSelected = "true";
+                }
+            });
+    });
+}
+
 function handleArchiveFeature(featureId) {
     if (!featureId) return;
 
@@ -1269,6 +1330,21 @@ function handleActionClick(event) {
             }
             break;
 
+        case ACTIONS.toggleLayoutEdit:
+            event.preventDefault();
+
+            if (isDashboardEditMode()) {
+                saveLayoutEdit();
+            } else {
+                startLayoutEdit();
+            }
+            break;
+
+        case ACTIONS.setCardSize:
+            event.preventDefault();
+            handleSetCardSize(action.dataset.size);
+            break;
+
         case ACTIONS.addFeature:
             event.preventDefault();
             handleAddFeature(featureId);
@@ -1293,6 +1369,12 @@ function handleKeyDown(event) {
     if (event.key === "Escape") {
         if (pointerSession) {
             handlePointerCancel();
+        }
+
+        const historyPanel = getElement(SELECTORS.historyPanel);
+
+        if (historyPanel && !historyPanel.hidden) {
+            handleToggleHistory();
         }
     }
 
@@ -1332,6 +1414,43 @@ function bindEvents() {
 
     root.addEventListener("click", handleActionClick, { signal });
     root.addEventListener("click", handleFeatureCardClick, { signal });
+
+    // Ketuk di luar panel riwayat menutupnya.
+    root.addEventListener(
+        "click",
+        (event) => {
+            const panel = getElement(SELECTORS.historyPanel);
+
+            if (!panel || panel.hidden) return;
+
+            if (
+                event.target.closest("[data-navigation-history]") ||
+                event.target.closest(
+                    '[data-action="toggle-navigation-history"]'
+                )
+            ) {
+                return;
+            }
+
+            handleToggleHistory();
+        },
+        { signal }
+    );
+
+    // Layar sentuh: cegah menu bawaan browser saat kartu ditekan lama.
+    root.addEventListener(
+        "contextmenu",
+        (event) => {
+            if (
+                event.target instanceof Element &&
+                event.target.closest(SELECTORS.card) &&
+                window.matchMedia("(pointer: coarse)").matches
+            ) {
+                event.preventDefault();
+            }
+        },
+        { signal }
+    );
     root.addEventListener("click", handleSearchSuggestionClick, { signal });
 
     root.addEventListener("pointerdown", handlePointerDown, {

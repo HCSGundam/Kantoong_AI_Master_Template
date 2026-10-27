@@ -31,6 +31,11 @@ import {
     normalizeDashboardCardSize,
 } from "./dashboard-user-config.js";
 
+import { getSizePresets, formatSize } from "./adaptive-menu/adaptive-menu-resize.js";
+import { createSummaryBox } from "./feature-system/feature-ui.js";
+import { createFeatureHub } from "./feature-hub/feature-hub.js";
+import { initFeatureHub } from "./feature-hub/feature-hub-bootstrap.js";
+
 
 /* ============================================================
    01. CONSTANTS
@@ -101,6 +106,9 @@ const state = {
      * belum memiliki pilihan fitur tersimpan.
      */
     featureSelectionLoaded: false,
+
+    /** ID fitur yang pernah terdaftar (agar fitur baru bisa muncul otomatis). */
+    knownFeatureIds: new Set(),
 
     // Menyimpan kondisi layout sebelum mode edit dimulai
     layoutEditSnapshot: null,
@@ -865,6 +873,14 @@ function loadFeatureSelection() {
             )
         );
 
+        state.knownFeatureIds = new Set(
+            Array.isArray(saved.knownFeatureIds)
+                ? saved.knownFeatureIds.filter(
+                    (id) => typeof id === "string"
+                )
+                : []
+        );
+
         return;
     }
 
@@ -882,6 +898,10 @@ function saveFeatureSelection() {
 
         activeFeatureIds: [
             ...state.activeFeatureIds,
+        ],
+
+        knownFeatureIds: [
+            ...state.knownFeatureIds,
         ],
 
         updatedAt: new Date().toISOString(),
@@ -911,6 +931,39 @@ function saveFeatureSelection() {
  * Ini bukan kode fitur itu sendiri.
  * Descriptor akan disediakan oleh feature loader.
  */
+
+/**
+ * Peta nama ikon (string) ke karakter yang bisa langsung ditampilkan.
+ * Nama yang tidak dikenal dipakai apa adanya (mis. emoji atau huruf).
+ */
+const FEATURE_ICON_GLYPHS = {
+    "user-round": "\u{1F464}",
+    user: "\u{1F464}",
+    settings: "\u2699",
+    package: "\u{1F4E6}",
+    heart: "\u2661",
+    map: "\u{1F4CD}",
+};
+
+function resolveFeatureIcon(value) {
+    const icon = normalizeString(value, "\u25A1");
+
+    return FEATURE_ICON_GLYPHS[icon] ?? icon;
+}
+
+/**
+ * Kontrak core memakai status "active", sedangkan dashboard
+ * memakai "published". Keduanya dianggap sama.
+ */
+function normalizeFeatureStatus(value) {
+    const status = normalizeString(value, "published");
+
+    if (status === "active") {
+        return "published";
+    }
+
+    return status;
+}
 
 function normalizeFeatureDescriptor(input) {
     if (!isObject(input)) {
@@ -942,10 +995,7 @@ function normalizeFeatureDescriptor(input) {
             "Fitur lainnya"
         ),
 
-        icon: normalizeString(
-            input.icon,
-            "□"
-        ),
+        icon: resolveFeatureIcon(input.icon),
 
         keywords: Array.isArray(input.keywords)
             ? input.keywords
@@ -957,10 +1007,7 @@ function normalizeFeatureDescriptor(input) {
 
         available: input.available !== false,
 
-        status: normalizeString(
-            input.status,
-            "published"
-        ),
+        status: normalizeFeatureStatus(input.status),
 
         /**
          * Optional ukuran awal yang disediakan oleh modul.
@@ -981,6 +1028,40 @@ function normalizeFeatureDescriptor(input) {
         onOpen: typeof input.onOpen === "function"
             ? input.onOpen
             : null,
+
+        /**
+         * Fitur bergaya mount/unmount (mis. Profile) ditampilkan
+         * pada feature stage saat kartunya dibuka.
+         */
+        mount: typeof input.mount === "function"
+            ? input.mount
+            : null,
+
+        unmount: typeof input.unmount === "function"
+            ? input.unmount
+            : null,
+
+        /**
+         * Dipakai Feature Hub:
+         * - tier: "package" (termasuk paket) atau "addon" (berbayar).
+         * - publishedAt: tanggal rilis, dasar tag NEW.
+         * - order: urutan tampil di hub.
+         */
+        /**
+         * Ringkasan di kartu: fungsi opsional yang mengembalikan
+         * { title, text, progress? } untuk ditampilkan pada kartu.
+         */
+        summary: typeof input.summary === "function"
+            ? input.summary
+            : null,
+
+        tier: normalizeString(input.tier, "package"),
+
+        publishedAt: normalizeString(input.publishedAt),
+
+        order: Number.isFinite(input.order)
+            ? input.order
+            : 999,
 
         metadata: isObject(input.metadata)
             ? { ...input.metadata }
@@ -1030,12 +1111,24 @@ export function registerDashboardFeatures(features = []) {
         normalizedFeatures.push(feature);
     }
 
-    if (!state.featureSelectionLoaded) {
-        for (const feature of normalizedFeatures) {
-            if (feature.defaultActive) {
-                state.activeFeatureIds.add(feature.id);
-            }
+    for (const feature of normalizedFeatures) {
+        if (!feature.defaultActive) {
+            continue;
         }
+
+        // Dashboard baru: aktifkan fitur awal. Dashboard lama: aktifkan
+        // hanya fitur awal yang BARU (belum pernah terdaftar), supaya
+        // fitur yang sengaja diarsipkan pengguna tidak muncul lagi.
+        if (
+            !state.featureSelectionLoaded ||
+            !state.knownFeatureIds.has(feature.id)
+        ) {
+            state.activeFeatureIds.add(feature.id);
+        }
+    }
+
+    for (const feature of normalizedFeatures) {
+        state.knownFeatureIds.add(feature.id);
     }
 
     ensureLayoutsContainActiveFeatures();
@@ -1198,6 +1291,21 @@ function createFeatureCard(feature, layoutEntry) {
 
     applyCardPosition(card, layoutEntry);
 
+    const archiveButton = card.querySelector(
+        '[data-action="archive-feature"]'
+    );
+
+    if (archiveButton) {
+        archiveButton.dataset.featureId = feature.id;
+
+        archiveButton.setAttribute(
+            "aria-label",
+            `Arsipkan ${feature.title}`
+        );
+    }
+
+    hydrateCardSummary(card, feature);
+
     if (state.mode === LAYOUT_MODE_EDIT) {
         revealCardEditControls(card, true);
     }
@@ -1230,6 +1338,14 @@ function applyCardPosition(card, entry) {
 
 
 function revealCardEditControls(card, visible) {
+    const archiveButton = card.querySelector(
+        '[data-action="archive-feature"]'
+    );
+
+    if (archiveButton) {
+        archiveButton.hidden = !visible;
+    }
+
     const dragHandle = card.querySelector("[data-drag-handle]");
 
     if (dragHandle) {
@@ -1277,11 +1393,100 @@ export function renderDashboardFeatures() {
         }
     }
 
+    // Kartu "Tambah Fitur" ikut menjadi bagian grid (ukuran 2x2) dan
+    // selalu menempati ruang kosong setelah kartu terakhir.
+    const hubEntry = getHubEntryElement();
+
     grid.replaceChildren(fragment);
+
+    if (hubEntry) {
+        grid.append(hubEntry);
+    }
 
     updateFeatureState();
     renderGridGuide();
     updateEditModeUI();
+}
+
+let hubEntryElement = null;
+
+function getHubEntryElement() {
+    if (!hubEntryElement) {
+        hubEntryElement =
+            state.root?.querySelector(".dashboard-feature-hub-entry") ??
+            null;
+    }
+
+    return hubEntryElement;
+}
+
+/** Mengisi kotak ringkasan pada kartu (mis. nama akun, tema aktif). */
+async function hydrateCardSummary(card, feature) {
+    const slot = card.querySelector("[data-feature-summary]");
+
+    if (!slot || typeof feature.summary !== "function") {
+        return;
+    }
+
+    try {
+        const data = await feature.summary({
+            dashboardApi: getDashboardApi(),
+        });
+
+        if (!data || !card.isConnected) {
+            return;
+        }
+
+        slot.replaceChildren(createSummaryBox(data));
+        slot.hidden = false;
+
+        card.dataset.hasSummary = "true";
+    } catch (error) {
+        console.warn(
+            `[KANTOONG Dashboard] Ringkasan ${feature.id} gagal dimuat:`,
+            error
+        );
+    }
+}
+
+/** Menyegarkan ringkasan semua kartu (setelah login, tema berubah, dll). */
+export function refreshFeatureSummaries() {
+    const cards = state.elements.featureGrid?.querySelectorAll(
+        "[data-feature-card]"
+    ) ?? [];
+
+    for (const card of cards) {
+        const feature = state.featureCatalog.get(card.dataset.featureId);
+
+        if (feature) {
+            hydrateCardSummary(card, feature);
+        }
+    }
+}
+
+/** Pilihan ukuran di toolbar mode edit (sesuai jumlah kolom grid). */
+function renderSizeChips() {
+    const container = state.elements.layoutToolbar?.querySelector(
+        "[data-size-chips]"
+    );
+
+    if (!container) {
+        return;
+    }
+
+    const chips = getSizePresets(state.gridColumns).map((preset) => {
+        const chip = document.createElement("button");
+
+        chip.type = "button";
+        chip.className = "dashboard-size-chip";
+        chip.dataset.action = "set-card-size";
+        chip.dataset.size = formatSize(preset);
+        chip.textContent = `${preset.width}\u00D7${preset.height}`;
+
+        return chip;
+    });
+
+    container.replaceChildren(...chips);
 }
 
 
@@ -1465,6 +1670,10 @@ function updateEditModeUI() {
 
     if (state.elements.layoutToolbar) {
         state.elements.layoutToolbar.hidden = !editing;
+
+        if (editing) {
+            renderSizeChips();
+        }
     }
 
     const cards = state.elements.featureGrid?.querySelectorAll(
@@ -1775,6 +1984,15 @@ export async function openDashboardFeature(featureId) {
         }
     );
 
+    // Fitur dengan mount() dirender pada feature stage.
+    if (typeof feature.mount === "function") {
+        const mounted = await openFeatureStage(feature);
+
+        if (!mounted) {
+            return false;
+        }
+    }
+
     /**
      * Callback fitur bersifat opsional.
      * Pemeriksaan akses tindakan sensitif harus dilakukan
@@ -1802,265 +2020,276 @@ export async function openDashboardFeature(featureId) {
 
 
 /* ============================================================
-   21. FEATURE HUB
+   20B. FEATURE STAGE
    ============================================================ */
 
-function createFeatureHubItem(feature) {
-    const article = document.createElement("article");
+/**
+ * Feature stage adalah layar penuh di dalam dashboard tempat
+ * sebuah fitur (mis. Profile) menampilkan dirinya lewat mount().
+ */
 
-    article.className = "dashboard-feature-hub__item";
-    article.dataset.featureId = feature.id;
+let activeStage = null;
 
-    const header = document.createElement("div");
-    header.className = "dashboard-feature-hub__item-header";
-
-    const icon = document.createElement("span");
-    icon.className = "dashboard-feature-hub__item-icon";
-    icon.setAttribute("aria-hidden", "true");
-    icon.textContent = feature.icon || "□";
-
-    const copy = document.createElement("div");
-    copy.className = "dashboard-feature-hub__item-copy";
-
-    const title = document.createElement("h4");
-    title.textContent = feature.title;
-
-    const description = document.createElement("p");
-    description.textContent = feature.description;
-
-    copy.append(title);
-
-    if (feature.description) {
-        copy.append(description);
-    }
-
-    header.append(icon, copy);
-
-    const actions = document.createElement("div");
-    actions.className = "dashboard-feature-hub__item-actions";
-
-    const status = document.createElement("span");
-    status.className = "dashboard-feature-hub__item-status";
-    status.textContent = feature.status === "published"
-        ? "Tersedia"
-        : "Belum tersedia";
-
-    const button = document.createElement("button");
-    button.className = "dashboard-secondary-button";
-    button.type = "button";
-
-    button.dataset.action = "add-feature";
-    button.dataset.featureId = feature.id;
-
-    button.textContent = "Tambah";
-
-    const canAdd =
-        feature.available &&
-        feature.status === "published";
-
-    button.disabled = !canAdd;
-
-    actions.append(status, button);
-
-    article.append(header, actions);
-
-    return article;
-}
-
-
-export function renderFeatureHub(query = "") {
-    const container = state.elements.featureHubCategories;
-
-    if (!container) {
-        return;
-    }
-
-    const normalizedQuery = normalizeString(query).toLowerCase();
-
-    const availableFeatures = [
-        ...state.featureCatalog.values(),
-    ].filter((feature) => {
-        if (state.activeFeatureIds.has(feature.id)) {
-            return false;
-        }
-
-        const searchableText = [
-            feature.title,
-            feature.description,
-            feature.category,
-            ...feature.keywords,
-        ].join(" ").toLowerCase();
-
-        return searchableText.includes(normalizedQuery);
-    });
-
-    const categories = new Map();
-
-    for (const feature of availableFeatures) {
-        const category = feature.category || "Fitur lainnya";
-
-        if (!categories.has(category)) {
-            categories.set(category, []);
-        }
-
-        categories.get(category).push(feature);
-    }
-
-    const fragment = document.createDocumentFragment();
-
-    for (const [categoryName, features] of categories) {
-        const section = document.createElement("section");
-        section.className = "dashboard-feature-hub__category";
-
-        const header = document.createElement("header");
-        header.className = "dashboard-feature-hub__category-header";
-
-        const heading = document.createElement("h3");
-        heading.textContent = categoryName;
-
-        header.append(heading);
-
-        const grid = document.createElement("div");
-        grid.className = "dashboard-feature-hub__category-grid";
-
-        for (const feature of features) {
-            grid.append(
-                createFeatureHubItem(feature)
-            );
-        }
-
-        section.append(header, grid);
-        fragment.append(section);
-    }
-
-    container.replaceChildren(fragment);
-
-    if (state.elements.featureHubLoading) {
-        state.elements.featureHubLoading.hidden = true;
-    }
-
-    if (state.elements.featureHubEmpty) {
-        state.elements.featureHubEmpty.hidden =
-            availableFeatures.length > 0;
-    }
-}
-
-
-export function openFeatureHub() {
-    renderFeatureHub(
-        state.elements.featureHubSearch?.value ?? ""
-    );
-
-    const dialog = state.elements.featureHubDialog;
-
-    if (!dialog) {
+export async function openFeatureStage(feature) {
+    if (!state.root || typeof feature?.mount !== "function") {
         return false;
     }
 
-    if (!dialog.open) {
-        if (typeof dialog.showModal === "function") {
-            dialog.showModal();
-        } else {
-            dialog.setAttribute("open", "");
-        }
+    await closeFeatureStage();
+
+    const stage = document.createElement("section");
+    stage.className = "dashboard-feature-stage";
+    stage.dataset.featureId = feature.id;
+    stage.setAttribute("role", "dialog");
+    stage.setAttribute("aria-label", feature.title);
+
+    const header = document.createElement("header");
+    header.className = "dashboard-feature-stage__header";
+
+    const back = document.createElement("button");
+    back.type = "button";
+    back.className = "dashboard-icon-button";
+    back.setAttribute("aria-label", "Kembali ke dashboard");
+    back.textContent = "\u2190";
+
+    const heading = document.createElement("h2");
+    heading.className = "dashboard-feature-stage__title";
+    heading.textContent = feature.title;
+
+    header.append(back, heading);
+
+    const body = document.createElement("div");
+    body.className = "dashboard-feature-stage__body";
+
+    stage.append(header, body);
+    state.root.append(stage);
+
+    back.addEventListener("click", () => {
+        closeFeatureStage();
+    });
+
+    activeStage = { stage, body, feature };
+
+    const logger = {
+        debug() {},
+        info() {},
+        warn: console.warn.bind(console),
+        error: console.error.bind(console),
+    };
+
+    // Data login dibaca dari Supabase lewat auth-bridge. Dimuat dinamis
+    // agar kegagalan memuat Supabase tidak merusak seluruh dashboard.
+    let bridge = null;
+    let currentUser = null;
+
+    try {
+        bridge = await import("./integrations/auth-bridge.js");
+        currentUser = await bridge.getDashboardUser();
+    } catch (error) {
+        console.warn(
+            "[KANTOONG Dashboard] Layanan login tidak dapat dimuat:",
+            error
+        );
     }
 
-    recordDashboardHistory({
-        type: "feature-hub-open",
-        title: "Feature Hub",
-    });
+    // Pengguna menutup layar ini saat data login sedang dimuat.
+    if (!activeStage || activeStage.stage !== stage) {
+        return false;
+    }
+
+    try {
+        await feature.mount({
+            element: body,
+            rootElement: body,
+            feature,
+            logger,
+            dashboard: getDashboardState(),
+            tenantId: state.root.dataset.tenantId ?? null,
+            currentUser,
+            dashboardApi: getDashboardApi(),
+            auth: bridge
+                ? {
+                    signInWithGoogle: bridge.signInWithGoogle,
+                    signInWithEmail: bridge.signInWithEmail,
+                    signOut: bridge.signOut,
+                    openAdmin: bridge.openAdmin,
+                    describeError: bridge.describeAuthError,
+                }
+                : null,
+            reload: () => reloadFeatureStage(),
+        });
+    } catch (error) {
+        console.error(
+            `[KANTOONG Dashboard] Gagal menampilkan fitur ${feature.id}:`,
+            error
+        );
+
+        announce("Fitur gagal ditampilkan.");
+
+        await closeFeatureStage();
+
+        return false;
+    }
+
+    back.focus();
 
     return true;
 }
 
-
-export function closeFeatureHub() {
-    const dialog = state.elements.featureHubDialog;
-
-    if (!dialog) {
-        return;
-    }
-
-    if (typeof dialog.close === "function" && dialog.open) {
-        dialog.close();
-    } else {
-        dialog.removeAttribute("open");
-    }
-}
-
-
-/**
- * Menambahkan feature ke dashboard.
- *
- * Kartu baru mendapat ukuran awal dari konfigurasi.
- */
-export function addFeatureToDashboard(featureId) {
-    const feature = state.featureCatalog.get(featureId);
+/** Membuka ulang fitur yang sedang tampil (mis. setelah login/keluar). */
+export async function reloadFeatureStage() {
+    const feature = activeStage?.feature;
 
     if (!feature) {
         return false;
     }
 
-    if (!feature.available || feature.status !== "published") {
-        announce("Fitur ini belum dapat ditambahkan.");
+    await closeFeatureStage();
+
+    return openFeatureStage(feature);
+}
+
+export async function closeFeatureStage() {
+    if (!activeStage) {
         return false;
     }
 
-    if (state.activeFeatureIds.has(featureId)) {
-        return false;
+    const { stage, body, feature } = activeStage;
+
+    activeStage = null;
+
+    try {
+        if (typeof feature.unmount === "function") {
+            await feature.unmount({
+                element: body,
+                rootElement: body,
+                feature,
+            });
+        }
+    } catch (error) {
+        console.warn(
+            `[KANTOONG Dashboard] Gagal membersihkan fitur ${feature.id}:`,
+            error
+        );
     }
 
-    state.activeFeatureIds.add(featureId);
+    stage.remove();
 
-    ensureLayoutsContainActiveFeatures();
-
-    saveFeatureSelection();
-    saveLayouts();
-
-    renderDashboardFeatures();
-    renderFeatureHub(
-        state.elements.featureHubSearch?.value ?? ""
-    );
-
-    announce(`${feature.title} berhasil ditambahkan.`);
+    // Login/keluar di layar fitur dapat mengubah ringkasan kartu.
+    refreshFeatureSummaries();
 
     return true;
 }
 
 
+/* ============================================================
+   21. FEATURE HUB
+   ============================================================ */
+
 /**
- * Mengarsipkan kartu dari dashboard.
- *
- * Katalog fitur tetap menyimpan fitur sehingga pengguna
- * dapat menambahkannya kembali melalui Feature Hub.
+ * Jembatan yang diberikan ke modul Feature Hub.
+ * Seluruh logika hub ada di feature-hub/*; dashboard hanya
+ * menyediakan operasi dasar atas state-nya sendiri.
+ */
+const hubApi = {
+    getFeatures: () => [...state.featureCatalog.values()],
+
+    getFeature: (id) => state.featureCatalog.get(id),
+
+    isActive: (id) => state.activeFeatureIds.has(id),
+
+    getElements: () => state.elements,
+
+    activate(id) {
+        state.activeFeatureIds.add(id);
+
+        ensureLayoutsContainActiveFeatures();
+
+        saveFeatureSelection();
+        saveLayouts();
+
+        renderDashboardFeatures();
+    },
+
+    deactivate(id) {
+        state.activeFeatureIds.delete(id);
+
+        for (const profile of ["mobile", "tablet", "desktop"]) {
+            state.layouts[profile] =
+                state.layouts[profile].filter(
+                    (entry) => entry.id !== id
+                );
+        }
+
+        saveFeatureSelection();
+        saveLayouts();
+
+        renderDashboardFeatures();
+    },
+
+    updateFeature(id, patch) {
+        const current = state.featureCatalog.get(id);
+
+        if (!current) {
+            return false;
+        }
+
+        state.featureCatalog.set(id, { ...current, ...patch });
+
+        renderDashboardFeatures();
+
+        return true;
+    },
+
+    announce: (message) => announce(message),
+
+    record: (entry) => recordDashboardHistory(entry),
+};
+
+const featureHub = createFeatureHub({ api: hubApi });
+
+let featureHubController = null;
+
+export function getFeatureHub() {
+    return featureHub;
+}
+
+export function renderFeatureHub(query = "") {
+    featureHub.render(query);
+}
+
+export function openFeatureHub() {
+    return featureHub.open();
+}
+
+export function closeFeatureHub() {
+    featureHub.close();
+}
+
+/** Menambahkan fitur ke dashboard (kartu baru berukuran awal 2x2). */
+export function addFeatureToDashboard(featureId) {
+    return featureHub.add(featureId);
+}
+
+/**
+ * Mengarsipkan kartu dari dashboard. Fitur tetap ada di katalog
+ * sehingga muncul kembali di Feature Hub.
  */
 export function archiveFeatureFromDashboard(featureId) {
-    const feature = state.featureCatalog.get(featureId);
+    return featureHub.archive(featureId);
+}
 
-    if (!feature || !state.activeFeatureIds.has(featureId)) {
-        return false;
-    }
-
-    state.activeFeatureIds.delete(featureId);
-
-    for (const profile of ["mobile", "tablet", "desktop"]) {
-        state.layouts[profile] =
-            state.layouts[profile].filter(
-                (entry) => entry.id !== featureId
-            );
-    }
-
-    saveFeatureSelection();
-    saveLayouts();
-
-    renderDashboardFeatures();
-    renderFeatureHub(
-        state.elements.featureHubSearch?.value ?? ""
-    );
-
-    announce(`${feature.title} diarsipkan.`);
-
-    return true;
+/** Operasi dashboard yang boleh dipakai fitur (mis. Pengaturan). */
+export function getDashboardApi() {
+    return {
+        getTheme: () => state.theme,
+        setTheme: (theme) => {
+            setDashboardTheme(theme);
+            refreshFeatureSummaries();
+        },
+        resetLayout: () => resetDashboardLayout(),
+        clearHistory: () => clearNavigationHistory(),
+    };
 }
 
 
@@ -2081,6 +2310,7 @@ export function searchDashboardFeatures(query = "") {
     state.searchQuery = normalizedQuery;
 
     const results = [...state.featureCatalog.values()]
+        .filter((feature) => feature.status === "published")
         .map((feature) => {
             const terms = [
                 feature.title,
@@ -2933,6 +3163,11 @@ export function initDashboardUser() {
 
     collectDashboardElements();
 
+    featureHubController = initFeatureHub({
+        hub: featureHub,
+        getElements: () => state.elements,
+    });
+
     updateViewportProfile();
 
     loadThemePreference();
@@ -2984,6 +3219,16 @@ export function initDashboardUser() {
         }
     );
 
+    document.addEventListener(
+        "keydown",
+        (event) => {
+            if (event.key === "Escape" && activeStage) {
+                closeFeatureStage();
+            }
+        },
+        { signal: state.abortController.signal }
+    );
+
     state.initialized = true;
 
     recordDashboardHistory({
@@ -3012,6 +3257,11 @@ export function initDashboardUser() {
  */
 
 export function destroyDashboardUser() {
+    closeFeatureStage();
+
+    featureHubController?.destroy();
+    featureHubController = null;
+
     state.abortController?.abort();
 
     state.abortController = null;

@@ -1,0 +1,420 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+    <meta name="theme-color" content="#ffffff">
+
+    <title id="pageTitle">Kantoong AI - Master Template</title>
+
+    <!-- CSS GLOBAL -->
+
+    <!-- CSS STOREFRONT -->
+
+    <!-- CSS HOST DASHBOARD USER -->
+
+    <!-- CSS CHAT AI -->
+
+    <!-- GOOGLE IDENTITY SERVICES -->
+    <script
+        src="https://accounts.google.com/gsi/client"
+        async
+        defer
+    ></script>
+  <script type="module" crossorigin src="/assets/homepage-CAthC6Nl.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="/assets/client-config-Bx9lNscw.js">
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-vYFxeodt.js">
+  <link rel="stylesheet" crossorigin href="/assets/homepage-BQnOidwV.css">
+</head>
+
+<body>
+    <div class="mobile-container" id="appRoot">
+
+        <!-- =========================================
+             HEADER UTAMA
+        ========================================== -->
+        <header class="app-header">
+
+            <!-- HAMBURGER: MEMBUKA DASHBOARD USER -->
+            <button
+                class="header-icon"
+                id="showcaseMenuBtn"
+                type="button"
+                aria-label="Buka Dashboard User"
+                aria-controls="kantoongDashboardHost"
+                aria-expanded="false"
+            >
+                <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                >
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+
+            <!-- NAMA BRAND -->
+            <h1 class="header-title" id="brandTitle">
+                BUSINESS NAME
+            </h1>
+
+            <div class="header-right">
+
+                <!-- PENCARIAN -->
+                <button
+                    class="header-icon"
+                    id="btnSearch"
+                    type="button"
+                    aria-label="Cari produk lewat AI"
+                >
+                    <svg
+                        width="21"
+                        height="21"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                    >
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line
+                            x1="21"
+                            y1="21"
+                            x2="16.65"
+                            y2="16.65"
+                        ></line>
+                    </svg>
+                </button>
+
+                <!-- KERANJANG -->
+                <button
+                    class="header-icon"
+                    id="btnCart"
+                    type="button"
+                    aria-label="Keranjang"
+                >
+                    <svg
+                        width="21"
+                        height="21"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M6 8h12l-1 12H7L6 8z"></path>
+                        <path d="M9 8a3 3 0 0 1 6 0"></path>
+                    </svg>
+
+                    <span
+                        class="cart-badge"
+                        id="cartCount"
+                        hidden
+                    >0</span>
+                </button>
+
+            </div>
+        </header>
+
+        <!-- =========================================
+             HOMEPAGE / STOREFRONT
+        ========================================== -->
+        <main class="page-scroll" id="pageScroll">
+
+            <!-- HERO -->
+            <section
+                class="hero"
+                id="heroSection"
+                aria-label="Sorotan toko"
+            >
+                <div
+                    class="hero-track scroll-x"
+                    id="heroTrack"
+                ></div>
+
+                <div
+                    class="hero-dots"
+                    id="heroDots"
+                    aria-hidden="true"
+                ></div>
+            </section>
+
+            <!-- INFORMASI BRAND -->
+            <section
+                class="brand-slot"
+                id="brandSlot"
+                aria-label="Informasi brand"
+            ></section>
+
+            <!-- PRODUK UNGGULAN -->
+            <section
+                class="page-section"
+                id="featuredSection"
+            >
+                <div class="section-head">
+                    <h2 id="featuredTitle">
+                        Produk Unggulan
+                    </h2>
+
+                    <button
+                        class="section-link"
+                        id="resetCatalogBtn"
+                        type="button"
+                        hidden
+                    >
+                        Kembali ke awal
+                    </button>
+                </div>
+
+                <div
+                    class="rail scroll-x"
+                    id="featuredRail"
+                ></div>
+            </section>
+
+            <!-- KATEGORI PRODUK -->
+            <section
+                class="page-section"
+                id="categorySection"
+                aria-label="Kategori produk"
+            >
+                <div id="categoryList"></div>
+            </section>
+
+        </main>
+
+        <!-- =========================================
+             HOST DASHBOARD USER
+             Dashboard dimuat oleh engine.js
+             melalui iframe dari folder dashboard-user.
+        ========================================== -->
+        <div
+            id="kantoongDashboardHost"
+            hidden
+            aria-hidden="true"
+        ></div>
+
+        <!-- =========================================
+             HOST KOMPONEN DINAMIS
+        ========================================== -->
+        <div id="dynamicComponentContainer"></div>
+
+        <!-- =========================================
+             PANEL CHAT AI
+        ========================================== -->
+        <aside
+            class="chat-panel"
+            id="chatPanel"
+            data-state="peek"
+            aria-label="Konsultasi AI"
+        >
+
+            <!-- HEADER PANEL -->
+            <div class="panel-head" id="panelHead">
+
+                <div
+                    class="drag-handle"
+                    id="dragHandle"
+                ></div>
+
+                <!-- TAMPILAN CHAT SAAT PEEK -->
+                <div class="peek-row" id="peekRow">
+
+                    <div
+                        class="ai-avatar"
+                        aria-hidden="true"
+                    >
+                        <svg
+                            width="22"
+                            height="22"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                        >
+                            <path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7L12 2z"></path>
+                        </svg>
+                    </div>
+
+                    <div class="peek-text">
+                        <strong id="peekTitle">
+                            Halo Kak!
+                        </strong>
+
+                        <p id="peekGreeting">
+                            Mau cari produk yang cocok untuk kebutuhanmu?
+                        </p>
+                    </div>
+
+                    <button
+                        class="send-btn"
+                        id="peekSendBtn"
+                        type="button"
+                        aria-label="Mulai konsultasi"
+                    >
+                        <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                            <polyline points="5 12 12 5 19 12"></polyline>
+                        </svg>
+                    </button>
+
+                </div>
+
+                <!-- HEADER CHAT SAAT TERBUKA -->
+                <div class="chat-header" id="chatHeader">
+                    <h2 id="chatHeading">
+                        Konsultasi AI
+                    </h2>
+
+                    <button
+                        class="chat-close"
+                        id="chatCloseBtn"
+                        type="button"
+                        aria-label="Kecilkan chat"
+                    >
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- RIWAYAT PERCAKAPAN -->
+            <div
+                class="chat-box"
+                id="chatBox"
+                aria-live="polite"
+            ></div>
+
+            <!-- SARAN PERTANYAAN -->
+            <div
+                class="chat-suggestions"
+                id="chatSuggestions"
+            ></div>
+
+            <!-- INPUT PESAN -->
+            <div class="input-bar-container">
+
+                <div class="input-box">
+
+                    <!-- MIKROFON: BELUM DIAKTIFKAN -->
+                    <button
+                        class="mic-btn"
+                        id="btnMic"
+                        type="button"
+                        aria-label="Fitur suara belum tersedia"
+                        disabled
+                    >
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <rect
+                                x="9"
+                                y="2"
+                                width="6"
+                                height="12"
+                                rx="3"
+                            ></rect>
+
+                            <path d="M5 11a7 7 0 0 0 14 0"></path>
+                            <line x1="12" y1="18" x2="12" y2="22"></line>
+                        </svg>
+                    </button>
+
+                    <!-- KOLOM PESAN -->
+                    <textarea
+                        id="kolomKetik"
+                        rows="1"
+                        placeholder="Ketik pesan..."
+                        aria-label="Ketik pesan"
+                    ></textarea>
+
+                </div>
+
+                <!-- KIRIM PESAN -->
+                <button
+                    class="send-btn"
+                    id="tombolKirim"
+                    type="button"
+                    aria-label="Kirim pesan"
+                >
+                    <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                        <polyline points="5 12 12 5 19 12"></polyline>
+                    </svg>
+                </button>
+
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- =============================================
+         KONFIGURASI APLIKASI
+    ============================================== -->
+
+    <!-- =============================================
+         AI BRAIN
+    ============================================== -->
+
+    <!-- =============================================
+         CHAT PANEL CONTROLLER
+    ============================================== -->
+
+    <!-- =============================================
+         CORE ENGINE
+         Mengatur storefront, data, event, keranjang,
+         dan pembukaan Dashboard User.
+    ============================================== -->
+
+    <!-- =============================================
+         KERANJANG
+    ============================================== -->
+
+</body>
+</html>

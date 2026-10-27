@@ -350,6 +350,7 @@ function getDashboardFrame() {
   });
 
   frame.addEventListener("load", () => {
+    frame.dataset.kantoongLoaded = "true";
     log("Dokumen Dashboard User selesai dimuat.");
     emit("dashboard-document-loaded", { url: DASHBOARD_URL });
   });
@@ -375,12 +376,19 @@ function setPageVisibilityForDashboard(isOpen) {
     page.setAttribute("aria-hidden", String(isOpen));
   }
 
-  const header = $("header");
+  
+const header = $("header");
+const hamburger = $(SELECTORS.hamburger);
 
-  if (header) {
-    header.hidden = isOpen;
-    header.setAttribute("aria-hidden", String(isOpen));
+if (header) {
+  if (isOpen && header.contains(document.activeElement)) {
+    hamburger?.blur();
   }
+
+  header.hidden = isOpen;
+  header.setAttribute("aria-hidden", String(isOpen));
+}
+
 
   const host = getDashboardHost();
 
@@ -407,15 +415,41 @@ function setPageVisibilityForDashboard(isOpen) {
   }
 }
 
+
+function sendDashboardOpenMessage() {
+  const frame = state.dashboardFrame;
+
+  if (!frame?.contentWindow) return;
+
+  frame.contentWindow.postMessage(
+    {
+      type: "kantoong:dashboard-open",
+    },
+    window.location.origin
+  );
+}
+
 function openDashboard() {
   if (state.dashboardOpen) return;
 
   try {
-    // Siapkan frame sebelum menampilkan host.
-    getDashboardFrame();
+    const frame = getDashboardFrame();
 
     state.dashboardOpen = true;
     setPageVisibilityForDashboard(true);
+
+    // Beri tahu Dashboard User bahwa pengguna ingin membukanya.
+    // PERBAIKAN LAYAR PUTIH: iframe baru selalu berisi about:blank yang
+    // readyState-nya sudah "complete", sehingga pengecekan lama mengirim
+    // pesan ke dokumen kosong. Sekarang kita memakai penanda khusus yang
+    // hanya diset saat dokumen dashboard ASLI selesai dimuat.
+    if (frame.dataset.kantoongLoaded === "true") {
+      sendDashboardOpenMessage();
+    } else {
+      frame.addEventListener("load", sendDashboardOpenMessage, {
+        once: true,
+      });
+    }
 
     emit("dashboard-opened", {
       tenant: state.activeTenant,
@@ -479,15 +513,23 @@ window.addEventListener("message", (event) => {
 
   switch (message.type) {
     case "dashboard-ready":
+    case "kantoong:dashboard-ready":
       emit("dashboard-ready", { tenant: state.activeTenant });
       log("Dashboard User melaporkan status siap.");
+
+      // Jaring pengaman: bila pesan "open" sebelumnya terlewat,
+      // kirim lagi saat dashboard menyatakan siap.
+      if (state.dashboardOpen) {
+        sendDashboardOpenMessage();
+      }
       break;
 
-    case "dashboard-close-request":
+    case "kantoong:dashboard-close-request":
       closeDashboard();
       break;
 
     case "dashboard-bootstrap-error":
+    case "kantoong:dashboard-bootstrap-error":
       reportError(
         `Dashboard User mengalami error: ${escapeText(message.message)}`
       );
@@ -567,6 +609,22 @@ function renderBrandSlot() {
 
   slot.replaceChildren();
 
+  if (brand.type === "none") return;
+
+  if (brand.type === "highlights" && Array.isArray(brand.items)) {
+    const highlights = makeElement("div", "brand-highlights");
+
+    brand.items.slice(0, 4).forEach((item) => {
+      const cell = makeElement("div", "brand-highlight");
+      cell.appendChild(makeElement("strong", "brand-highlight__title", item?.title ?? ""));
+      cell.appendChild(makeElement("span", "brand-highlight__sub", item?.sub ?? ""));
+      highlights.appendChild(cell);
+    });
+
+    slot.appendChild(highlights);
+    return;
+  }
+
   const wrapper = makeElement("div", "kantoong-brand-slot");
 
   if (brand.image && isSafeImageURL(brand.image)) {
@@ -608,7 +666,31 @@ function renderBrandSlot() {
    07. HERO / BANNER
    ============================================================ */
 
+const HERO_MAX_SLIDES = 5;
+
+/**
+ * Sumber slide hero:
+ * 1. Produk yang ditandai is_hero oleh owner (dashboard admin).
+ * 2. Jika belum ada, slide dari client-config.js.
+ */
 function getHeroSlides() {
+  const fromProducts = state.products
+    .filter((product) => product?.is_hero === true && product?.is_demo !== true)
+    .slice(0, HERO_MAX_SLIDES)
+    .map((product) => ({
+      type: "image",
+      src: getProductImage(product),
+      caption: product.hero_caption || "Pilihan unggulan",
+      title: getProductName(product),
+      text: product.hero_text || product.description || "",
+      ai_prompt: `Ceritakan tentang ${getProductName(product)}`,
+      product_id: getProductId(product),
+    }));
+
+  if (fromProducts.length > 0) {
+    return fromProducts;
+  }
+
   const slides = CFG?.hero?.slides;
 
   if (Array.isArray(slides) && slides.length > 0) {
@@ -622,40 +704,137 @@ function getHeroSlides() {
   return [
     {
       title: CFG?.app_name || "Selamat datang",
-      subtitle: "Temukan produk yang sesuai dengan kebutuhanmu.",
+      text: "Temukan produk yang sesuai dengan kebutuhanmu.",
     },
   ];
 }
 
-function renderHeroSlide(index) {
+function normalizeHeroSlide(raw) {
+  return {
+    type: raw?.type || "none",
+    src: String(raw?.src ?? raw?.image ?? ""),
+    mediaLabel: raw?.media_label || "Foto / video brand",
+    caption: raw?.caption || "",
+    title: raw?.title ?? raw?.heading ?? CFG?.app_name ?? "",
+    text: raw?.text ?? raw?.subtitle ?? raw?.description ?? "",
+    aiPrompt: raw?.ai_prompt || raw?.aiPrompt || "",
+  };
+}
+
+function scrollToFeatured() {
+  document
+    .getElementById("featuredSection")
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function askConsultation(text) {
+  window.dispatchEvent(
+    new CustomEvent("kantoong:consult", {
+      detail: { text: String(text || "") },
+    })
+  );
+}
+
+function createHeroSlide(rawSlide, index) {
+  const slide = normalizeHeroSlide(rawSlide);
+  const element = makeElement("article", "hero-slide");
+  element.dataset.heroIndex = String(index);
+
+  const media = makeElement("div", "hero-media");
+  const showPlaceholder = () => {
+    media.replaceChildren(
+      makeElement("span", "hero-media__label", slide.mediaLabel)
+    );
+  };
+
+  if (slide.src && isSafeImageURL(slide.src) && slide.type === "video") {
+    const video = document.createElement("video");
+    video.src = slide.src;
+    video.muted = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+    video.addEventListener("error", showPlaceholder);
+    media.appendChild(video);
+  } else if (slide.src && isSafeImageURL(slide.src)) {
+    const image = document.createElement("img");
+    image.src = slide.src;
+    image.alt = slide.title;
+    image.loading = index === 0 ? "eager" : "lazy";
+    image.decoding = "async";
+    image.addEventListener("error", showPlaceholder);
+    media.appendChild(image);
+  } else {
+    showPlaceholder();
+  }
+
+  element.appendChild(media);
+
+  const body = makeElement("div", "hero-body");
+
+  if (slide.caption) {
+    body.appendChild(makeElement("p", "hero-eyebrow", slide.caption));
+  }
+
+  body.appendChild(makeElement("h2", "hero-title", slide.title));
+
+  if (slide.text) {
+    body.appendChild(makeElement("p", "hero-text", slide.text));
+  }
+
+  const actions = makeElement("div", "hero-actions");
+
+  const productButton = makeElement(
+    "button",
+    "hero-cta hero-cta--primary",
+    "Lihat produk \u2192"
+  );
+  productButton.type = "button";
+  productButton.addEventListener("click", scrollToFeatured);
+
+  const askButton = makeElement(
+    "button",
+    "hero-cta",
+    "\u2726 Konsultasi AI"
+  );
+  askButton.type = "button";
+  askButton.addEventListener("click", () => askConsultation(slide.aiPrompt));
+
+  actions.append(productButton, askButton);
+  body.appendChild(actions);
+  element.appendChild(body);
+
+  return element;
+}
+
+function updateHeroDots(activeIndex) {
+  const dots = $(SELECTORS.heroDots);
+
+  if (!dots) return;
+
+  $$(".hero-dot", dots).forEach((dot, index) => {
+    dot.classList.toggle("is-active", index === activeIndex);
+  });
+}
+
+function renderHeroSlide(index, { scroll = true } = {}) {
   const slides = getHeroSlides();
   if (!slides.length) return;
 
   state.currentHeroIndex = (index + slides.length) % slides.length;
 
-  const slide = slides[state.currentHeroIndex];
+  const track = $(SELECTORS.heroTrack);
   const hero = $(SELECTORS.hero);
-  const title = $(SELECTORS.heroTitle);
-  const subtitle = $(SELECTORS.heroSubtitle);
-  const image = $(SELECTORS.heroImage);
 
-  if (title) {
-    title.textContent = escapeText(
-      slide.title ?? slide.heading ?? CFG?.app_name ?? ""
-    );
+  if (scroll && track) {
+    track.scrollTo({
+      left: track.clientWidth * state.currentHeroIndex,
+      behavior: "smooth",
+    });
   }
 
-  if (subtitle) {
-    subtitle.textContent = escapeText(
-      slide.subtitle ?? slide.description ?? ""
-    );
-  }
-
-  if (image && slide.image && isSafeImageURL(slide.image)) {
-    image.src = slide.image;
-    image.alt = escapeText(slide.alt || slide.title || "Banner");
-    image.loading = "eager";
-  }
+  updateHeroDots(state.currentHeroIndex);
 
   if (hero) {
     hero.dataset.slideIndex = String(state.currentHeroIndex);
@@ -663,24 +842,60 @@ function renderHeroSlide(index) {
 
   emit("hero-slide-changed", {
     index: state.currentHeroIndex,
-    slide,
+    slide: slides[state.currentHeroIndex],
   });
 }
 
 function renderHero() {
-  renderHeroSlide(0);
+  const track = $(SELECTORS.heroTrack);
+  const dots = $(SELECTORS.heroDots);
+  const slides = getHeroSlides();
 
   if (state.heroTimer) {
     window.clearInterval(state.heroTimer);
     state.heroTimer = null;
   }
 
-  const slides = getHeroSlides();
+  if (!track) return;
+
+  track.replaceChildren(
+    ...slides.map((slide, index) => createHeroSlide(slide, index))
+  );
+  track.scrollLeft = 0;
+
+  if (dots) {
+    dots.replaceChildren(
+      ...slides.map(() => makeElement("span", "hero-dot"))
+    );
+    dots.hidden = slides.length < 2;
+  }
+
+  // Sinkronkan titik penanda saat pengguna menggeser dengan jari/mouse.
+  if (track.dataset.heroBound !== "true") {
+    track.dataset.heroBound = "true";
+
+    track.addEventListener(
+      "scroll",
+      () => {
+        const width = track.clientWidth || 1;
+        const index = Math.round(track.scrollLeft / width);
+
+        if (index !== state.currentHeroIndex) {
+          state.currentHeroIndex = index;
+          updateHeroDots(index);
+        }
+      },
+      { passive: true }
+    );
+  }
+
+  state.currentHeroIndex = 0;
+  updateHeroDots(0);
 
   if (slides.length > 1) {
     const interval = Math.max(
       3000,
-      toNumber(CFG?.hero?.interval, 6000)
+      toNumber(CFG?.hero?.interval_seconds, 6) * 1000
     );
 
     state.heroTimer = window.setInterval(() => {
@@ -752,16 +967,21 @@ async function fetchProductsFromSupabase() {
 
   const tenantId = state.activeTenant;
 
-  if (!tenantId) {
+  // Filter business_id hanya dipakai bila diminta lewat client-config
+  // (filter_by_business_id: true). Keamanan data tetap diatur oleh RLS.
+  const filterByTenant = CFG?.filter_by_business_id === true;
+
+  if (filterByTenant && !tenantId) {
     throw new Error(
       "business_id belum dikonfigurasi. Data produk tenant tidak dimuat."
     );
   }
 
-  let query = supabase
-    .from("products")
-    .select("*")
-    .eq("business_id", tenantId);
+  let query = supabase.from("products").select("*");
+
+  if (filterByTenant) {
+    query = query.eq("business_id", tenantId);
+  }
 
   if (typeof query.order === "function") {
     query = query.order("created_at", { ascending: false });
@@ -821,6 +1041,9 @@ async function loadProducts() {
   } finally {
     state.isLoading = false;
 
+    // Hero mengikuti produk yang ditandai owner sebagai is_hero.
+    renderHero();
+
     emit("products-loaded", {
       count: state.products.length,
       usingDemo: state.usingDemo,
@@ -834,63 +1057,93 @@ async function loadProducts() {
    ============================================================ */
 
 function createProductCard(product, index) {
-  const card = makeElement("article", "kantoong-product-card");
+  const card = makeElement("article", "product-card");
   card.dataset.productId = getProductId(product);
+
+  const name = getProductName(product);
+
+  const thumb = makeElement("div", "product-thumb");
+  const showPlaceholder = () => {
+    thumb.replaceChildren(
+      makeElement(
+        "span",
+        "product-thumb__placeholder",
+        name.charAt(0).toUpperCase() || "P"
+      )
+    );
+  };
 
   const imageURL = getProductImage(product);
 
   if (imageURL && isSafeImageURL(imageURL)) {
-    const image = makeElement("img", "kantoong-product-card__image");
+    const image = document.createElement("img");
     image.src = imageURL;
-    image.alt = getProductName(product);
+    image.alt = name;
     image.loading = index < 4 ? "eager" : "lazy";
     image.decoding = "async";
-    image.addEventListener("error", () => {
-      image.hidden = true;
-    });
-    card.appendChild(image);
+    image.addEventListener("error", showPlaceholder);
+    thumb.appendChild(image);
+  } else {
+    showPlaceholder();
   }
 
-  const content = makeElement("div", "kantoong-product-card__content");
-
-  content.appendChild(
-    makeElement("h3", "kantoong-product-card__name", getProductName(product))
+  card.appendChild(thumb);
+  card.appendChild(makeElement("h3", "product-name", name));
+  card.appendChild(
+    makeElement("p", "product-price", formatCurrency(getProductPrice(product)))
   );
 
-  const category = getProductCategory(product);
+  const actions = makeElement("div", "product-actions");
 
-  content.appendChild(
-    makeElement("p", "kantoong-product-card__category", category)
-  );
-
-  content.appendChild(
-    makeElement(
-      "p",
-      "kantoong-product-card__price",
-      formatCurrency(getProductPrice(product))
-    )
-  );
-
-  const addButton = makeElement(
+  const askButton = makeElement(
     "button",
-    "kantoong-product-card__add",
-    "Tambah ke keranjang"
+    "product-ask",
+    CFG?.featured?.ask_label || "Tanyakan produk ini"
   );
+  askButton.type = "button";
+  askButton.dataset.action = "ask-product";
+  askButton.addEventListener("click", () => {
+    emit("product-selected", { product });
+    askConsultation(`Ceritakan tentang ${name}`);
+  });
 
-  addButton.type = "button";
-  addButton.dataset.action = "add-to-cart";
-  addButton.setAttribute("aria-label", `Tambah ${getProductName(product)} ke keranjang`);
-
-  addButton.addEventListener("click", () => {
+  const cartButton = makeElement("button", "product-cart", "+");
+  cartButton.type = "button";
+  cartButton.dataset.action = "add-to-cart";
+  cartButton.setAttribute("aria-label", `Tambah ${name} ke keranjang`);
+  cartButton.addEventListener("click", () => {
     addToCart(product);
   });
 
-  content.appendChild(addButton);
-  card.appendChild(content);
+  actions.append(askButton, cartButton);
+  card.appendChild(actions);
 
   return card;
 }
 
+function isFeaturedProduct(product) {
+  return (
+    product?.featured === true ||
+    product?.is_featured === true ||
+    product?.isFeatured === true
+  );
+}
+
+/**
+ * Etalase awal: produk yang ditandai owner sebagai unggulan.
+ * Jika belum ada yang ditandai, tampilkan beberapa produk pertama.
+ */
+function getFeaturedProducts() {
+  const featured = state.products.filter(isFeaturedProduct);
+
+  if (featured.length > 0) {
+    return featured;
+  }
+
+  const limit = Math.max(1, toNumber(CFG?.featured?.limit, 8));
+
+  return state.products.slice(0, limit);
+}
 
 function getProductContainer() {
   return (
@@ -905,7 +1158,7 @@ function getProductContainer() {
 }
 
 
-function renderProducts(productsToRender = state.products) {
+function renderProducts(productsToRender) {
   const container = getProductContainer();
 
   state.featured = state.products.filter(
@@ -927,8 +1180,10 @@ function renderProducts(productsToRender = state.products) {
     return;
   }
 
-  const source = Array.isArray(productsToRender) ? productsToRender : [];
-  const products = source.length ? source : [];
+  // Tanpa argumen = etalase unggulan. Dengan argumen = hasil filter/cari/AI.
+  const products = Array.isArray(productsToRender)
+    ? productsToRender
+    : getFeaturedProducts();
 
   container.replaceChildren();
 

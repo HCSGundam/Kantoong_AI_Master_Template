@@ -1,4 +1,3 @@
-
 {
   "name": "kantoong-core",
   "private": true,
@@ -7,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run --root ."
   },
   "devDependencies": {
-    "vite": "^7.0.0"
+    "vite": "^7.0.0",
+    "vitest": "^5.0.5"
   }
 }

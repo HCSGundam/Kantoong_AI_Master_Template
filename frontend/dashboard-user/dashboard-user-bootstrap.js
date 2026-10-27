@@ -49,6 +49,8 @@ import {
     DASHBOARD_USER_CONFIG,
 } from "./dashboard-user-config.js";
 
+import { mergeWithHubCatalog } from "./feature-hub/feature-hub-bootstrap.js";
+
 import {
     initDashboardUser,
     destroyDashboardUser,
@@ -102,7 +104,7 @@ import {
  */
 
 const FEATURE_MODULE_LOADERS = import.meta.glob(
-    "./features/**/index.js"
+    "./features/**/feature.js"
 );
 
 
@@ -654,8 +656,12 @@ async function loadAndRegisterFeatures() {
      * gagal dimuat.
      */
 
-    if (result.features.length > 0) {
-        registerDashboardFeatures(result.features);
+    // Gabungkan fitur yang ditemukan dengan rencana katalog: fitur yang
+    // belum dibuat otomatis menjadi "Coming soon" di Feature Hub.
+    const registrable = mergeWithHubCatalog(result.features);
+
+    if (registrable.length > 0) {
+        registerDashboardFeatures(registrable);
     }
 
     setDashboardLoading(false);

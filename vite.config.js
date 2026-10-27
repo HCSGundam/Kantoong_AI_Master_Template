@@ -15,6 +15,14 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         open: "/index.html",
+        
+            // Izinkan hostname ngrok saat pengujian.
+            // Ganti dengan hostname tunnel yang kamu gunakan.
+            allowedHosts: [
+                "localhost",
+                "127.0.0.1",
+                "italicize-playhouse-down.ngrok-free.dev",
+            ],
     },
 
     preview: {
@@ -32,6 +40,13 @@ export default defineConfig({
                 homepage: fileURLToPath(
                     new URL(
                         "./frontend/index.html",
+                        import.meta.url
+                    )
+                ),
+
+                dashboardAdmin: fileURLToPath(
+                    new URL(
+                        "./frontend/dashboard-admin/dashboard-admin.html",
                         import.meta.url
                     )
                 ),
