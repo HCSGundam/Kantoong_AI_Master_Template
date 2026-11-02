@@ -75,8 +75,8 @@ body.dark-mode {
     --line: #343842;
     --line-strong: #c7cad1;
 
-    --accent-color: #e7c783;
-    --primary-color: #e7c783;
+    --accent-color: #ffffff;
+    --primary-color: #f3f4f6;
 
     --shadow-color: 0, 0, 0;
 }
@@ -100,8 +100,8 @@ body.dark-mode {
         --line: #343842;
         --line-strong: #c7cad1;
 
-        --accent-color: #e7c783;
-        --primary-color: #e7c783;
+        --accent-color: #ffffff;
+        --primary-color: #f3f4f6;
 
         --shadow-color: 0, 0, 0;
     }

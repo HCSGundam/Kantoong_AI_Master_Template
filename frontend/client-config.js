@@ -104,7 +104,9 @@ const KantoongConfig = {
      * - "none"       = menyembunyikan area informasi
      */
     brand_slot: {
-        type: "highlights",
+        // Template dasar: "none" agar di bawah hero langsung deretan kategori.
+        // Ubah ke "highlights" bila klien ingin kotak keunggulan di bawah.
+        type: "none",
 
         items: [
             {
@@ -130,11 +132,69 @@ const KantoongConfig = {
     // ========================================================
 
     featured: {
-        title: "Produk Unggulan",
+        // Panel teks di kiri baris unggulan (sesuai sketsa)
+        eyebrow: "Produk unggulan",
+        title: "Pilihan Terbaik",
+        description: "Produk andalan yang dipilih langsung oleh toko.",
         matched_title: "Pilihan AI untuk kamu",
         limit: 8,
-        ask_label: "Tanyakan produk ini"
+        ask_label: "Konsultasi AI",
+
+        // Tampilan awal baris unggulan: "3d" (kartu berputar) atau "2d" (geser datar).
+        // Pembeli bisa mengganti lewat tombol 2D/3D di bawah baris.
+        view: "3d"
     },
+
+    /*
+     * Default baris pengiriman di kartu produk ("±1-2 hari | Jakarta").
+     * Dipakai bila produk belum diisi di dashboard admin.
+     * Kosong = tampil "Cek ongkir" dan "Indonesia".
+     */
+    shipping: {
+        estimate: "",
+        from: ""
+    },
+
+    /*
+     * Baris produk tambahan di bawah "Produk Unggulan".
+     * Setiap baris digeser ke samping (bukan ke bawah).
+     *
+     * sort:
+     * - "sales"    = paling laris (butuh data jumlah terjual)
+     * - "wishlist" = paling banyak di-wishlist (butuh wishlist_count)
+     * - "newest"   = produk terbaru (butuh tanggal dibuat)
+     *
+     * Baris yang datanya belum ada otomatis disembunyikan.
+     * Hapus/ubah urutan baris sesuai kebutuhan brand.
+     */
+    rails: [
+        {
+            eyebrow: "Paling laris",
+            title: "Best Seller",
+            description: "Produk yang paling banyak dibeli pelanggan.",
+            sort: "sales", limit: 10, min_items: 2
+        },
+        {
+            eyebrow: "Favorit pembeli",
+            title: "Paling Banyak Di-wishlist",
+            description: "Produk yang paling sering disimpan pembeli.",
+            sort: "wishlist", limit: 10, min_items: 2
+        },
+        {
+            eyebrow: "Baru datang",
+            title: "Produk Terbaru",
+            description: "Koleksi terbaru yang baru masuk toko.",
+            sort: "newest", limit: 10, min_items: 2
+        }
+    ],
+
+    /*
+     * Testimoni pembeli untuk bagian "Kata Mereka" di homepage.
+     * Isi HANYA dengan ulasan asli dari pembeli brand ini.
+     * Kosong = bagian testimoni disembunyikan.
+     * Contoh: { name: "Rina", product: "Oatcookies", rating: 5, text: "Renyah dan nggak terlalu manis!" }
+     */
+    testimonials: [],
 
 
     // ========================================================
@@ -158,8 +218,13 @@ const KantoongConfig = {
     /*
      * Alamat backend AI (Gemini). Jika backend mati atau API key
      * belum diisi, chat otomatis memakai jawaban lokal sebagai cadangan.
+     *
+     * "/api/chat" = alamat relatif. Saat development, Vite meneruskannya
+     * ke backend port 5000 (lihat vite.config.js -> proxy), sehingga
+     * juga jalan saat dibuka dari HP. Saat online nanti, backend harus
+     * melayani /api/chat di domain yang sama (atau isi URL lengkapnya).
      */
-    ai_endpoint: "http://127.0.0.1:5000/api/chat",
+    ai_endpoint: "/api/chat",
 
     ai_greetings: [
         "Mau cari produk yang cocok untuk kebutuhanmu?",

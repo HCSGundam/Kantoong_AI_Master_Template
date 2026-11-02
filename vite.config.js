@@ -23,6 +23,12 @@ export default defineConfig({
                 "127.0.0.1",
                 "italicize-playhouse-down.ngrok-free.dev",
             ],
+
+        // Chat AI: "/api/..." diteruskan ke backend (port 5000) di laptop.
+        // Jadi chat tetap jalan saat web dibuka dari HP.
+        proxy: {
+            "/api": "http://127.0.0.1:5000",
+        },
     },
 
     preview: {

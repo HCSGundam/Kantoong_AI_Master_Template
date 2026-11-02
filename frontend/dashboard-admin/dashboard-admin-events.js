@@ -19,6 +19,7 @@ import {
     toast,
     toggleHeroFields,
     updateImagePreview,
+    updateHeroImagePreview,
     renderProducts,
 } from "./dashboard-admin.js";
 import {
@@ -122,6 +123,16 @@ async function handleSubmit(event) {
             input.image_url = await uploadProductImage(file);
         }
 
+        const heroFile = $("fHeroImageFile").files?.[0];
+
+        if (heroFile) {
+            setMessage($("formMessage"), "Mengunggah foto hero…");
+            input.hero_image_url = await uploadProductImage(heroFile);
+        }
+
+        input.had_hero_image = Boolean(editingId && findProduct(editingId)?.hero_image_url);
+        input.existing_keys = Object.keys((editingId && findProduct(editingId)) || {});
+
         const saved = editingId
             ? await updateProduct(editingId, input)
             : await createProduct(input);
@@ -151,6 +162,25 @@ function handleImageFileChange() {
 
     previewObjectUrl = URL.createObjectURL(file);
     updateImagePreview(previewObjectUrl);
+}
+
+let heroPreviewObjectUrl = null;
+
+function handleHeroImageFileChange() {
+    const file = $("fHeroImageFile").files?.[0];
+
+    if (heroPreviewObjectUrl) {
+        URL.revokeObjectURL(heroPreviewObjectUrl);
+        heroPreviewObjectUrl = null;
+    }
+
+    if (!file) {
+        updateHeroImagePreview($("fHeroImageUrl").value.trim());
+        return;
+    }
+
+    heroPreviewObjectUrl = URL.createObjectURL(file);
+    updateHeroImagePreview(heroPreviewObjectUrl);
 }
 
 /* ---------- Aksi pada daftar ---------- */
@@ -247,6 +277,14 @@ export function bindAdminEvents({ onAuthChanged }) {
     $("fImageUrl").addEventListener("input", () => {
         if (!$("fImageFile").files?.length) {
             updateImagePreview($("fImageUrl").value.trim());
+        }
+    });
+
+    $("fHeroImageFile").addEventListener("change", handleHeroImageFileChange);
+
+    $("fHeroImageUrl").addEventListener("input", () => {
+        if (!$("fHeroImageFile").files?.length) {
+            updateHeroImagePreview($("fHeroImageUrl").value.trim());
         }
     });
 

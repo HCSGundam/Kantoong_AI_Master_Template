@@ -39,6 +39,10 @@ export function friendlyError(error) {
         return "Akunmu tidak punya izin. Pastikan sudah terdaftar sebagai owner.";
     }
 
+    if (/compare_at_price|ship_estimate|ship_from/i.test(message)) {
+        return "Kolom kartu produk belum ada. Jalankan db/product-card.sql di Supabase.";
+    }
+
     if (/relation .* does not exist|column .* does not exist/i.test(message)) {
         return "Struktur database belum siap. Jalankan db/owner-and-pin.sql di Supabase.";
     }
@@ -225,13 +229,13 @@ export function removeProductFromState(id) {
 
 /* ---------- Form ---------- */
 
-export function updateImagePreview(url) {
-    const preview = $("imagePreview");
+export function updateImagePreview(url, previewId = "imagePreview", emptyText = "P") {
+    const preview = $(previewId);
 
     preview.replaceChildren();
 
     if (!url) {
-        preview.textContent = "P";
+        preview.textContent = emptyText;
         return;
     }
 
@@ -239,9 +243,13 @@ export function updateImagePreview(url) {
     image.src = url;
     image.alt = "";
     image.addEventListener("error", () => {
-        preview.textContent = "P";
+        preview.textContent = emptyText;
     });
     preview.append(image);
+}
+
+export function updateHeroImagePreview(url) {
+    updateImagePreview(url, "heroImagePreview", "16:9");
 }
 
 export function toggleHeroFields() {
@@ -254,10 +262,14 @@ export function readForm() {
         category: $("fCategory").value,
         price: $("fPrice").value,
         stock: $("fStock").value,
+        compare_at_price: $("fCompareAt").value,
+        ship_estimate: $("fShipEstimate").value,
+        ship_from: $("fShipFrom").value,
         description: $("fDescription").value,
         image_url: $("fImageUrl").value,
         is_featured: $("fFeatured").checked,
         is_hero: $("fHero").checked,
+        hero_image_url: $("fHeroImageUrl").value,
         hero_caption: $("fHeroCaption").value,
         hero_text: $("fHeroText").value,
     };
@@ -276,6 +288,7 @@ export function resetForm() {
 
     setMessage($("formMessage"), "");
     updateImagePreview("");
+    updateHeroImagePreview("");
     toggleHeroFields();
 }
 
@@ -287,11 +300,16 @@ export function fillForm(product) {
     $("fCategory").value = product.category ?? "";
     $("fPrice").value = product.price ?? "";
     $("fStock").value = product.stock ?? 0;
+    $("fCompareAt").value = product.compare_at_price ?? "";
+    $("fShipEstimate").value = product.ship_estimate ?? "";
+    $("fShipFrom").value = product.ship_from ?? "";
     $("fDescription").value = product.description ?? "";
     $("fImageUrl").value = product.image_url ?? "";
     $("fImageFile").value = "";
     $("fFeatured").checked = product.is_featured === true;
     $("fHero").checked = product.is_hero === true;
+    $("fHeroImageUrl").value = product.hero_image_url ?? "";
+    $("fHeroImageFile").value = "";
     $("fHeroCaption").value = product.hero_caption ?? "";
     $("fHeroText").value = product.hero_text ?? "";
 
@@ -301,6 +319,7 @@ export function fillForm(product) {
 
     setMessage($("formMessage"), "");
     updateImagePreview(product.image_url ?? "");
+    updateHeroImagePreview(product.hero_image_url ?? "");
     toggleHeroFields();
 
     $("productForm").scrollIntoView({ behavior: "smooth", block: "start" });

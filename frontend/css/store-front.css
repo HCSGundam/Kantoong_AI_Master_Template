@@ -21,16 +21,17 @@
    ========================================================= */
 
 #appRoot {
-  --store-bg: #ffffff;
-  --store-surface: #ffffff;
-  --store-surface-soft: #f6f6f6;
-  --store-border: #e8e8e8;
+  /* Mengikuti token global (global.css) agar mode gelap ikut berubah. */
+  --store-bg: var(--container-bg, #ffffff);
+  --store-surface: var(--container-bg, #ffffff);
+  --store-surface-soft: var(--surface-soft, #f6f6f6);
+  --store-border: var(--line, #e8e8e8);
 
-  --store-text: #171717;
-  --store-text-muted: #737373;
+  --store-text: var(--text-primary, #171717);
+  --store-text-muted: var(--text-muted, #737373);
 
-  --store-accent: #171717;
-  --store-accent-contrast: #ffffff;
+  --store-accent: var(--text-primary, #171717);
+  --store-accent-contrast: var(--container-bg, #ffffff);
 
   --store-radius-sm: 8px;
   --store-radius-md: 14px;
@@ -71,14 +72,6 @@
   letter-spacing: -0.035em;
 }
 
-#featuredRail {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
-  width: 100%;
-  min-width: 0;
-  align-items: stretch;
-}
 
 /* =========================================================
    03. PRODUCT CARD
@@ -135,6 +128,27 @@
   transform: scale(1.035);
 }
 
+/* Foto tampil utuh (tidak terpotong) di atas latar blur dari foto yang sama. */
+#appRoot .product-thumb.has-backdrop {
+  isolation: isolate;
+}
+
+#appRoot .product-thumb.has-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: -16px;
+  z-index: -1;
+  background: var(--media-backdrop) center / cover no-repeat;
+  filter: blur(18px) saturate(1.15);
+  opacity: 0.55;
+}
+
+#appRoot .product-thumb.has-backdrop img {
+  position: absolute;
+  inset: 0;
+  object-fit: contain;
+}
+
 /* =========================================================
    05. PRODUCT INFORMATION
    ========================================================= */
@@ -159,6 +173,74 @@
   line-height: 1.5;
 
   font-variant-numeric: tabular-nums;
+}
+
+#appRoot .product-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+
+  margin: 4px 14px 0;
+
+  color: var(--store-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+#appRoot .product-video-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+
+  padding: 3px 8px;
+
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 600;
+
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 999px;
+}
+
+#appRoot .product-thumb video {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+/* Testimoni (hanya tampil bila CFG.testimonials diisi ulasan asli) */
+#appRoot .testimonial-card {
+  flex: 0 0 min(280px, 80%);
+
+  padding: 16px;
+
+  color: var(--store-text);
+  background: var(--store-surface);
+
+  border: 1px solid var(--store-border);
+  border-radius: 18px;
+}
+
+#appRoot .testimonial-card__stars {
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+#appRoot .testimonial-card__text {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+#appRoot .testimonial-card__who {
+  margin: 0;
+  color: var(--store-text-muted);
+  font-size: 0.85rem;
 }
 
 /* =========================================================
@@ -281,10 +363,6 @@
    ========================================================= */
 
 @media (max-width: 1024px) {
-  #featuredRail {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-  }
 
   #appRoot .product-name {
     margin-inline: 12px;
@@ -304,10 +382,6 @@
    ========================================================= */
 
 @media (max-width: 640px) {
-  #featuredRail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
 
   #appRoot .product-card {
     border-radius: 12px;
@@ -366,14 +440,6 @@
    Class berikut mengikuti createProductCard() aktual.
    ========================================================= */
 
-#appRoot #featuredRail {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px;
-  width: 100%;
-  min-width: 0;
-  align-items: stretch;
-}
 
 #appRoot .kantoong-product-card {
   display: flex;
@@ -396,7 +462,7 @@
   display: block;
   width: 100%;
   aspect-ratio: 1 / 1;
-  object-fit: cover;
+  object-fit: contain;
   background: #f6f6f6;
 }
 
@@ -482,17 +548,9 @@
 }
 
 @media (max-width: 1024px) {
-  #appRoot #featuredRail {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-  }
 }
 
 @media (max-width: 640px) {
-  #appRoot #featuredRail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
 
   #appRoot .kantoong-product-card__content {
     padding: 10px;
@@ -514,5 +572,36 @@
 
   #appRoot .kantoong-product-card:hover {
     transform: none;
+  }
+}
+
+/* =========================================================
+   PRODUK UNGGULAN = SATU BARIS GESER KE KANAN (sesuai sketsa)
+   Diletakkan paling akhir agar menimpa aturan grid di atas.
+   ========================================================= */
+
+
+
+/* Baris tambahan (Best Seller, Wishlist, Terbaru) = sama dengan Produk Unggulan */
+
+
+/* =========================================================
+   KATALOG PUSAT: semua produk, tersusun ke bawah
+   ========================================================= */
+
+#appRoot #categoryList {
+  margin-bottom: 14px;
+}
+
+#appRoot .catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  #appRoot .catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 }

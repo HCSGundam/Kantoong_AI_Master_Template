@@ -88,10 +88,30 @@
                         </label>
                     </div>
 
-                    <label class="admin-field">
-                        <span>Stok</span>
-                        <input id="fStock" type="number" min="0" step="1" inputmode="numeric" value="0">
-                    </label>
+                    <div class="admin-row">
+                        <label class="admin-field">
+                            <span>Stok</span>
+                            <input id="fStock" type="number" min="0" step="1" inputmode="numeric" value="0">
+                        </label>
+
+                        <label class="admin-field">
+                            <span>Harga coret (Rp) <small>(opsional)</small></span>
+                            <input id="fCompareAt" type="number" min="0" step="1" inputmode="numeric" placeholder="Harga sebelum diskon">
+                        </label>
+                    </div>
+
+                    <div class="admin-row">
+                        <label class="admin-field">
+                            <span>Estimasi kirim</span>
+                            <input id="fShipEstimate" type="text" maxlength="30" placeholder="±1-2 hari">
+                        </label>
+
+                        <label class="admin-field">
+                            <span>Dikirim dari</span>
+                            <input id="fShipFrom" type="text" maxlength="40" placeholder="Jakarta">
+                        </label>
+                    </div>
+                    <small class="admin-muted">Label diskon (misal -15%) muncul otomatis bila harga coret lebih tinggi dari harga. Rating &amp; jumlah terjual dihitung dari transaksi asli.</small>
 
                     <label class="admin-field">
                         <span>Deskripsi</span>
@@ -124,6 +144,18 @@
                         </label>
 
                         <div id="heroFields" class="admin-hero-fields" hidden>
+                            <div class="admin-field">
+                                <span>Foto hero <small>(opsional, foto melebar 16:9)</small></span>
+                                <div class="admin-image">
+                                    <div class="admin-image__preview admin-image__preview--wide" id="heroImagePreview" aria-hidden="true">16:9</div>
+                                    <div class="admin-image__inputs">
+                                        <input id="fHeroImageFile" type="file" accept="image/jpeg,image/png,image/webp">
+                                        <input id="fHeroImageUrl" type="url" placeholder="atau tempel URL foto hero (https://...)">
+                                    </div>
+                                </div>
+                                <small class="admin-muted">Kosongkan untuk memakai foto produk. Foto tetap tampil utuh, tidak terpotong.</small>
+                            </div>
+
                             <label class="admin-field">
                                 <span>Teks kecil hero</span>
                                 <input id="fHeroCaption" type="text" maxlength="40" placeholder="Premium collection">

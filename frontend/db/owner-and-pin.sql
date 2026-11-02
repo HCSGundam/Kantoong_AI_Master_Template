@@ -11,6 +11,7 @@ alter table public.products add column if not exists is_featured  boolean not nu
 alter table public.products add column if not exists is_hero      boolean not null default false;  -- tampil di hero slider
 alter table public.products add column if not exists hero_caption text;                            -- teks kecil di atas judul hero
 alter table public.products add column if not exists hero_text    text;                            -- teks promo di hero
+alter table public.products add column if not exists hero_image_url text;                          -- foto khusus hero (melebar 16:9)
 alter table public.products add column if not exists sales_count  integer not null default 0;
 
 -- 2. TABEL OWNER ----------------------------------------------

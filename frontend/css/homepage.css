@@ -51,6 +51,28 @@
   object-fit: cover;
 }
 
+/* Foto tampil utuh (tidak terpotong) di atas latar blur dari foto yang sama. */
+#appRoot .hero-media.has-backdrop {
+  position: relative;
+  isolation: isolate;
+}
+
+#appRoot .hero-media.has-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: -24px;
+  z-index: -1;
+  background: var(--media-backdrop) center / cover no-repeat;
+  filter: blur(24px) saturate(1.15);
+  opacity: 0.6;
+}
+
+#appRoot .hero-media.has-backdrop img {
+  position: absolute;
+  inset: 0;
+  object-fit: contain;
+}
+
 #appRoot .hero-media__label {
   color: #7a7a7a;
   font-size: 0.9rem;

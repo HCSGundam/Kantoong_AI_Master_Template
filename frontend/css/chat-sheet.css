@@ -13,6 +13,7 @@
 
 .kc-sheet {
     --kc-sheet-h: 132px;
+    --kc-avatar: 40px;
     --kc-kb: 0px;
 
     --kc-surface: var(--container-bg, #ffffff);
@@ -49,6 +50,10 @@
 
 .kc-sheet.is-dragging {
     transition: none;
+}
+
+.kc-sheet[hidden] {
+    display: none;
 }
 
 @media (min-width: 900px) {
@@ -256,11 +261,18 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+
+    /* Tetap bisa di-scroll, tapi tanpa batang/tombol naik-turun. */
+    scrollbar-width: none;
+}
+
+.kc-messages::-webkit-scrollbar {
+    display: none;
 }
 
 .ai-message {
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-columns: var(--kc-avatar) minmax(0, 1fr);
     column-gap: 8px;
     row-gap: 4px;
     align-items: start;
@@ -273,8 +285,8 @@
     grid-row: 1;
     align-self: start;
 
-    width: 34px;
-    height: 34px;
+    width: var(--kc-avatar);
+    height: var(--kc-avatar);
 
     border-radius: 50%;
 }
@@ -317,7 +329,7 @@
 /* Pesan pengguna: rata kanan, gelembung hitam, avatar "ANDA" */
 
 .ai-message--user {
-    grid-template-columns: minmax(0, 1fr) 34px;
+    grid-template-columns: minmax(0, 1fr) var(--kc-avatar);
 }
 
 .ai-message--user::before {
@@ -395,7 +407,7 @@
     flex-direction: column;
     gap: 5px;
 
-    width: 84px;
+    width: 108px;
     padding: 0;
 
     color: inherit;
@@ -412,8 +424,8 @@
     display: grid;
     place-items: center;
 
-    width: 84px;
-    height: 84px;
+    width: 108px;
+    height: 108px;
 
     object-fit: cover;
 
@@ -469,15 +481,22 @@
 
 /* ---------- Saran pertanyaan (3 chip, hanya sebelum chat pertama) ---------- */
 
+/* Saran chat: satu baris digeser ke samping, maksimal 5, bisa diacak. */
 .kc-suggestions {
     flex: none;
 
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
     gap: 8px;
 
     padding: 0 16px 10px;
+
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.kc-suggestions::-webkit-scrollbar {
+    display: none;
 }
 
 .kc-suggestions[hidden],
@@ -486,7 +505,8 @@
 }
 
 .ai-suggestion {
-    max-width: 92%;
+    flex: none;
+    white-space: nowrap;
     padding: 9px 16px;
 
     color: var(--kc-text);
@@ -498,7 +518,7 @@
     font: inherit;
     font-size: 0.875rem;
     line-height: 1.35;
-    text-align: right;
+    text-align: left;
 
     cursor: pointer;
 }
@@ -595,19 +615,34 @@
     cursor: pointer;
 }
 
-.kc-composer__box {
+/* Bar ketik sesuai sketsa: kapsul abu berisi kolom putih + ikon alat. */
+.kc-composer__row {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    align-items: center;
+    gap: 4px;
 
-    padding: 10px 10px 8px 14px;
+    padding: 5px 6px 5px 5px;
+
+    background: color-mix(in srgb, var(--kc-text) 10%, var(--kc-surface));
+    border-radius: 30px;
+}
+
+.kc-composer__box {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 4px 14px 4px 4px;
 
     background: var(--kc-surface);
 
-    border: 1px solid var(--kc-line);
+    border: 1px solid transparent;
     border-radius: 24px;
 
-    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
 }
 
 .kc-composer__box:focus-within {
@@ -617,11 +652,13 @@
 .kc-composer textarea {
     display: block;
 
+    flex: 1 1 auto;
+    min-width: 0;
     width: 100%;
-    min-height: 26px;
+    min-height: 38px;
     max-height: 120px;
     margin: 0;
-    padding: 2px 4px 2px 0;
+    padding: 8px 4px;
 
     color: var(--kc-text);
     background: transparent;
@@ -788,8 +825,8 @@
     display: flex;
 }
 
-.kc-composer[data-mode="autopilot"] .kc-composer__bar {
-    justify-content: flex-start;
+.kc-composer[data-mode="autopilot"] .kc-composer__row {
+    align-items: center;
 }
 
 /* ---------- Etalase di belakang chat ---------- */
@@ -806,4 +843,310 @@
     .kc-agent .kc-orb {
         animation: none;
     }
+}
+
+/* ---------- Mode orb: kotak sambutan mengecil jadi orb melayang ---------- */
+
+.kc-peek__orb {
+    cursor: pointer;
+}
+
+.kc-float-orb {
+    position: absolute;
+    z-index: 45;
+
+    width: 56px;
+    height: 56px;
+    padding: 0;
+
+    border: 2px solid var(--container-bg, #ffffff);
+    border-radius: 50%;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+
+    transition: left 260ms cubic-bezier(0.22, 1, 0.36, 1),
+        top 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.kc-float-orb[hidden] {
+    display: none;
+}
+
+.kc-float-orb.is-dragging {
+    cursor: grabbing;
+    transition: none;
+}
+
+.kc-float-orb:focus-visible {
+    outline: 3px solid var(--text-primary, #111111);
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kc-float-orb {
+        transition: none;
+    }
+}
+
+/* ---------- Penyesuaian sesuai sketsa chat terbaru ---------- */
+
+/* Kotak chat diturunkan dengan menarik/mengetuk garis pegangan,
+   jadi tombol panah turun tidak ditampilkan. */
+#chatCloseBtn {
+    display: none;
+}
+
+/* Tombol kirim di dalam kolom putih (kiri). Saat kosong: lingkaran garis. */
+.kc-composer .kc-send {
+    width: 34px;
+    height: 34px;
+}
+
+.kc-composer .kc-send:disabled {
+    opacity: 1;
+    color: var(--kc-text);
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--kc-text);
+}
+
+.kc-composer textarea::placeholder {
+    font-weight: 700;
+}
+
+.kc-composer__tools {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+}
+
+.kc-tool {
+    display: inline-grid;
+    place-items: center;
+
+    width: 38px;
+    height: 38px;
+    padding: 0;
+
+    color: var(--kc-muted);
+    background: transparent;
+
+    border: 0;
+    border-radius: 50%;
+
+    cursor: pointer;
+}
+
+.kc-tool svg {
+    width: 21px;
+    height: 21px;
+
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.kc-tool:hover:not(:disabled),
+.kc-tool[aria-expanded="true"],
+.kc-tool[aria-pressed="true"] {
+    color: var(--kc-text);
+    background: var(--kc-surface);
+}
+
+.kc-tool:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.kc-tools__divider {
+    width: 1.5px;
+    height: 24px;
+    margin: 0 4px;
+
+    background: color-mix(in srgb, var(--kc-text) 35%, transparent);
+}
+
+
+@media (max-width: 400px) {
+    .kc-tool {
+        width: 32px;
+        height: 32px;
+    }
+
+    .kc-tool svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    .kc-tools__divider {
+        margin: 0 2px;
+    }
+}
+
+.kc-suggestion-shuffle {
+    width: 36px;
+    height: 36px;
+}
+
+@media (min-width: 900px) {
+    .kc-sheet {
+        --kc-avatar: 44px;
+    }
+}
+
+/* Kolom ketik tanpa batang/tombol scroll naik-turun. */
+.kc-composer textarea {
+    scrollbar-width: none;
+}
+
+.kc-composer textarea::-webkit-scrollbar {
+    display: none;
+}
+
+/* =========================================================
+   BAR KETIK: DIAM vs MENGETIK (data-typing pada #kcComposer)
+   ========================================================= */
+
+/* Default (DIAM): kapsul abu, ikon alat di kanan. */
+.kc-composer .kc-plus,
+.kc-composer .kc-tool--mic,
+.kc-composer .kc-send--main {
+    display: none;
+}
+
+.kc-composer .kc-send--idle {
+    width: 34px;
+    height: 34px;
+}
+
+/* MENGETIK: kolom putih memanjang penuh, ikon kanan hilang,
+   tombol + dan mic di dalam kolom, tombol kirim hitam di luar. */
+.kc-composer[data-typing="true"] .kc-composer__row {
+    padding: 0;
+    gap: 10px;
+
+    background: transparent;
+}
+
+.kc-composer[data-typing="true"] .kc-composer__box {
+    padding: 5px 6px 5px 4px;
+
+    border-color: var(--kc-line);
+}
+
+.kc-composer[data-typing="true"] .kc-composer__tools,
+.kc-composer[data-typing="true"] .kc-send--idle {
+    display: none;
+}
+
+.kc-composer[data-typing="true"] .kc-plus,
+.kc-composer[data-typing="true"] .kc-tool--mic {
+    display: inline-grid;
+}
+
+.kc-composer[data-typing="true"] .kc-send--main {
+    display: inline-grid;
+
+    width: 48px;
+    height: 48px;
+}
+
+.kc-composer[data-typing="true"] .kc-send--main svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Tombol kirim utama tetap hitam pekat; saat kosong sedikit pudar. */
+.kc-composer .kc-send--main:disabled {
+    color: var(--kc-surface);
+    background: var(--kc-text);
+    box-shadow: none;
+    opacity: 0.35;
+}
+
+.kc-tool--plus {
+    color: var(--kc-text);
+}
+
+/* Menu + kini di kiri: membuka ke kanan. */
+.kc-composer .kc-plus .kc-menu {
+    right: auto;
+    left: 0;
+}
+
+/* Ikon kirim di bar DIAM: lingkaran garis (seperti sketsa). */
+.kc-composer .kc-send--idle {
+    color: var(--kc-text);
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--kc-text);
+}
+
+/* Menu peniti (bar DIAM): muncul di atas ikon, rata kanan. */
+.kc-attach-wrap {
+    position: relative;
+}
+
+.kc-composer .kc-menu--attach {
+    right: -60px;
+    left: auto;
+
+    min-width: 210px;
+}
+
+/* Tombol + di bar DIAM: menu Chat baru & ANACHRONOS MODE, muncul di atas kiri. */
+.kc-start-wrap {
+    position: relative;
+    display: inline-grid;
+}
+
+.kc-composer[data-typing="true"] .kc-start-wrap {
+    display: none;
+}
+
+.kc-composer .kc-menu--start {
+    right: auto;
+    left: -4px;
+
+    min-width: 230px;
+}
+
+.kc-composer .kc-send--idle svg {
+    stroke-width: 2.4;
+}
+
+/* Ikon Anachronos: bintang empat sudut berisi simbol infinity. */
+.kc-menu__item svg.kc-anachronos-icon .kc-anachronos-icon__star {
+    fill: currentColor;
+    stroke: none;
+}
+
+.kc-menu__item svg.kc-anachronos-icon .kc-anachronos-icon__infinity {
+    fill: none;
+    stroke: var(--kc-surface, #fff);
+    stroke-width: 1.1;
+    stroke-linecap: round;
+}
+
+.kc-menu__item--anachronos {
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.kc-composer .kc-menu--start {
+    min-width: 260px;
+}
+
+.kc-menu__item--anachronos {
+    white-space: nowrap;
+}
+
+.kc-menu__item svg.kc-anachronos-icon {
+    width: 22px;
+    height: 22px;
 }

@@ -119,7 +119,7 @@ const AIState = {
     initialized: false,
     busy: false,
     history: [],
-    lastSuggestionsDate: "",
+    suggestionsOpen: false,
     requestController: null,
     requestSequence: 0,
     boundElements: null
@@ -129,9 +129,6 @@ const STORAGE_PREFIX = "kantoong:chat:";
 
 const HISTORY_KEY =
     `${STORAGE_PREFIX}${AI_CONFIG.businessId}`;
-
-const SUGGESTIONS_KEY =
-    `kantoong:chat-used:${AI_CONFIG.businessId}`;
 
 const MAX_MESSAGE_LENGTH = 3000;
 
@@ -858,52 +855,6 @@ function renderInitialGreeting() {
    07. SARAN PERTANYAAN
    ============================================================ */
 
-function getDailySuggestionState() {
-    const today = getTodayKey();
-
-    try {
-        const raw = localStorage.getItem(SUGGESTIONS_KEY);
-
-        if (raw) {
-            const parsed = JSON.parse(raw);
-
-            if (parsed && parsed.date === today) {
-                const used = Array.isArray(parsed.used)
-                    ? parsed.used
-                    : [];
-
-                return {
-                    date: today,
-                    sent: parsed.sent === true || used.length > 0,
-                    used
-                };
-            }
-        }
-    } catch (error) {
-        console.warn(
-            "[KANTOONG AI] Status saran tidak dapat dibaca:",
-            error
-        );
-    }
-
-    // Hari baru (lewat 00.00): saran muncul lagi dari awal.
-    return { date: today, sent: false, used: [] };
-}
-
-function saveDailySuggestionState(state) {
-    try {
-        localStorage.setItem(
-            SUGGESTIONS_KEY,
-            JSON.stringify(state)
-        );
-    } catch (error) {
-        console.warn(
-            "[KANTOONG AI] Tidak dapat menyimpan status saran:",
-            error
-        );
-    }
-}
-
 function shuffleArray(items) {
     const result = [...items];
 
@@ -921,15 +872,16 @@ function shuffleArray(items) {
     return result;
 }
 
-const SUGGESTIONS_PER_VISIT = 3;
+const SUGGESTIONS_PER_VISIT = 5;
 
 /**
  * Aturan saran chat:
- * - Muncul 3 saran (diacak tiap kunjungan) HANYA sebelum pesan pertama
- *   hari ini.
- * - Setelah pengguna mengirim satu pesan (mengetik atau memilih saran),
- *   saran hilang sampai pukul 00.00.
- * - Pukul 00.00 saran kembali; riwayat chat tetap tersimpan.
+ * - Tersembunyi secara default (tidak memenuhi layar).
+ * - Muncul HANYA saat pengguna memencet ikon robot (saran chat):
+ *   maks. 5 saran dalam satu baris yang digeser ke samping, dengan
+ *   tombol acak di depannya.
+ * - Hilang lagi saat pengguna memilih salah satu saran, mulai mengetik
+ *   sendiri, mengirim pesan, atau memencet ikon robot sekali lagi.
  */
 function renderSuggestions() {
     const { suggestions } = getElements();
@@ -939,35 +891,46 @@ function renderSuggestions() {
     }
 
     suggestions.replaceChildren();
+    suggestions.hidden = !AIState.suggestionsOpen;
 
-    const state = getDailySuggestionState();
+    emit("suggestions-toggled", { open: AIState.suggestionsOpen });
 
-    suggestions.hidden = state.sent;
-
-    if (state.sent) {
+    if (!AIState.suggestionsOpen) {
         return;
     }
 
-    if (!AIState.sessionSuggestions) {
-        const pool = AI_CONFIG.suggestions
-            .map((item) => String(item ?? "").trim())
-            .filter(Boolean);
+    const pool = AI_CONFIG.suggestions
+        .map((item) => String(item ?? "").trim())
+        .filter(Boolean);
 
-        AIState.sessionSuggestions = shuffleArray(pool)
-            .slice(0, SUGGESTIONS_PER_VISIT);
-    }
+    const picks = shuffleArray(pool).slice(0, SUGGESTIONS_PER_VISIT);
 
-    if (AIState.sessionSuggestions.length === 0) {
+    if (picks.length === 0) {
         suggestions.hidden = true;
         return;
     }
 
-    AIState.sessionSuggestions.forEach((text) => {
+    const shuffle = createElement(
+        "button",
+        "kc-icon-btn kc-suggestion-shuffle"
+    );
+
+    shuffle.type = "button";
+    shuffle.setAttribute("aria-label", "Acak saran lain");
+    shuffle.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 3l4 4-4 4M3 7h18M7 21l-4-4 4-4M21 17H3"/></svg>';
+
+    shuffle.addEventListener("click", () => renderSuggestions());
+
+    suggestions.appendChild(shuffle);
+
+    picks.forEach((text) => {
         const chip = createElement("button", "ai-suggestion", text);
 
         chip.type = "button";
 
         chip.addEventListener("click", () => {
+            closeSuggestions();
             sendMessage(text);
         });
 
@@ -975,33 +938,28 @@ function renderSuggestions() {
     });
 }
 
-function markSuggestionUsed(text) {
-    const state = getDailySuggestionState();
-
-    state.sent = true;
-
-    if (text && !state.used.includes(text)) {
-        state.used.push(text);
+function closeSuggestions() {
+    if (!AIState.suggestionsOpen) {
+        return;
     }
 
-    saveDailySuggestionState(state);
+    AIState.suggestionsOpen = false;
+    renderSuggestions();
 }
 
-/** Menjadwalkan kemunculan ulang saran tepat setelah 00.00. */
-function scheduleSuggestionReset() {
-    window.clearTimeout(AIState.suggestionResetTimer);
+/** Ikon robot (saran chat): buka/tutup saran. */
+function handleShowSuggestions() {
+    AIState.suggestionsOpen = !AIState.suggestionsOpen;
+    renderSuggestions();
+}
 
-    const now = new Date();
-    const midnight = new Date(now);
+/** Pengguna mulai mengetik sendiri: saran disembunyikan. */
+function handleInputTyping() {
+    const { input } = getElements();
 
-    midnight.setHours(24, 0, 1, 0);
-
-    AIState.suggestionResetTimer = window.setTimeout(() => {
-        AIState.sessionSuggestions = null;
-
-        renderSuggestions();
-        scheduleSuggestionReset();
-    }, Math.max(1000, midnight - now));
+    if (input?.value.trim()) {
+        closeSuggestions();
+    }
 }
 
 /* ============================================================
@@ -1606,7 +1564,6 @@ export async function sendMessage(rawText) {
         input.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
-    markSuggestionUsed(message);
 
     const userMessage = addHistoryMessage(
         "user",
@@ -1616,7 +1573,7 @@ export async function sendMessage(rawText) {
 
     renderMessage(userMessage);
 
-    renderSuggestions();
+    closeSuggestions();
 
     const typingIndicator = renderTypingIndicator();
 
@@ -1823,7 +1780,18 @@ function handleConsultEvent(event) {
 }
 
 function handleProductsReady() {
-    renderSuggestions();
+    /*
+     * Riwayat chat bisa tampil sebelum data produk selesai dimuat,
+     * sehingga foto produk di pesan lama belum muncul. Setelah produk
+     * siap, tampilkan ulang riwayat agar fotonya ikut muncul.
+     */
+    const needsPhotos = AIState.history.some(
+        (message) => Array.isArray(message.productIds) && message.productIds.length
+    );
+
+    if (needsPhotos && !AIState.busy) {
+        renderInitialGreeting();
+    }
 }
 
 /* ============================================================
@@ -1865,6 +1833,11 @@ export function initAIBrain() {
             "keydown",
             handleInputKeydown
         );
+
+        elements.input.addEventListener(
+            "input",
+            handleInputTyping
+        );
     }
 
     elements.chatBox.addEventListener(
@@ -1900,14 +1873,24 @@ export function initAIBrain() {
         handleProductsReady
     );
 
+    // engine.js mengirim nama event dengan awalan "kantoong:".
+    window.addEventListener(
+        "kantoong:supabase-data-ready",
+        handleProductsReady
+    );
+
     document.addEventListener(
         "supabase-data-ready",
         handleProductsReady
     );
 
+    window.addEventListener(
+        "kantoong:show-suggestions",
+        handleShowSuggestions
+    );
+
     renderInitialGreeting();
     renderSuggestions();
-    scheduleSuggestionReset();
 
     emit("ai-ready", {
         title: AI_CONFIG.title,
@@ -1928,7 +1911,6 @@ export function destroyAIBrain() {
         return;
     }
 
-    window.clearTimeout(AIState.suggestionResetTimer);
 
     const elements = AIState.boundElements;
 
@@ -1944,6 +1926,11 @@ export function destroyAIBrain() {
             "keydown",
             handleInputKeydown
         );
+
+        elements.input.removeEventListener(
+            "input",
+            handleInputTyping
+        );
     }
 
     if (elements?.chatBox) {
@@ -1956,6 +1943,16 @@ export function destroyAIBrain() {
     window.removeEventListener(
         "kantoong:consult",
         handleConsultEvent
+    );
+
+    window.removeEventListener(
+        "kantoong:show-suggestions",
+        handleShowSuggestions
+    );
+
+    window.removeEventListener(
+        "kantoong:supabase-data-ready",
+        handleProductsReady
     );
 
     document.removeEventListener(

@@ -13,6 +13,9 @@
  * 4. Kotak ketik bergaya asisten AI: tombol + (lampiran foto, dokumen,
  *    video, chat baru, mode agen), auto-tinggi, tombol kirim.
  * 5. Mode agen (infrastruktur): orb bermata dua menggantikan kolom ketik.
+ * 6. Mode orb: ketuk orb di kotak sambutan -> kotak berubah jadi SATU orb
+ *    melayang yang bisa digeser ke mana saja dan menempel di tepi layar
+ *    (seperti panel edge HP). Ketuk orb -> kembali jadi kotak sambutan.
  *
  * Percakapan dan pengiriman pesan TETAP di ai-brain.js.
  *
@@ -57,7 +60,7 @@ function initChatSheet() {
        01. KONSTANTA
        ==================================================== */
 
-    const PEEK_HEIGHT = 132;
+    const PEEK_HEIGHT = 104;
     const OPEN_THRESHOLD = PEEK_HEIGHT + 36;
     const MID_RATIO = 0.52;
     const FLICK_SPEED = 0.4; // px per milidetik
@@ -74,6 +77,9 @@ function initChatSheet() {
     let closeTimer = 0;
     let keyboard = 0;
 
+    /** true = kotak chat sedang disembunyikan dan tampil sebagai orb. */
+    let minimized = false;
+
     const drag = {
         active: false,
         id: null,
@@ -83,6 +89,7 @@ function initChatSheet() {
         lastT: 0,
         v: 0,
         moved: false,
+        target: null,
         raf: 0,
         nextH: 0,
     };
@@ -135,6 +142,8 @@ function initChatSheet() {
         const bounds = getBounds();
 
         window.clearTimeout(closeTimer);
+
+        restoreFromOrb();
 
         state = name;
         panel.dataset.state = name;
@@ -218,6 +227,9 @@ function initChatSheet() {
         drag.lastT = performance.now();
         drag.v = 0;
         drag.moved = false;
+        // Setelah pointer capture, target event berubah jadi `grab`;
+        // simpan elemen yang benar-benar disentuh untuk deteksi ketukan.
+        drag.target = event.target;
 
         try {
             grab.setPointerCapture(event.pointerId);
@@ -282,7 +294,7 @@ function initChatSheet() {
             panel.classList.remove("is-dragging");
 
             if (!cancelled) {
-                handleTap(event);
+                handleTap();
             }
 
             return;
@@ -301,15 +313,24 @@ function initChatSheet() {
     grab.addEventListener("pointerup", (event) => endDrag(event, false));
     grab.addEventListener("pointercancel", (event) => endDrag(event, true));
 
-    function handleTap(event) {
+    function handleTap() {
+        const target = drag.target instanceof Element ? drag.target : grab;
+
+        // Ketuk orb di kotak sambutan: kotak mengecil jadi orb melayang.
+        if (state === "peek" && target.closest("#peekOrb")) {
+            minimizeToOrb();
+            return;
+        }
+
         if (state === "peek") {
             snapTo("mid");
             return;
         }
 
-        // Ketuk garis pegangan: mid <-> penuh.
-        if (event.target.closest(".kc-sheet__handle")) {
-            snapTo(state === "mid" ? "full" : "mid");
+        // Ketuk garis pegangan: turun satu tingkat (penuh -> tengah -> minim).
+        // Untuk naik, tahan lalu tarik garis pegangan ke atas.
+        if (target.closest(".kc-sheet__handle")) {
+            snapTo(state === "full" ? "mid" : "peek");
         }
     }
 
@@ -505,6 +526,7 @@ function initChatSheet() {
 
         menu.hidden = true;
         plusBtn?.setAttribute("aria-expanded", "false");
+        syncTypingSoon();
     }
 
     function toggleMenu() {
@@ -527,6 +549,185 @@ function initChatSheet() {
         }
     });
 
+    /**
+     * Membuka pemilih file sesuai jenis lampiran.
+     * Kamera: di HP langsung membuka kamera; di laptop jadi pemilih foto biasa.
+     */
+    function openPicker(action) {
+        if (!fileInput) return;
+
+        fileInput.removeAttribute("capture");
+
+        switch (action) {
+            case "attach-file":
+                fileInput.accept = "image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt";
+                break;
+
+            case "attach-camera":
+                fileInput.accept = "image/*";
+                fileInput.setAttribute("capture", "environment");
+                break;
+
+            case "attach-video":
+                fileInput.accept = "video/*";
+                break;
+
+            default:
+                return;
+        }
+
+        fileInput.click();
+    }
+
+    /** Menyisipkan link (http/https) ke kolom ketik. */
+    function insertLink() {
+        const raw = window.prompt("Tempel link produk atau referensi:", "https://");
+        const value = String(raw ?? "").trim();
+
+        if (!value || value === "https://") return;
+
+        let url;
+        try {
+            url = new URL(value);
+        } catch {
+            notify("Link tidak valid.");
+            return;
+        }
+
+        if (url.protocol !== "https:" && url.protocol !== "http:") {
+            notify("Hanya link http/https yang bisa disisipkan.");
+            return;
+        }
+
+        const current = textarea.value.trim();
+        textarea.value = current ? `${current} ${url.href}` : url.href;
+        textarea.dispatchEvent(new Event("input", { bubbles: true }));
+        textarea.focus({ preventScroll: true });
+    }
+
+    $("btnLink")?.addEventListener("click", insertLink);
+
+    // Peniti di bar DIAM: menu kecil foto/dokumen, kamera, video.
+    const attachBtn = $("btnAttach");
+    const attachMenu = $("kcAttachMenu");
+
+    function closeAttachMenu() {
+        if (!attachMenu || attachMenu.hidden) return;
+
+        attachMenu.hidden = true;
+        attachBtn?.setAttribute("aria-expanded", "false");
+    }
+
+    attachBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+
+        if (!attachMenu) return;
+
+        const willOpen = attachMenu.hidden;
+
+        attachMenu.hidden = !willOpen;
+        attachBtn.setAttribute("aria-expanded", String(willOpen));
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+        if (!event.target.closest(".kc-attach-wrap")) {
+            closeAttachMenu();
+        }
+    });
+
+    attachMenu?.addEventListener("click", (event) => {
+        const item = event.target.closest("[data-kc-action]");
+
+        if (!item) return;
+
+        openPicker(item.dataset.kcAction);
+        closeAttachMenu();
+    });
+
+    // Tombol + di bar DIAM: menu kecil "Chat baru" & "ANACHRONOS MODE" (segera).
+    const startBtn = $("kcIdleSend");
+    const startMenu = $("kcStartMenu");
+
+    function closeStartMenu() {
+        if (!startMenu || startMenu.hidden) return;
+
+        startMenu.hidden = true;
+        startBtn?.setAttribute("aria-expanded", "false");
+    }
+
+    startBtn?.addEventListener("click", (event) => {
+        event.stopPropagation();
+
+        if (!startMenu) return;
+
+        const willOpen = startMenu.hidden;
+
+        startMenu.hidden = !willOpen;
+        startBtn.setAttribute("aria-expanded", String(willOpen));
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+        if (!event.target.closest(".kc-start-wrap")) {
+            closeStartMenu();
+        }
+    });
+
+    startMenu?.addEventListener("click", (event) => {
+        const item = event.target.closest("[data-kc-action]");
+
+        if (!item || item.disabled) return;
+
+        if (item.dataset.kcAction === "new-chat") {
+            clearAttachments();
+            window.KantoongAIBrain?.newChat?.();
+        }
+
+        closeStartMenu();
+    });
+
+    /*
+     * Dua keadaan bar ketik:
+     * - DIAM     : ikon alat tampil di kanan.
+     * - MENGETIK : kolom memanjang, ikon kanan hilang, semua fitur
+     *              pindah ke menu + di kiri, tombol kirim hitam di luar.
+     * Mengetik = kolom sudah berisi teks (atau menu + sedang terbuka).
+     * Menghapus semua teks = kembali ke bar DIAM.
+     */
+    let typingTimer = 0;
+
+    function syncTyping() {
+        const typing =
+            Boolean(textarea?.value.trim()) ||
+            (menu ? !menu.hidden : false);
+
+        composer.dataset.typing = String(typing);
+    }
+
+    function syncTypingSoon() {
+        // Beri jeda agar ketukan tombol + sempat membuka menunya dulu.
+        window.clearTimeout(typingTimer);
+        typingTimer = window.setTimeout(syncTyping, 160);
+    }
+
+    textarea?.addEventListener("focus", syncTyping);
+    textarea?.addEventListener("input", syncTyping);
+    composer?.addEventListener("focusout", syncTypingSoon);
+    composer?.addEventListener("click", syncTypingSoon);
+    document.addEventListener("pointerdown", syncTypingSoon);
+
+    syncTyping();
+
+    // Ikon robot: buka/tutup saran chat (diatur ai-brain.js).
+    const suggestBtn = $("btnSuggest");
+
+    suggestBtn?.addEventListener("click", () => {
+        window.dispatchEvent(new CustomEvent("kantoong:show-suggestions"));
+    });
+
+    window.addEventListener("kantoong:suggestions-toggled", (event) => {
+        suggestBtn?.setAttribute("aria-pressed", String(event.detail?.open === true));
+    });
+
     menu?.addEventListener("click", (event) => {
         const item = event.target.closest("[data-kc-action]");
 
@@ -534,19 +735,21 @@ function initChatSheet() {
 
         switch (item.dataset.kcAction) {
             case "attach-file":
-                fileInput.accept =
-                    "image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt";
-                fileInput.click();
-                break;
-
             case "attach-video":
-                fileInput.accept = "video/*";
-                fileInput.click();
+                openPicker(item.dataset.kcAction);
                 break;
 
             case "new-chat":
                 clearAttachments();
                 window.KantoongAIBrain?.newChat?.();
+                break;
+
+            case "insert-link":
+                insertLink();
+                break;
+
+            case "suggest":
+                window.dispatchEvent(new CustomEvent("kantoong:show-suggestions"));
                 break;
 
             case "agent-toggle":
@@ -621,7 +824,10 @@ function initChatSheet() {
         }
     });
 
-    window.addEventListener("kantoong:collapse", () => snapTo("peek"));
+    window.addEventListener("kantoong:collapse", () => {
+        // Saat sedang jadi orb, biarkan tetap orb.
+        if (!minimized) snapTo("peek");
+    });
 
     window.addEventListener("kantoong:ai-matched", () => {
         if (state === "full") {
@@ -637,6 +843,16 @@ function initChatSheet() {
             return;
         }
 
+        if (attachMenu && !attachMenu.hidden) {
+            closeAttachMenu();
+            return;
+        }
+
+        if (startMenu && !startMenu.hidden) {
+            closeStartMenu();
+            return;
+        }
+
         if (
             state !== "peek" &&
             (panel.contains(document.activeElement) || state === "full")
@@ -646,12 +862,167 @@ function initChatSheet() {
     });
 
     /* ====================================================
+       12B. MODE ORB MELAYANG
+       ==================================================== */
+
+    const ORB_SIZE = 56;
+    const ORB_MARGIN = 8;
+    const ORB_STORE_KEY = "kantoong_orb_pos";
+
+    const floatOrb = document.createElement("button");
+    floatOrb.type = "button";
+    floatOrb.className = "kc-float-orb kc-orb";
+    floatOrb.id = "kcFloatOrb";
+    floatOrb.hidden = true;
+    floatOrb.setAttribute("aria-label", "Buka konsultasi AI");
+    host.appendChild(floatOrb);
+
+    /** Posisi orb: sisi layar (kiri/kanan) + tinggi relatif 0..1. */
+    let orbPos = { side: "right", y: 0.72 };
+
+    try {
+        const saved = JSON.parse(localStorage.getItem(ORB_STORE_KEY) || "null");
+        if (saved && (saved.side === "left" || saved.side === "right")) {
+            orbPos = { side: saved.side, y: clamp(Number(saved.y) || 0.72, 0, 1) };
+        }
+    } catch {
+        // Penyimpanan browser tidak tersedia; pakai posisi bawaan.
+    }
+
+    function orbLimits() {
+        const headerHeight =
+            document.querySelector(".app-header")?.offsetHeight ?? 58;
+
+        return {
+            minY: headerHeight + ORB_MARGIN,
+            maxY: (host.clientHeight || window.innerHeight) - ORB_SIZE - ORB_MARGIN,
+            maxX: (host.clientWidth || window.innerWidth) - ORB_SIZE - ORB_MARGIN,
+        };
+    }
+
+    function placeOrb(x, y) {
+        floatOrb.style.left = `${Math.round(x)}px`;
+        floatOrb.style.top = `${Math.round(y)}px`;
+    }
+
+    /** Menempelkan orb ke tepi kiri/kanan sesuai orbPos. */
+    function dockOrb() {
+        const { minY, maxY, maxX } = orbLimits();
+
+        placeOrb(
+            orbPos.side === "left" ? ORB_MARGIN : maxX,
+            minY + (maxY - minY) * orbPos.y
+        );
+    }
+
+    function minimizeToOrb() {
+        snapTo("peek");
+
+        minimized = true;
+        panel.hidden = true;
+        floatOrb.hidden = false;
+        dockOrb();
+    }
+
+    function restoreFromOrb() {
+        if (!minimized) return;
+
+        minimized = false;
+        floatOrb.hidden = true;
+        panel.hidden = false;
+    }
+
+    const orbDrag = { id: null, dx: 0, dy: 0, startX: 0, startY: 0, moved: false };
+
+    floatOrb.addEventListener("pointerdown", (event) => {
+        const rect = floatOrb.getBoundingClientRect();
+
+        orbDrag.id = event.pointerId;
+        orbDrag.dx = event.clientX - rect.left;
+        orbDrag.dy = event.clientY - rect.top;
+        orbDrag.startX = event.clientX;
+        orbDrag.startY = event.clientY;
+        orbDrag.moved = false;
+
+        floatOrb.setPointerCapture(event.pointerId);
+        floatOrb.classList.add("is-dragging");
+    });
+
+    floatOrb.addEventListener("pointermove", (event) => {
+        if (event.pointerId !== orbDrag.id) return;
+
+        if (
+            !orbDrag.moved &&
+            Math.hypot(event.clientX - orbDrag.startX, event.clientY - orbDrag.startY) < 6
+        ) {
+            return;
+        }
+
+        orbDrag.moved = true;
+
+        const hostRect = host.getBoundingClientRect();
+        const { minY, maxY, maxX } = orbLimits();
+
+        placeOrb(
+            clamp(event.clientX - hostRect.left - orbDrag.dx, ORB_MARGIN, maxX),
+            clamp(event.clientY - hostRect.top - orbDrag.dy, minY, maxY)
+        );
+    });
+
+    function endOrbDrag(event, cancelled) {
+        if (event.pointerId !== orbDrag.id) return;
+
+        orbDrag.id = null;
+        floatOrb.classList.remove("is-dragging");
+
+        if (!orbDrag.moved) {
+            // Ketuk orb: kembali jadi kotak sambutan.
+            if (!cancelled) snapTo("peek");
+            return;
+        }
+
+        // Lepas: menempel ke tepi terdekat, seperti panel edge HP.
+        const { minY, maxY, maxX } = orbLimits();
+        const x = floatOrb.offsetLeft;
+        const y = floatOrb.offsetTop;
+
+        orbPos = {
+            side: x + ORB_SIZE / 2 < (maxX + ORB_SIZE) / 2 ? "left" : "right",
+            y: maxY > minY ? clamp((y - minY) / (maxY - minY), 0, 1) : 0,
+        };
+
+        try {
+            localStorage.setItem(ORB_STORE_KEY, JSON.stringify(orbPos));
+        } catch {
+            // Posisi hanya berlaku sampai halaman ditutup.
+        }
+
+        dockOrb();
+    }
+
+    $("peekOrb")?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            minimizeToOrb();
+            floatOrb.focus();
+        }
+    });
+
+    floatOrb.addEventListener("pointerup", (event) => endOrbDrag(event, false));
+    floatOrb.addEventListener("pointercancel", (event) => endOrbDrag(event, true));
+
+    window.addEventListener("resize", () => {
+        if (minimized) dockOrb();
+    });
+
+    /* ====================================================
        13. API
        ==================================================== */
 
     window.KantoongChat = Object.freeze({
         open: (name = "mid") => snapTo(name, { focus: true }),
         collapse: () => snapTo("peek"),
+        minimize: () => minimizeToOrb(),
         getState: () => state,
         getLastFiles: () => [...lastFiles],
 

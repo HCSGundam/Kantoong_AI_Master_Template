@@ -63,9 +63,9 @@
     -->
 
 
-  <script type="module" crossorigin src="/assets/dashboardUser-CwDHeZGZ.js"></script>
+  <script type="module" crossorigin src="/assets/dashboardUser-DWS_-QyY.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="stylesheet" crossorigin href="/assets/dashboardUser-DymxeTjF.css">
+  <link rel="stylesheet" crossorigin href="/assets/dashboardUser-GPNH94GZ.css">
 </head>
 
 <body>
@@ -176,8 +176,14 @@
                             focusable="false"
                             aria-hidden="true"
                         >
-                            <path d="M12 20h9" />
-                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                            <g class="dashboard-icon-pencil">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                            </g>
+                            <path
+                                class="dashboard-icon-check"
+                                d="M5 12.5l4.5 4.5L19 7.5"
+                            />
                         </svg>
                     </button>
 
@@ -742,27 +748,44 @@
                     data-action="open-feature-hub"
                     aria-haspopup="dialog"
                     aria-controls="dashboardFeatureHubDialog"
+                    aria-label="Tambah fitur: buka Feature Hub"
                 >
 
                     <span
-                        class="dashboard-feature-hub-entry__plus"
+                        class="dashboard-feature-hub-entry__thumbs"
+                        data-hub-entry-thumbs
                         aria-hidden="true"
-                    >
-                        <svg
-                            viewBox="0 0 24 24"
-                            focusable="false"
+                    ></span>
+
+                    <span class="dashboard-feature-hub-entry__row">
+
+                        <span
+                            class="dashboard-feature-hub-entry__plus"
                             aria-hidden="true"
                         >
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                    </span>
+                            <svg
+                                viewBox="0 0 24 24"
+                                focusable="false"
+                                aria-hidden="true"
+                            >
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
+                        </span>
 
-                    <span class="dashboard-feature-hub-entry__title">
-                        Tambah Fitur
-                    </span>
+                        <span class="dashboard-feature-hub-entry__pill">
+                            <svg
+                                viewBox="0 0 24 24"
+                                focusable="false"
+                                aria-hidden="true"
+                            >
+                                <path d="M7 17 17 7M8 7h9v9" />
+                            </svg>
 
-                    <span class="dashboard-feature-hub-entry__description">
-                        Buka Feature Hub
+                            <span class="dashboard-feature-hub-entry__title">
+                                Tambah Fitur
+                            </span>
+                        </span>
+
                     </span>
 
                 </button>

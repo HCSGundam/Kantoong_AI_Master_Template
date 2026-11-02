@@ -138,6 +138,16 @@ function isSafeImageURL(value) {
   }
 }
 
+/**
+ * Latar blur dari foto yang sama, supaya foto bisa tampil utuh
+ * (tidak terpotong) tanpa menyisakan ruang kosong yang polos.
+ */
+function setMediaBackdrop(container, src) {
+  const url = new URL(String(src), document.baseURI).href;
+  container.style.setProperty("--media-backdrop", `url(${JSON.stringify(url)})`);
+  container.classList.add("has-backdrop");
+}
+
 function makeElement(tag, className, text) {
   const element = document.createElement(tag);
 
@@ -595,6 +605,25 @@ function applyConfig() {
     brandTitle.textContent = String(CFG.app_name);
   }
 
+  // Judul "Produk Unggulan" (dipakai juga oleh panel teks di dalam rail).
+  const featuredTitle = $("#featuredTitle");
+  const featuredEyebrow = $("#featuredEyebrow");
+
+  if (featuredTitle && CFG?.featured?.title) {
+    featuredTitle.textContent = String(CFG.featured.title);
+  }
+
+  if (featuredEyebrow && CFG?.featured?.eyebrow) {
+    featuredEyebrow.textContent = String(CFG.featured.eyebrow);
+  }
+
+  const featuredText = $("#featuredText");
+  if (featuredText) {
+    featuredText.textContent = String(CFG?.featured?.description || "").trim();
+    featuredText.hidden = !featuredText.textContent;
+  }
+
+
   emit("config-applied", {
     appName: CFG?.app_name || "KANTOONG",
     tenant: state.activeTenant,
@@ -679,7 +708,8 @@ function getHeroSlides() {
     .slice(0, HERO_MAX_SLIDES)
     .map((product) => ({
       type: "image",
-      src: getProductImage(product),
+      // Foto hero khusus (melebar) bila diunggah admin; jika tidak, foto produk.
+      src: product.hero_image_url || getProductImage(product),
       caption: product.hero_caption || "Pilihan unggulan",
       title: getProductName(product),
       text: product.hero_text || product.description || "",
@@ -721,9 +751,9 @@ function normalizeHeroSlide(raw) {
   };
 }
 
-function scrollToFeatured() {
+function scrollToCatalog() {
   document
-    .getElementById("featuredSection")
+    .getElementById("categorySection")
     ?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -764,6 +794,7 @@ function createHeroSlide(rawSlide, index) {
     image.loading = index === 0 ? "eager" : "lazy";
     image.decoding = "async";
     image.addEventListener("error", showPlaceholder);
+    setMediaBackdrop(media, slide.src);
     media.appendChild(image);
   } else {
     showPlaceholder();
@@ -785,23 +816,16 @@ function createHeroSlide(rawSlide, index) {
 
   const actions = makeElement("div", "hero-actions");
 
-  const productButton = makeElement(
-    "button",
-    "hero-cta hero-cta--primary",
-    "Lihat produk \u2192"
-  );
-  productButton.type = "button";
-  productButton.addEventListener("click", scrollToFeatured);
-
+  // Satu tombol pil di dalam foto (sesuai sketsa): "Chat <brand> AI".
   const askButton = makeElement(
     "button",
     "hero-cta",
-    "\u2726 Konsultasi AI"
+    `Chat ${CFG?.app_name || "Kantoong"} AI`
   );
   askButton.type = "button";
   askButton.addEventListener("click", () => askConsultation(slide.aiPrompt));
 
-  actions.append(productButton, askButton);
+  actions.append(askButton);
   body.appendChild(actions);
   element.appendChild(body);
 
@@ -932,8 +956,7 @@ function useDemoProducts() {
   state.products = demoProducts;
   state.usingDemo = true;
 
-  renderProducts();
-  renderCategories();
+  renderStorefront();
 
   emit("supabase-data-ready", {
     products: state.products,
@@ -1010,8 +1033,7 @@ async function loadProducts() {
       return;
     }
 
-    renderProducts();
-    renderCategories();
+    renderStorefront();
 
     emit("supabase-data-ready", {
       products: state.products,
@@ -1028,8 +1050,7 @@ async function loadProducts() {
     } else {
       state.products = [];
       state.usingDemo = false;
-      renderProducts();
-      renderCategories();
+      renderStorefront();
 
       showToast("Produk belum dapat dimuat. Coba lagi nanti.");
 
@@ -1052,6 +1073,102 @@ async function loadProducts() {
   }
 }
 
+/* ------------------------------------------------------------
+   Wishlist (ikon hati). Disimpan di perangkat pembeli saja.
+   ------------------------------------------------------------ */
+
+const WISHLIST_KEY = "kantoong_wishlist";
+
+function readWishlist() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(WISHLIST_KEY) || "[]");
+    return new Set(Array.isArray(saved) ? saved.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+const wishlist = readWishlist();
+
+function isWishlisted(product) {
+  return wishlist.has(getProductId(product));
+}
+
+function setLikeState(button, liked) {
+  button.classList.toggle("is-liked", liked);
+  button.setAttribute("aria-pressed", String(liked));
+}
+
+function toggleWishlist(product) {
+  const id = getProductId(product);
+  const added = !wishlist.has(id);
+
+  if (added) {
+    wishlist.add(id);
+  } else {
+    wishlist.delete(id);
+  }
+
+  try {
+    localStorage.setItem(WISHLIST_KEY, JSON.stringify([...wishlist]));
+  } catch {
+    // Penyimpanan diblokir (mode privat): hati tetap berfungsi selama halaman terbuka.
+  }
+
+  // Samakan semua kartu produk yang sama (bisa muncul di beberapa baris).
+  document.querySelectorAll(".product-card").forEach((card) => {
+    if (card.dataset.productId !== id) return;
+
+    const button = card.querySelector(".product-like");
+    if (button) setLikeState(button, added);
+  });
+
+  emit("wishlist-changed", { product, added, ids: [...wishlist] });
+  showToast(
+    added
+      ? `${getProductName(product)} disimpan ke wishlist.`
+      : `${getProductName(product)} dihapus dari wishlist.`
+  );
+}
+
+/** Ikon garis kecil (SVG) untuk kartu produk. */
+function makeIcon(className, paths) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  if (className) svg.setAttribute("class", className);
+
+  paths.forEach((d) => {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    svg.appendChild(path);
+  });
+
+  return svg;
+}
+
+const ICONS = {
+  heart: ["M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"],
+  bag: ["M6 8h12l-1 12H7z", "M9 8V7a3 3 0 0 1 6 0v1"],
+  truck: ["M3 6h11v10H3z", "M14 10h4l3 3v3h-7", "M5.5 18a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0M15.5 18a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0"],
+  pin: ["M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z", "M9.5 10a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0"],
+};
+
+function getCompareAtPrice(product) {
+  return toNumber(product?.compare_at_price ?? product?.original_price, 0);
+}
+
+/** Persen diskon dari harga coret. 0 bila tidak ada diskon asli. */
+function getDiscountPercent(product) {
+  const price = getProductPrice(product);
+  const compareAt = getCompareAtPrice(product);
+
+  if (!(compareAt > price) || price <= 0) return 0;
+
+  return Math.round((1 - price / compareAt) * 100);
+}
+
 /* ============================================================
    10. RENDER PRODUK
    ============================================================ */
@@ -1064,7 +1181,11 @@ function createProductCard(product, index) {
 
   const thumb = makeElement("div", "product-thumb");
   const showPlaceholder = () => {
-    thumb.replaceChildren(
+    // Label & tombol di atas foto tetap dipertahankan.
+    thumb
+      .querySelectorAll("img, video, .product-video-badge, .product-thumb__placeholder")
+      .forEach((el) => el.remove());
+    thumb.prepend(
       makeElement(
         "span",
         "product-thumb__placeholder",
@@ -1074,38 +1195,96 @@ function createProductCard(product, index) {
   };
 
   const imageURL = getProductImage(product);
+  const videoURL = String(product?.video_url ?? "");
 
-  if (imageURL && isSafeImageURL(imageURL)) {
+  if (videoURL && isSafeImageURL(videoURL)) {
+    // Video produk diputar otomatis tanpa suara agar pembeli langsung paham barangnya.
+    const video = document.createElement("video");
+    video.src = videoURL;
+    video.muted = true;
+    video.loop = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+    if (imageURL && isSafeImageURL(imageURL)) {
+      video.poster = imageURL;
+      setMediaBackdrop(thumb, imageURL);
+    }
+    video.addEventListener("error", showPlaceholder);
+    thumb.appendChild(video);
+    thumb.appendChild(makeElement("span", "product-video-badge", "▶ Video"));
+  } else if (imageURL && isSafeImageURL(imageURL)) {
     const image = document.createElement("img");
     image.src = imageURL;
     image.alt = name;
     image.loading = index < 4 ? "eager" : "lazy";
     image.decoding = "async";
     image.addEventListener("error", showPlaceholder);
+    setMediaBackdrop(thumb, imageURL);
     thumb.appendChild(image);
   } else {
     showPlaceholder();
   }
 
-  card.appendChild(thumb);
-  card.appendChild(makeElement("h3", "product-name", name));
-  card.appendChild(
-    makeElement("p", "product-price", formatCurrency(getProductPrice(product)))
-  );
+  // Label diskon: hanya bila harga coret asli diisi owner.
+  const discount = getDiscountPercent(product);
+  if (discount > 0) {
+    thumb.appendChild(makeElement("span", "product-discount", `-${discount}%`));
+  }
 
-  const actions = makeElement("div", "product-actions");
+  // Pojok kanan atas: hati (wishlist) lalu orb AI di bawahnya.
+  const corner = makeElement("div", "product-corner");
 
-  const askButton = makeElement(
-    "button",
-    "product-ask",
-    CFG?.featured?.ask_label || "Tanyakan produk ini"
-  );
+  const likeButton = makeElement("button", "product-like");
+  likeButton.type = "button";
+  likeButton.dataset.action = "toggle-wishlist";
+  likeButton.setAttribute("aria-label", `Simpan ${name} ke wishlist`);
+  likeButton.appendChild(makeIcon("", ICONS.heart));
+  setLikeState(likeButton, isWishlisted(product));
+  likeButton.addEventListener("click", () => toggleWishlist(product));
+
+  // Pembeda dari marketplace biasa: orb AI kecil di pojok foto.
+  const askLabel = CFG?.featured?.ask_label || "Tanyakan produk ini";
+  const askButton = makeElement("button", "product-ask");
   askButton.type = "button";
   askButton.dataset.action = "ask-product";
+  askButton.title = askLabel;
+  askButton.setAttribute("aria-label", `${askLabel}: ${name}`);
+  askButton.append(
+    makeElement("span", "product-ask__eye"),
+    makeElement("span", "product-ask__eye")
+  );
   askButton.addEventListener("click", () => {
     emit("product-selected", { product });
     askConsultation(`Ceritakan tentang ${name}`);
   });
+
+  corner.append(likeButton, askButton);
+  thumb.appendChild(corner);
+
+  card.appendChild(thumb);
+
+  const info = makeElement("div", "product-info");
+
+  // Bukti sosial di atas nama: rating & jumlah terjual (angka asli dari database).
+  info.appendChild(createProductMeta(product));
+
+  info.appendChild(makeElement("h3", "product-name", name));
+
+  // Harga (+ harga coret) dan tombol keranjang dalam satu baris.
+  const buyRow = makeElement("div", "product-buy");
+  const priceWrap = makeElement("p", "product-price");
+  priceWrap.appendChild(
+    document.createTextNode(formatCurrency(getProductPrice(product)))
+  );
+
+  if (discount > 0) {
+    priceWrap.appendChild(
+      makeElement("s", "product-price__was", formatCurrency(getCompareAtPrice(product)))
+    );
+  }
+
+  buyRow.appendChild(priceWrap);
 
   const cartButton = makeElement("button", "product-cart", "+");
   cartButton.type = "button";
@@ -1114,11 +1293,94 @@ function createProductCard(product, index) {
   cartButton.addEventListener("click", () => {
     addToCart(product);
   });
+  buyRow.appendChild(cartButton);
+  info.appendChild(buyRow);
 
-  actions.append(askButton, cartButton);
-  card.appendChild(actions);
+  // Baris pengiriman di bawah garis: estimasi & kota asal.
+  info.appendChild(createProductShipping(product));
+
+  card.appendChild(info);
 
   return card;
+}
+
+/** Angka gaya marketplace: 850, 5rb+, 1,2jt+. */
+function formatSocialCount(value) {
+  const number = Math.max(0, Math.floor(toNumber(value, 0)));
+
+  if (number >= 1_000_000) {
+    return `${String(Math.floor(number / 100_000) / 10).replace(".", ",")}jt+`;
+  }
+
+  if (number >= 1_000) {
+    return `${Math.floor(number / 1_000)}rb+`;
+  }
+
+  return String(number);
+}
+
+/**
+ * Baris "★ 4.7 (8rb) | 5rb+ terjual" — SELALU tampil agar kartu seragam.
+ * Tidak pernah mengarang angka: produk tanpa ulasan tampil "★ Baru",
+ * produk belum laku tampil "0 terjual". Angka diisi otomatis oleh
+ * database (db/sales-and-reviews.sql).
+ */
+function createProductMeta(product) {
+  const rating = toNumber(product?.rating ?? product?.rating_avg, 0);
+  const reviews = toNumber(product?.review_count ?? product?.reviews_count, 0);
+  const sold = toNumber(product?.sales_count ?? product?.sold_count, 0);
+
+  const ratingEl = makeElement("span", "product-rating");
+
+  if (rating > 0) {
+    ratingEl.append(
+      makeElement("span", "product-rating__star", "★"),
+      makeElement("strong", "", rating.toFixed(1).replace(".", ",")),
+      document.createTextNode(reviews > 0 ? ` (${formatSocialCount(reviews)})` : "")
+    );
+  } else {
+    ratingEl.classList.add("is-empty");
+    ratingEl.append(
+      makeElement("span", "product-rating__star", "★"),
+      document.createTextNode("Baru")
+    );
+  }
+
+  const soldEl = makeElement("span", "product-sold");
+  soldEl.append(
+    makeIcon("product-icon", ICONS.bag),
+    document.createTextNode(`${formatSocialCount(sold)} terjual`)
+  );
+
+  const meta = makeElement("div", "product-meta");
+  meta.append(ratingEl, soldEl);
+  return meta;
+}
+
+/**
+ * Baris "truk ±1-2 hari | pin Jakarta" — SELALU tampil.
+ * Urutan isi: data produk (admin) -> default toko (client-config.js
+ * bagian shipping) -> teks netral.
+ */
+function createProductShipping(product) {
+  const estimate =
+    escapeText(product?.ship_estimate) ||
+    escapeText(CFG?.shipping?.estimate) ||
+    "Cek ongkir";
+  const from =
+    escapeText(product?.ship_from ?? product?.city) ||
+    escapeText(CFG?.shipping?.from) ||
+    "Indonesia";
+
+  const estimateEl = makeElement("span", "product-ship__item");
+  estimateEl.append(makeIcon("product-icon", ICONS.truck), document.createTextNode(estimate));
+
+  const fromEl = makeElement("span", "product-ship__item");
+  fromEl.append(makeIcon("product-icon", ICONS.pin), document.createTextNode(from));
+
+  const row = makeElement("div", "product-ship");
+  row.append(estimateEl, fromEl);
+  return row;
 }
 
 function isFeaturedProduct(product) {
@@ -1158,8 +1420,8 @@ function getProductContainer() {
 }
 
 
-function renderProducts(productsToRender) {
-  const container = getProductContainer();
+function renderProducts(productsToRender, target) {
+  const container = target || getProductContainer();
 
   state.featured = state.products.filter(
     (product) =>
@@ -1209,10 +1471,672 @@ function renderProducts(productsToRender) {
 
   container.appendChild(fragment);
 
+  if (container.classList.contains("featured-rail")) {
+    decorateShowcaseRail(container);
+  }
+
   emit("products-rendered", {
     count: products.length,
     products,
   });
+}
+
+/* ------------------------------------------------------------
+   ETALASE "HIDUP" (Produk Unggulan, Best Seller, Produk Terbaru, ...)
+   Setiap bagian bertanda .featured punya:
+   - mode 2D: baris geser; kartu fokus membesar; tulisan melompat
+     memutar kiri (awal) -> atas (tengah) -> kanan (ujung);
+   - mode 3D: KOMIDI PUTAR — kartu melingkar, tulisan diam di kiri,
+     geser jari = memutar lingkaran;
+   - tombol 2D/3D (label = mode tujuan), titik posisi, panah berikutnya.
+   ------------------------------------------------------------ */
+
+const FEATURED_VIEW_KEY = "kantoong_featured_view";
+
+/** Status putaran komidi putar per baris. */
+const carouselStates = new WeakMap();
+
+function getCarousel(rail) {
+  if (!carouselStates.has(rail)) {
+    carouselStates.set(rail, {
+      pos: 0,          // posisi putaran dalam satuan kartu (boleh pecahan)
+      dragging: false,
+      moved: false,
+      startX: 0,
+      startPos: 0,
+      pointerId: null,
+    });
+  }
+
+  return carouselStates.get(rail);
+}
+
+function getShowcase(element) {
+  return element?.closest?.(".featured") || null;
+}
+
+function getShowcaseRail(section) {
+  return section?.querySelector(".featured-rail") || null;
+}
+
+function isCarouselMode(section) {
+  return section?.dataset.view === "3d";
+}
+
+function getRailCards(rail) {
+  return [...rail.children].filter((el) => el.classList.contains("product-card"));
+}
+
+function setActiveDot(section, activeIndex) {
+  $$(".featured-dot", section).forEach((dot, index) => {
+    dot.classList.toggle("is-active", index === activeIndex);
+  });
+}
+
+function updateRailFocus(rail) {
+  const section = getShowcase(rail);
+
+  if (isCarouselMode(section)) return;
+
+  const cards = getRailCards(rail);
+
+  if (!cards.length) return;
+
+  const max = rail.scrollWidth - rail.clientWidth;
+  const progress = max > 1 ? Math.min(1, Math.max(0, rail.scrollLeft / max)) : 0;
+
+  const centerOf = (card) => card.offsetLeft + card.offsetWidth / 2;
+  const first = centerOf(cards[0]);
+  const last = centerOf(cards[cards.length - 1]);
+  const focusX = first + (last - first) * progress;
+  const step = cards[0].offsetWidth || 1;
+
+  let activeIndex = 0;
+  let nearest = Infinity;
+
+  cards.forEach((card, index) => {
+    const distance = Math.abs(centerOf(card) - focusX);
+    const focus = 1 - Math.min(1, distance / step);
+
+    card.style.setProperty("--focus", focus.toFixed(3));
+    card.classList.toggle("is-focus", focus > 0.5);
+
+    if (distance < nearest) {
+      nearest = distance;
+      activeIndex = index;
+    }
+  });
+
+  rail.dataset.active = String(activeIndex);
+
+  if (!section) return;
+
+  const panel = rail.querySelector(".featured-panel");
+  const edge = (panel?.offsetWidth || 0) * 0.6;
+  let layout = "middle";
+
+  if (!panel || max <= 1 || rail.scrollLeft <= edge) {
+    layout = "start";
+  } else if (rail.scrollLeft >= max - edge) {
+    layout = "end";
+  }
+
+  if (section.dataset.layout !== layout) {
+    section.dataset.layout = layout;
+    positionFeaturedFloat(section);
+  }
+
+  setActiveDot(section, activeIndex);
+}
+
+function enhanceRail(rail) {
+  if (!rail) return;
+
+  if (rail.dataset.focusReady !== "true") {
+    rail.dataset.focusReady = "true";
+    rail.classList.add("rail--focus");
+
+    let frame = 0;
+    const schedule = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        updateRailFocus(rail);
+      });
+    };
+
+    rail.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+  }
+
+  updateRailFocus(rail);
+  // Ukuran kartu baru pasti setelah foto/huruf termuat.
+  requestAnimationFrame(() => updateRailFocus(rail));
+}
+
+/** Geser rail sampai kartu ke-index berada di tengah. */
+function scrollRailToCard(rail, index) {
+  const card = getRailCards(rail)[index];
+
+  if (!card) return;
+
+  rail.scrollTo({
+    left: card.offsetLeft + card.offsetWidth / 2 - rail.clientWidth / 2,
+    behavior: "smooth",
+  });
+}
+
+/**
+ * Ruang kosong selebar panel teks di dalam rail (kiri & kanan).
+ * Tulisannya sendiri satu blok (.featured-float) yang melompat ke sini.
+ */
+function createFeaturedPanel(position) {
+  const panel = makeElement("div", `featured-panel featured-panel--${position}`);
+  panel.setAttribute("aria-hidden", "true");
+  return panel;
+}
+
+/**
+ * Tulisan etalase "melompat memutar": kiri (awal) -> atas (tengah)
+ * -> kanan (ujung), seperti berjalan di pinggir lingkaran.
+ * Mode 3D: tulisan diam di kiri.
+ */
+function positionFeaturedFloat(section) {
+  const float = section?.querySelector(".featured-float");
+  const cta = section?.querySelector(".featured-float-cta");
+  const stage = section?.querySelector(".featured-stage");
+
+  if (!section || !float || !cta || !stage) return;
+
+  const carouselMode = isCarouselMode(section);
+  const layout = carouselMode ? "start" : section.dataset.layout || "start";
+  const spot = layout === "middle" ? "top" : layout === "end" ? "right" : "left";
+  section.dataset.textSpot = spot;
+
+  const pad = parseFloat(getComputedStyle(section).getPropertyValue("--page-pad")) || 16;
+  const width = section.clientWidth;
+  const panel = carouselMode
+    ? section.querySelector(".featured-panel--side")
+    : section.querySelector(".featured-rail > .featured-panel");
+  const panelWidth = panel?.offsetWidth || 124;
+
+  float.style.width = spot === "top" ? "" : `${panelWidth}px`;
+
+  const floatHeight = float.offsetHeight;
+  const ctaHeight = cta.offsetHeight;
+  let floatX;
+  let floatY;
+  let ctaX;
+  let ctaY;
+
+  if (spot === "top") {
+    const head = section.querySelector(".featured-head");
+    floatX = pad;
+    floatY = (head?.offsetTop || 0) + 2;
+    ctaX = width - pad - cta.offsetWidth;
+    ctaY = floatY + floatHeight - ctaHeight;
+  } else {
+    const block = floatHeight + 10 + ctaHeight;
+    floatX = spot === "right" ? width - pad - panelWidth : pad;
+    floatY = stage.offsetTop + Math.max(0, (stage.offsetHeight - block) / 2);
+    ctaX = floatX;
+    ctaY = floatY + floatHeight + 10;
+  }
+
+  float.style.left = `${floatX}px`;
+  float.style.top = `${floatY}px`;
+  cta.style.left = `${ctaX}px`;
+  cta.style.top = `${ctaY}px`;
+
+  // Animasi baru aktif setelah posisi pertama terpasang (tanpa kedip saat dibuka).
+  if (section.dataset.floatReady !== "true") {
+    requestAnimationFrame(() => {
+      section.dataset.floatReady = "true";
+    });
+  }
+}
+
+function readFeaturedView() {
+  try {
+    const saved = localStorage.getItem(FEATURED_VIEW_KEY);
+    if (saved === "2d" || saved === "3d") return saved;
+  } catch {
+    // Penyimpanan diblokir: pakai bawaan toko.
+  }
+
+  return CFG?.featured?.view === "2d" ? "2d" : "3d";
+}
+
+/* ---------- Mode 3D: komidi putar ---------- */
+
+function getCarouselGeometry(rail) {
+  const cards = getRailCards(rail);
+  const count = cards.length;
+  const width = cards[0]?.offsetWidth || 180;
+  const step = 360 / Math.max(count, 1);
+
+  return { cards, count, width, step };
+}
+
+function layoutCarousel(rail, { animate = true } = {}) {
+  const section = getShowcase(rail);
+
+  if (!isCarouselMode(section)) return;
+
+  const { cards, count, step, width } = getCarouselGeometry(rail);
+
+  if (!count) return;
+
+  const state = getCarousel(rail);
+
+  rail.classList.toggle("is-animating", animate);
+
+  // Lingkaran dibuat lonjong agar kartu samping mengintip di belakang
+  // kartu depan (tidak keluar layar HP); di laptop menyebar lebih lebar.
+  const stageWidth = rail.clientWidth || width;
+  const spreadX = Math.max(width * 0.46, Math.min(stageWidth * 0.4, width * 1.4));
+  const depth = width * 1.1;
+
+  let tallest = 0;
+
+  cards.forEach((card, index) => {
+    let angle = ((index - state.pos) * step) % 360;
+    if (angle > 180) angle -= 360;
+    if (angle < -180) angle += 360;
+
+    const radians = (angle * Math.PI) / 180;
+    const facing = Math.cos(radians); // 1 = depan, -1 = belakang
+    const visible = Math.abs(angle) < 125;
+
+    card.style.transform =
+      `translateX(calc(-50% + ${(Math.sin(radians) * spreadX).toFixed(1)}px)) ` +
+      `translateZ(${((facing - 1) * depth).toFixed(1)}px) ` +
+      `rotateY(${(angle * 0.55).toFixed(1)}deg)`;
+    card.style.opacity = visible ? String(0.35 + 0.65 * Math.max(0, facing)) : "0";
+    card.style.zIndex = String(Math.round(100 + facing * 100));
+    card.style.pointerEvents = visible ? "" : "none";
+    card.classList.toggle("is-focus", Math.abs(angle) < step / 2);
+    card.setAttribute("aria-hidden", String(!visible));
+
+    tallest = Math.max(tallest, card.offsetHeight);
+  });
+
+  rail.style.height = `${tallest + 40}px`;
+
+  const active = ((Math.round(state.pos) % count) + count) % count;
+  rail.dataset.active = String(active);
+  setActiveDot(section, active);
+}
+
+/** Putar ke kartu tertentu lewat jalur terpendek. */
+function rotateCarouselTo(rail, index) {
+  const { count } = getCarouselGeometry(rail);
+
+  if (!count) return;
+
+  const state = getCarousel(rail);
+  const current = Math.round(state.pos);
+  let diff = (index - (((current % count) + count) % count)) % count;
+  if (diff > count / 2) diff -= count;
+  if (diff < -count / 2) diff += count;
+
+  state.pos = current + diff;
+  layoutCarousel(rail);
+}
+
+function clearCarouselStyles(rail) {
+  rail.style.height = "";
+  rail.classList.remove("is-animating");
+
+  getRailCards(rail).forEach((card) => {
+    card.style.transform = "";
+    card.style.opacity = "";
+    card.style.zIndex = "";
+    card.style.pointerEvents = "";
+    card.removeAttribute("aria-hidden");
+  });
+}
+
+function initCarouselGestures(rail) {
+  if (rail.dataset.carouselReady === "true") return;
+  rail.dataset.carouselReady = "true";
+
+  const state = getCarousel(rail);
+  const active = () => isCarouselMode(getShowcase(rail));
+
+  rail.addEventListener("pointerdown", (event) => {
+    if (!active() || event.button > 0) return;
+
+    state.dragging = true;
+    state.moved = false;
+    state.startX = event.clientX;
+    state.startPos = state.pos;
+    state.pointerId = event.pointerId;
+  });
+
+  rail.addEventListener("pointermove", (event) => {
+    if (!state.dragging || event.pointerId !== state.pointerId) return;
+
+    const dx = event.clientX - state.startX;
+
+    if (!state.moved && Math.abs(dx) > 6) {
+      state.moved = true;
+      rail.setPointerCapture?.(event.pointerId);
+    }
+
+    if (!state.moved) return;
+
+    const { width } = getCarouselGeometry(rail);
+    // Geser ke kiri = lingkaran berputar, kartu kanan maju ke depan.
+    state.pos = state.startPos - dx / (width * 0.9);
+    layoutCarousel(rail, { animate: false });
+  });
+
+  const release = () => {
+    if (!state.dragging) return;
+
+    state.dragging = false;
+
+    if (state.moved) {
+      state.pos = Math.round(state.pos);
+      layoutCarousel(rail);
+    }
+  };
+
+  rail.addEventListener("pointerup", release);
+  rail.addEventListener("pointercancel", release);
+
+  // Setelah memutar, ketukan tidak dianggap klik tombol di kartu.
+  // Ketuk kartu samping = putar kartu itu ke depan.
+  rail.addEventListener(
+    "click",
+    (event) => {
+      if (!active()) return;
+
+      if (state.moved) {
+        event.preventDefault();
+        event.stopPropagation();
+        state.moved = false;
+        return;
+      }
+
+      const card = event.target.closest(".product-card");
+
+      if (card && !card.classList.contains("is-focus")) {
+        event.preventDefault();
+        event.stopPropagation();
+        rotateCarouselTo(rail, getRailCards(rail).indexOf(card));
+      }
+    },
+    true
+  );
+
+  window.addEventListener("resize", () => {
+    layoutCarousel(rail, { animate: false });
+    positionFeaturedFloat(getShowcase(rail));
+  });
+}
+
+/* ---------- Pergantian mode & kontrol ---------- */
+
+function refreshShowcaseView(section) {
+  const rail = getShowcaseRail(section);
+
+  if (!rail) return;
+
+  if (isCarouselMode(section)) {
+    rail.scrollLeft = 0;
+    layoutCarousel(rail, { animate: false });
+  } else {
+    clearCarouselStyles(rail);
+    updateRailFocus(rail);
+  }
+
+  positionFeaturedFloat(section);
+}
+
+function applyShowcaseView(section, view) {
+  const toggle = section.querySelector(".featured-view");
+
+  section.dataset.view = view;
+
+  if (toggle) {
+    // Label = mode tujuan: saat 3D tertulis "2D", saat 2D tertulis "3D".
+    toggle.textContent = view === "3d" ? "2D" : "3D";
+    toggle.setAttribute("aria-pressed", String(view === "3d"));
+    toggle.setAttribute(
+      "aria-label",
+      view === "3d" ? "Tampilan 3D aktif, ketuk untuk 2D" : "Tampilan 2D aktif, ketuk untuk 3D"
+    );
+  }
+
+  refreshShowcaseView(section);
+}
+
+/** Ganti mode semua etalase sekaligus dan ingat pilihan pembeli. */
+function setFeaturedView(view) {
+  $$(".featured").forEach((section) => applyShowcaseView(section, view));
+
+  try {
+    localStorage.setItem(FEATURED_VIEW_KEY, view);
+  } catch {
+    // Abaikan: pilihan tetap berlaku selama halaman terbuka.
+  }
+}
+
+/** Tombol 2D/3D dan panah "berikutnya" (dipasang sekali per bagian). */
+function initShowcaseControls(section) {
+  const rail = getShowcaseRail(section);
+
+  if (!rail || section.dataset.controlsReady === "true") return;
+
+  section.dataset.controlsReady = "true";
+  section.dataset.view = readFeaturedView();
+  initCarouselGestures(rail);
+
+  section.querySelector(".featured-view")?.addEventListener("click", () => {
+    setFeaturedView(isCarouselMode(section) ? "2d" : "3d");
+  });
+
+  section.querySelector(".featured-next")?.addEventListener("click", () => {
+    if (isCarouselMode(section)) {
+      const state = getCarousel(rail);
+      state.pos = Math.round(state.pos) + 1;
+      layoutCarousel(rail);
+      return;
+    }
+
+    const cards = getRailCards(rail);
+    const active = toNumber(rail.dataset.active, 0);
+
+    if (active >= cards.length - 1) {
+      rail.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
+
+    scrollRailToCard(rail, active + 1);
+  });
+
+  section.querySelector(".featured-float-cta")?.addEventListener("click", scrollToCatalog);
+}
+
+/** Dipanggil setiap kali kartu baru dirender ke rail etalase. */
+function decorateShowcaseRail(rail) {
+  const section = getShowcase(rail);
+  const cards = getRailCards(rail);
+
+  if (!section) return;
+
+  initShowcaseControls(section);
+
+  if (cards.length) {
+    rail.prepend(createFeaturedPanel("start"));
+    rail.appendChild(createFeaturedPanel("end"));
+  }
+
+  // Ruang tulisan yang DIAM di kiri untuk mode 3D.
+  section.querySelector(".featured-panel--side")?.remove();
+  if (cards.length) {
+    section.querySelector(".featured-stage")?.before(createFeaturedPanel("side"));
+  }
+
+  const dots = section.querySelector(".featured-dots");
+  if (dots) {
+    dots.replaceChildren(...cards.map(() => makeElement("span", "featured-dot")));
+  }
+
+  const controls = section.querySelector(".featured-controls");
+  if (controls) controls.hidden = cards.length < 2;
+
+  const next = section.querySelector(".featured-next");
+  if (next) next.hidden = cards.length < 2;
+
+  getCarousel(rail).pos = 0;
+  rail.scrollLeft = 0;
+  section.dataset.layout = "start";
+
+  enhanceRail(rail);
+  applyShowcaseView(section, section.dataset.view === "2d" ? "2d" : "3d");
+
+  // Ukuran kartu pasti setelah foto termuat.
+  const relayout = () => {
+    layoutCarousel(rail, { animate: false });
+    positionFeaturedFloat(section);
+  };
+
+  requestAnimationFrame(relayout);
+  rail.querySelectorAll("img").forEach((image) => {
+    image.addEventListener("load", relayout, { once: true });
+  });
+}
+
+/** Membuat kerangka etalase (sama dengan Produk Unggulan) untuk baris lain. */
+function createShowcaseSection({ eyebrow, title, description }) {
+  const section = makeElement("section", "page-section featured product-rail-section");
+  section.dataset.layout = "start";
+  section.setAttribute("aria-label", title || "Produk");
+
+  const head = makeElement("div", "featured-head");
+  head.setAttribute("aria-hidden", "true");
+
+  const float = makeElement("div", "featured-float");
+  float.append(
+    makeElement("p", "featured-float__eyebrow", eyebrow || ""),
+    makeElement("h2", "", title || "Produk")
+  );
+
+  if (description) {
+    float.appendChild(makeElement("p", "featured-float__text", description));
+  }
+
+  const cta = makeElement("button", "featured-float-cta", "Jelajahi sekarang →");
+  cta.type = "button";
+
+  const stage = makeElement("div", "featured-stage");
+  const rail = makeElement("div", "rail scroll-x product-rail featured-rail");
+
+  const next = makeElement("button", "featured-next");
+  next.type = "button";
+  next.hidden = true;
+  next.setAttribute("aria-label", "Produk berikutnya");
+  next.appendChild(makeIcon("", ["M9 5l7 7-7 7"]));
+
+  stage.append(rail, next);
+
+  const controls = makeElement("div", "featured-controls");
+  controls.hidden = true;
+
+  const toggle = makeElement("button", "featured-view", "2D");
+  toggle.type = "button";
+
+  const dots = makeElement("div", "featured-dots");
+  dots.setAttribute("aria-hidden", "true");
+
+  controls.append(toggle, dots);
+  section.append(head, float, cta, stage, controls);
+
+  return { section, rail };
+}
+
+/* ------------------------------------------------------------
+   Baris geser tambahan + katalog pusat
+   ------------------------------------------------------------ */
+
+/**
+ * Cara mengurutkan tiap baris. Hanya produk yang punya data asli
+ * yang masuk (misalnya Best Seller butuh angka terjual > 0).
+ */
+const RAIL_SORTERS = {
+  sales: {
+    value: (product) => toNumber(product?.sales_count ?? product?.sold_count, 0),
+  },
+  wishlist: {
+    value: (product) =>
+      toNumber(product?.wishlist_count ?? product?.wishlists_count, 0),
+  },
+  newest: {
+    value: (product) => {
+      const time = Date.parse(product?.created_at ?? product?.createdAt ?? "");
+      return Number.isFinite(time) ? time : 0;
+    },
+  },
+};
+
+function getRailProducts(rail) {
+  const sorter = RAIL_SORTERS[rail?.sort];
+  if (!sorter) return [];
+
+  const limit = Math.max(1, toNumber(rail?.limit, 10));
+
+  return state.products
+    .map((product) => ({ product, score: sorter.value(product) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((item) => item.product);
+}
+
+/** Baris geser ke samping: Best Seller, Wishlist, Terbaru, dst. */
+function renderRails() {
+  const host = $("#extraRails");
+  if (!host) return;
+
+  host.replaceChildren();
+
+  const rails = Array.isArray(CFG?.rails) ? CFG.rails : [];
+
+  rails.forEach((rail) => {
+    const products = getRailProducts(rail);
+    const minItems = Math.max(1, toNumber(rail?.min_items, 2));
+
+    // Baris tanpa data asli disembunyikan, tidak dikarang.
+    if (products.length < minItems) return;
+
+    // Kerangka sama persis dengan Produk Unggulan (komidi putar + tulisan melompat).
+    const { section, rail: list } = createShowcaseSection({
+      eyebrow: rail.eyebrow,
+      title: rail.title,
+      description: rail.description,
+    });
+
+    host.appendChild(section);
+    renderProducts(products, list);
+  });
+}
+
+/** Katalog pusat: semua produk brand, tersusun ke bawah. */
+function renderCatalog(products = state.products) {
+  const grid = $("#catalogGrid");
+  if (!grid) return;
+
+  renderProducts(products, grid);
+}
+
+function renderStorefront() {
+  renderProducts();
+  renderCategories();
+  renderRails();
+  renderCatalog();
 }
 
 /* ============================================================
@@ -1243,6 +2167,7 @@ function renderCategories() {
 
   allButton.addEventListener("click", () => {
     filterByCategory("all");
+    scrollToCatalog();
   });
 
   fragment.appendChild(allButton);
@@ -1260,6 +2185,7 @@ function renderCategories() {
 
     button.addEventListener("click", () => {
       filterByCategory(category);
+      scrollToCatalog();
     });
 
     fragment.appendChild(button);
@@ -1278,7 +2204,12 @@ function filterByCategory(category) {
           (product) => getProductCategory(product) === selected
         );
 
-  renderProducts(products);
+  renderCatalog(products);
+
+  const catalogTitle = $("#catalogTitle");
+  if (catalogTitle) {
+    catalogTitle.textContent = selected === "all" ? "Semua Produk" : selected;
+  }
 
   $$(SELECTORS.categories + " [data-category]").forEach((button) => {
     button.setAttribute(
@@ -1325,7 +2256,8 @@ function searchProducts(query) {
         return searchable.includes(normalized);
       });
 
-  renderProducts(state.matched);
+  renderCatalog(state.matched);
+  $("#categorySection")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   emit("matched", {
     query: state.searchQuery,
@@ -1601,9 +2533,9 @@ function initAIEventBridge() {
   document.addEventListener("kantoong:show-catalog", () => {
     closeDashboard();
 
-    renderProducts(state.products);
+    renderCatalog(state.products);
 
-    const container = getProductContainer();
+    const container = $("#categorySection") || getProductContainer();
 
     container?.scrollIntoView({
       behavior: "smooth",
@@ -1658,7 +2590,7 @@ function initCompatibilityEvents() {
 
   // Aksi katalog tetap tersedia untuk modul AI lama.
   document.addEventListener("kantoong:show-products", () => {
-    renderProducts(state.products);
+    renderCatalog(state.products);
   });
 
   // API global yang sengaja dibatasi ke fungsi storefront.
@@ -1694,6 +2626,40 @@ function initCompatibilityEvents() {
    16. INISIALISASI ENGINE
    ============================================================ */
 
+/**
+ * Testimoni pembeli dari client-config.js (CFG.testimonials).
+ * Hanya ulasan asli dari brand; bila kosong, bagiannya disembunyikan.
+ */
+function renderTestimonials() {
+  const section = $("#testimonialSection");
+  const list = $("#testimonialList");
+  const items = Array.isArray(CFG?.testimonials) ? CFG.testimonials : [];
+
+  if (!section || !list) return;
+
+  section.hidden = items.length === 0;
+  list.replaceChildren();
+
+  items.slice(0, 12).forEach((item) => {
+    const card = makeElement("article", "testimonial-card");
+    const rating = Math.max(0, Math.min(5, Math.round(toNumber(item?.rating, 5))));
+
+    card.appendChild(
+      makeElement("p", "testimonial-card__stars", "★".repeat(rating) + "☆".repeat(5 - rating))
+    );
+    card.appendChild(makeElement("p", "testimonial-card__text", `“${item?.text ?? ""}”`));
+
+    const who = makeElement("p", "testimonial-card__who");
+    who.appendChild(makeElement("strong", "", item?.name ?? "Pembeli"));
+    if (item?.product) {
+      who.appendChild(makeElement("span", "", ` · ${item.product}`));
+    }
+    card.appendChild(who);
+
+    list.appendChild(card);
+  });
+}
+
 async function initKantoongEngine() {
   if (state.initialized) {
     log("Engine sudah diinisialisasi; inisialisasi ganda diabaikan.");
@@ -1708,6 +2674,7 @@ async function initKantoongEngine() {
     applyConfig();
     renderHero();
     renderBrandSlot();
+    renderTestimonials();
 
     initDashboardControls();
     initSearch();

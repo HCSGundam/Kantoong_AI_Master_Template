@@ -14,11 +14,41 @@ function text(value) {
     return String(value ?? "").trim();
 }
 
+/**
+ * Kolom tambahan kartu produk (db/product-card.sql). Hanya dikirim bila
+ * diisi atau kolomnya sudah ada, agar admin tetap jalan sebelum SQL dijalankan.
+ */
+function buildCardPatch(input) {
+    const known = new Set(input.existing_keys ?? []);
+    const compareAt = Number(input.compare_at_price);
+    const values = {
+        compare_at_price:
+            text(input.compare_at_price) && Number.isFinite(compareAt) && compareAt > 0
+                ? compareAt
+                : null,
+        ship_estimate: text(input.ship_estimate) || null,
+        ship_from: text(input.ship_from) || null,
+    };
+
+    return Object.fromEntries(
+        Object.entries(values).filter(([key, value]) => value !== null || known.has(key))
+    );
+}
+
 function buildPayload(input) {
     const price = Number(input.price);
     const stock = Number.parseInt(input.stock, 10);
 
+    // Kolom hero_image_url hanya dikirim bila dipakai, agar admin tetap bisa
+    // menyimpan produk walau kolomnya belum ditambahkan di database.
+    const heroImage = text(input.hero_image_url);
+    const heroImagePatch = heroImage || input.had_hero_image
+        ? { hero_image_url: heroImage || null }
+        : {};
+
     return {
+        ...heroImagePatch,
+        ...buildCardPatch(input),
         name: text(input.name),
         category: text(input.category) || "Umum",
         price: Number.isFinite(price) && price >= 0 ? price : 0,
@@ -41,6 +71,12 @@ export function validateProductInput(input) {
 
     if (!Number.isFinite(price) || price < 0) {
         return "Harga harus berupa angka 0 atau lebih.";
+    }
+
+    const compareAt = Number(input.compare_at_price);
+
+    if (text(input.compare_at_price) && (!Number.isFinite(compareAt) || compareAt < 0)) {
+        return "Harga coret harus berupa angka 0 atau lebih.";
     }
 
     return "";

@@ -1,0 +1,1440 @@
+/* =========================================================
+   KANTOONG CORE — UKURAN RINGKAS (gaya marketplace)
+   File: frontend/css/compact.css
+
+   Dimuat PALING AKHIR. Tujuannya: huruf kecil dan rapi seperti
+   aplikasi marketplace, supaya yang dominan adalah foto/video produk,
+   bukan tulisan. Ubah angka di sini untuk menyetel ukuran per klien.
+   ========================================================= */
+
+/* ---------- 01. HOMEPAGE: HERO ---------- */
+
+#appRoot .hero-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+#appRoot .hero-title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+#appRoot .hero-text {
+  font-size: 12.5px;
+  line-height: 1.45;
+  -webkit-line-clamp: 2;
+}
+
+#appRoot .hero-body {
+  gap: 4px;
+}
+
+#appRoot .hero-actions {
+  gap: 8px;
+  margin-top: 6px;
+}
+
+#appRoot .hero-cta {
+  min-height: 34px;
+  padding: 7px 14px;
+
+  border-radius: 10px;
+
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* ---------- 02. HOMEPAGE: INFO BRAND & JUDUL BAGIAN ---------- */
+
+#appRoot .brand-highlight__title {
+  font-size: 12.5px;
+}
+
+#appRoot .brand-highlight__sub {
+  font-size: 11px;
+}
+
+#appRoot .section-head h2 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+#appRoot .section-link {
+  font-size: 12px;
+}
+
+#appRoot .kantoong-category-chip {
+  font-size: 12px;
+}
+
+/* ---------- 03. KARTU PRODUK ---------- */
+
+#appRoot .product-name {
+  margin: 8px 10px 0;
+
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.4;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+#appRoot .product-price {
+  margin: 4px 10px 0;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+#appRoot .product-meta {
+  margin: 2px 10px 0;
+  font-size: 11px;
+}
+
+/* ---------- 04. CHAT: KOTAK SAMBUTAN (MINIM) ---------- */
+
+.kc-peek {
+  gap: 12px;
+  padding: 0 0 10px;
+}
+
+.kc-peek .kc-orb {
+  width: 42px;
+  height: 42px;
+}
+
+.kc-peek__text strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kc-peek__text p {
+  font-size: 12.5px;
+}
+
+.kc-peek .kc-send {
+  width: 36px;
+  height: 36px;
+}
+
+/* ---------- 05. CHAT: PERCAKAPAN (LEGA, SEPERTI CHAT TOKO) ---------- */
+
+.kc-sheet {
+  --kc-avatar: 28px;
+}
+
+@media (min-width: 900px) {
+  .kc-sheet {
+    --kc-avatar: 32px;
+  }
+}
+
+.kc-chatbar h2 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kc-messages {
+  gap: 10px;
+  padding: 4px 12px 8px;
+}
+
+.ai-message {
+  column-gap: 8px;
+  row-gap: 2px;
+}
+
+.ai-message__bubble {
+  padding: 8px 12px;
+
+  border-radius: 14px;
+
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ai-message--ai .ai-message__bubble {
+  border-top-left-radius: 4px;
+}
+
+.ai-message__time {
+  font-size: 10px;
+}
+
+/* Pesan pengguna: tanpa avatar "ANDA" agar gelembung lebih lebar. */
+.ai-message--user {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ai-message--user::before {
+  display: none;
+}
+
+.ai-message--user > * {
+  grid-column: 1;
+}
+
+.ai-message--user .ai-message__bubble {
+  max-width: 82%;
+  border-top-right-radius: 4px;
+}
+
+.ai-attachment-chip {
+  font-size: 11px;
+}
+
+.ai-product-card__name {
+  font-size: 11px;
+}
+
+.ai-catalog-link {
+  font-size: 11.5px;
+}
+
+.ai-suggestion {
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+
+.kc-menu__item {
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+/* ---------- 06. CHAT: BAR KETIK ---------- */
+
+/* Placeholder "Tulis Context": tidak tebal, satu baris, tidak terpotong. */
+.kc-composer textarea::placeholder {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.kc-composer textarea:placeholder-shown {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kc-composer textarea {
+  min-height: 34px;
+  padding: 7px 4px;
+}
+
+/* Ikon kirim di bar DIAM: bulat hitam, panah putih. */
+.kc-composer .kc-send--idle {
+  color: var(--kc-surface);
+  background: var(--kc-text);
+  box-shadow: none;
+}
+
+.kc-composer__box {
+  padding: 3px 10px 3px 3px;
+}
+
+.kc-tool {
+  width: 34px;
+  height: 34px;
+}
+
+.kc-tool svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* =========================================================
+   07. HERO PENDEK: tulisan DI DALAM foto + efek fade
+   Banner tipis seperti marketplace, supaya produk cepat terlihat.
+   ========================================================= */
+
+#appRoot .hero {
+  padding: 0;
+}
+
+#appRoot .hero-track.scroll-x {
+  border-radius: 0;
+}
+
+#appRoot .hero-slide {
+  position: relative;
+  display: block;
+}
+
+#appRoot .hero-media {
+  aspect-ratio: 21 / 9;
+  max-height: 220px;
+  width: 100%;
+
+  background: #1a1a1a;
+  border: 0;
+  border-radius: 0;
+}
+
+/* Banner: foto memenuhi bidang (tidak pakai latar blur). */
+#appRoot .hero-media.has-backdrop::before {
+  display: none;
+}
+
+#appRoot .hero-media.has-backdrop img,
+#appRoot .hero-media img,
+#appRoot .hero-media video {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+}
+
+/* Fade: pekat di sisi tulisan -> transparan ke arah foto. */
+#appRoot .hero-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 78%) 0%, rgb(0 0 0 / 45%) 38%, rgb(0 0 0 / 0%) 72%),
+    linear-gradient(0deg, rgb(0 0 0 / 45%) 0%, rgb(0 0 0 / 0%) 55%);
+}
+
+#appRoot .hero-media__label {
+  position: relative;
+  z-index: 0;
+  color: #8a8a8a;
+}
+
+#appRoot .hero-body {
+  position: absolute;
+  left: var(--page-pad, 16px);
+  right: 38%;
+  bottom: 16px;
+  z-index: 2;
+
+  gap: 4px;
+  padding: 0;
+}
+
+#appRoot .hero-eyebrow {
+  color: rgb(255 255 255 / 85%);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+
+#appRoot .hero-title {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Penjelasan panjang disembunyikan di HP agar banner tetap pendek. */
+#appRoot .hero-text {
+  display: none;
+}
+
+#appRoot .hero-actions {
+  margin-top: 6px;
+}
+
+#appRoot .hero-cta {
+  min-height: 28px;
+  padding: 4px 14px;
+
+  color: #111111;
+  background: #ffffff;
+  border: 0;
+  border-radius: 999px;
+
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+#appRoot .hero-dots {
+  position: absolute;
+  right: var(--page-pad, 16px);
+  bottom: 12px;
+  z-index: 3;
+  padding: 0;
+}
+
+#appRoot .hero-dot {
+  background: rgb(255 255 255 / 55%);
+}
+
+#appRoot .hero-dot.is-active {
+  width: 16px;
+  background: #ffffff;
+}
+
+@media (min-width: 900px) {
+  #appRoot .hero-slide {
+    display: block;
+  }
+
+  #appRoot .hero-media {
+    aspect-ratio: 32 / 9;
+    max-height: 320px;
+  }
+
+  #appRoot .hero-body {
+    right: 50%;
+    bottom: 28px;
+  }
+
+  #appRoot .hero-title {
+    font-size: 32px;
+  }
+
+  #appRoot .hero-text {
+    display: -webkit-box;
+    color: rgb(255 255 255 / 85%);
+    font-size: 13px;
+  }
+}
+
+/* =========================================================
+   08. DERETAN KATEGORI DI BAWAH HERO (pil geser)
+   ========================================================= */
+
+#appRoot .brand-slot:empty {
+  display: none;
+}
+
+#appRoot .category-strip {
+  padding: 12px 0 0;
+}
+
+#appRoot .category-strip #categoryList {
+  display: flex;
+  gap: 8px;
+  padding: 0 var(--page-pad, 16px) 2px;
+  margin: 0;
+}
+
+#appRoot .category-strip .kantoong-category-chip {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 6px 16px;
+
+  color: var(--store-text);
+  background: transparent;
+  border: 1px solid var(--store-text);
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+#appRoot .category-strip .kantoong-category-chip[aria-pressed="true"] {
+  color: var(--store-accent-contrast, #fff);
+  background: var(--store-accent, #111);
+}
+
+/* =========================================================
+   09. PRODUK UNGGULAN YANG "PINTAR" SAAT DIGESER
+   - awal  : panel teks di kiri, kartu pertama paling besar
+   - tengah: panel teks ringkas pindah ke atas, kartu tengah membesar
+   - ujung : panel teks di kanan, kartu terakhir paling besar
+   ========================================================= */
+
+#appRoot .featured {
+  display: block;
+  padding-inline: 0;
+}
+
+/* Judul ringkas di atas: hanya muncul saat posisi tengah. */
+#appRoot .featured-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+
+  max-height: 0;
+  padding: 0 var(--page-pad, 16px);
+  overflow: hidden;
+  opacity: 0;
+
+  transition: max-height 220ms ease, opacity 180ms ease, padding 220ms ease;
+}
+
+#appRoot .featured[data-layout="middle"] .featured-head,
+#appRoot .featured #resetCatalogBtn:not([hidden]) {
+  max-height: 64px;
+  padding-bottom: 4px;
+  opacity: 1;
+}
+
+#appRoot .featured-head__text {
+  min-width: 0;
+}
+
+#appRoot .featured-head__eyebrow,
+#appRoot .featured-panel__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+
+  color: var(--store-text);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#appRoot .featured-head__eyebrow::after,
+#appRoot .featured-panel__eyebrow::after {
+  content: "";
+  flex: 0 0 28px;
+  height: 1px;
+  background: currentColor;
+}
+
+#appRoot .featured-head h2 {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#appRoot .featured-head__cta {
+  flex: 0 0 auto;
+  padding: 0;
+  color: var(--store-text);
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* Panel teks di dalam rail (kiri & kanan). */
+#appRoot .featured-panel {
+  flex: 0 0 124px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 6px;
+
+  scroll-snap-align: start;
+}
+
+#appRoot .featured-panel--end {
+  scroll-snap-align: end;
+  padding-left: 4px;
+}
+
+/* Label kecil di panel: satu baris, garisnya menyesuaikan sisa ruang. */
+#appRoot .featured-panel__eyebrow {
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+#appRoot .featured-panel__eyebrow::after {
+  flex: 1 1 auto;
+  min-width: 10px;
+}
+
+#appRoot .featured-panel__title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+#appRoot .featured-panel__text {
+  margin: 0 0 4px;
+  color: var(--store-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+#appRoot .featured-panel__cta {
+  padding: 5px 10px;
+
+  color: var(--store-text);
+  background: transparent;
+  border: 1px solid var(--store-text);
+  border-radius: 999px;
+
+  font: inherit;
+  font-size: 10.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#appRoot .featured-rail {
+  align-items: center;
+  gap: 4px;
+  padding: 10px var(--page-pad, 16px) 12px;
+  scroll-padding-inline: var(--page-pad, 16px);
+}
+
+#appRoot .featured-rail > .product-card {
+  flex: 0 0 clamp(150px, 46%, 210px);
+  scroll-snap-align: center;
+}
+
+/* Titik penanda posisi geser. */
+#appRoot .featured-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  padding: 2px 0 0;
+}
+
+#appRoot .featured-dots[hidden] {
+  display: none;
+}
+
+#appRoot .featured-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--store-border, #d4d4d4);
+  border-radius: 999px;
+  transition: width 200ms ease, background 200ms ease;
+}
+
+#appRoot .featured-dot.is-active {
+  width: 18px;
+  background: var(--store-text);
+}
+
+@media (min-width: 900px) {
+  #appRoot .featured-panel {
+    flex-basis: 220px;
+  }
+
+  #appRoot .featured-panel__title {
+    font-size: 28px;
+  }
+
+  #appRoot .featured-panel__text {
+    font-size: 13px;
+  }
+
+  #appRoot .featured-rail > .product-card {
+    flex-basis: 210px;
+  }
+}
+
+/* Semua baris geser: kartu yang difokus membesar, sisanya mengecil. */
+#appRoot .rail--focus {
+  align-items: center;
+  /* Urutan lapisan kartu dikurung di dalam baris agar tidak menutupi chat. */
+  isolation: isolate;
+}
+
+#appRoot .rail--focus > .product-card {
+  transform: scale(calc(1 - 0.12 * (1 - var(--focus, 1))));
+  transform-origin: center;
+  transition: transform 90ms linear, box-shadow 200ms ease;
+}
+
+#appRoot .rail--focus > .product-card.is-focus {
+  z-index: 1;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
+}
+
+
+
+/* =========================================================
+   10. KARTU PRODUK (sesuai desain: sudut bulat, info lengkap)
+   ========================================================= */
+
+#appRoot .product-card {
+  position: relative;
+  border: 1px solid rgb(0 0 0 / 5%);
+  border-radius: 18px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 6%);
+}
+
+#appRoot .product-card:hover {
+  transform: none;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 10%);
+}
+
+#appRoot .rail--focus > .product-card:hover {
+  transform: scale(calc(1 - 0.12 * (1 - var(--focus, 1))));
+}
+
+#appRoot .product-thumb {
+  border-radius: 0;
+}
+
+/* Label diskon kiri atas. */
+#appRoot .product-discount {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 3;
+
+  padding: 3px 8px;
+
+  color: #ffffff;
+  background: #111111;
+  border-radius: 999px;
+
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+#appRoot .product-video-badge {
+  top: auto;
+  bottom: 8px;
+  left: 8px;
+}
+
+/* Kanan atas: hati, lalu orb AI di bawahnya. */
+#appRoot .product-corner {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+#appRoot .product-like {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  color: #111111;
+  background: rgb(255 255 255 / 82%);
+  border: 0;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+
+#appRoot .product-like svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  transition: transform 160ms ease;
+}
+
+#appRoot .product-like.is-liked svg {
+  fill: currentColor;
+  transform: scale(1.08);
+}
+
+#appRoot .product-like:active svg {
+  transform: scale(0.85);
+}
+
+#appRoot .product-ask {
+  position: static;
+
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+
+  background: #111111;
+  border: 1.5px solid rgb(255 255 255 / 85%);
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 25%);
+  cursor: pointer;
+}
+
+#appRoot .product-ask__eye {
+  width: 3px;
+  height: 7px;
+  background: #ffffff;
+  border-radius: 2px;
+}
+
+#appRoot .product-ask:focus-visible,
+#appRoot .product-cart:focus-visible,
+#appRoot .product-like:focus-visible {
+  outline: 2px solid var(--store-text);
+  outline-offset: 2px;
+}
+
+/* Isi kartu */
+#appRoot .product-info {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 8px 10px 10px;
+}
+
+#appRoot .product-icon {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#appRoot .product-meta {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  margin: 0 0 3px;
+
+  color: var(--store-text-muted);
+  font-size: 10.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#appRoot .product-meta > * + * {
+  margin-left: 6px;
+  padding-left: 6px;
+  border-left: 1px solid var(--store-border, #e5e5e5);
+}
+
+#appRoot .product-rating,
+#appRoot .product-sold,
+#appRoot .product-ship__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+#appRoot .product-rating strong {
+  color: var(--store-text);
+  font-weight: 600;
+}
+
+#appRoot .product-rating__star {
+  color: #f5b301;
+}
+
+#appRoot .product-name {
+  margin: 0;
+}
+
+#appRoot .product-buy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin: auto 0 0;
+  padding-top: 6px;
+}
+
+#appRoot .product-buy .product-price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 5px;
+  margin: 0;
+  min-width: 0;
+}
+
+#appRoot .product-price__was {
+  color: var(--store-text-muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+#appRoot .product-buy .product-cart {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  min-height: 0;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  color: var(--store-accent-contrast, #fff);
+  background: var(--store-accent, #111);
+  border: 0;
+  border-radius: 999px;
+
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#appRoot .product-ship {
+  display: flex;
+  align-items: center;
+  margin-top: 7px;
+  padding-top: 6px;
+
+  color: var(--store-text-muted);
+  border-top: 1px solid var(--store-border, #ececec);
+
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#appRoot .product-ship > * + * {
+  margin-left: 6px;
+  padding-left: 6px;
+  border-left: 1px solid var(--store-border, #e5e5e5);
+}
+
+/* Katalog & baris lain: rapat ala marketplace. */
+
+#appRoot .catalog-grid {
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  #appRoot .catalog-grid {
+    gap: 6px;
+  }
+
+  #appRoot #categorySection {
+    padding-inline: 6px;
+  }
+
+  #appRoot #categorySection .section-head {
+    padding-inline: 10px;
+  }
+
+  #appRoot .catalog-grid .product-card {
+    border-radius: 14px;
+  }
+}
+
+/* Jarak antar-bagian lebih pendek. */
+#appRoot .page-section {
+  padding-top: 16px;
+}
+
+#appRoot .section-head {
+  margin-bottom: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .rail--focus > .product-card,
+  #appRoot .featured-head,
+  #appRoot .featured-dot,
+  #appRoot .product-like svg {
+    transition: none;
+  }
+}
+
+/* =========================================================
+   11. PRODUK UNGGULAN: KARTU LEBAR + MODE 3D (DRUM BERPUTAR)
+   ========================================================= */
+
+/* Kartu unggulan lebih lebar agar info lengkap muat satu baris. */
+#appRoot .featured-rail > .product-card {
+  flex: 0 0 clamp(210px, 62%, 250px);
+}
+
+#appRoot .featured-stage {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Panah bulat "berikutnya" di kanan (sesuai desain). */
+#appRoot .featured-next {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  z-index: 60;
+
+  width: 38px;
+  height: 38px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  color: var(--store-text);
+  background: var(--store-surface, #fff);
+  border: 1px solid rgb(0 0 0 / 6%);
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 14%);
+
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+#appRoot .featured-next[hidden],
+#appRoot .featured[data-layout="end"] .featured-next {
+  display: none;
+}
+
+#appRoot .featured-next svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Baris kontrol: [3D] ▬ • • */
+#appRoot .featured-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+#appRoot .featured-controls[hidden] {
+  display: none;
+}
+
+#appRoot .featured-controls .featured-dots {
+  padding: 0;
+}
+
+#appRoot .featured-view {
+  min-width: 36px;
+  padding: 2px 10px;
+
+  color: var(--store-text);
+  background: transparent;
+  border: 1px solid var(--store-text);
+  border-radius: 999px;
+
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+#appRoot .featured-view[aria-pressed="true"] {
+  color: var(--store-accent-contrast, #fff);
+  background: var(--store-accent, #111);
+}
+
+/* =========================================================
+   12. DETAIL KARTU (persis desain)
+   ========================================================= */
+
+#appRoot .product-card {
+  border-radius: 20px;
+}
+
+#appRoot .product-info {
+  padding: 10px 12px 10px;
+}
+
+#appRoot .product-name {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+#appRoot .product-buy .product-price {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+#appRoot .product-price__was {
+  font-size: 10.5px;
+}
+
+#appRoot .product-meta,
+#appRoot .product-ship {
+  font-size: 11px;
+}
+
+#appRoot .product-meta {
+  margin-bottom: 4px;
+}
+
+#appRoot .product-rating.is-empty {
+  color: var(--store-text-muted);
+}
+
+#appRoot .product-rating.is-empty .product-rating__star {
+  color: var(--store-border, #d4d4d4);
+}
+
+#appRoot .product-ship {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+/* Katalog 2 kolom di HP: huruf sedikit lebih kecil agar tetap satu baris. */
+@media (max-width: 640px) {
+  #appRoot .catalog-grid .product-meta,
+  #appRoot .catalog-grid .product-ship {
+    font-size: 10px;
+  }
+
+  #appRoot .catalog-grid .product-info {
+    padding: 8px 9px 9px;
+  }
+}
+
+/* =========================================================
+   13. MODE 3D = KOMIDI PUTAR
+   Panel teks diam di kiri, kartu melingkar di kanan.
+   Posisi tiap kartu dihitung engine.js (layoutCarousel).
+   ========================================================= */
+
+#appRoot .featured-panel--side {
+  display: none;
+}
+
+#appRoot .featured[data-view="3d"] {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 4px;
+  padding-left: var(--page-pad, 16px);
+}
+
+#appRoot .featured[data-view="3d"] .featured-panel--side {
+  display: grid;
+  position: relative;
+  z-index: 2;
+}
+
+/* Judul ringkas & panel di dalam rail tidak dipakai di mode 3D. */
+#appRoot .featured[data-view="3d"] .featured-head,
+#appRoot .featured[data-view="3d"] .featured-rail > .featured-panel {
+  display: none;
+}
+
+#appRoot .featured[data-view="3d"] .featured-controls {
+  grid-column: 1 / -1;
+}
+
+#appRoot .featured[data-view="3d"] .featured-stage {
+  overflow: hidden;
+  min-width: 0;
+}
+
+#appRoot .featured[data-view="3d"] .featured-rail {
+  position: relative;
+  display: block;
+  overflow: visible;
+  padding: 0;
+
+  perspective: 900px;
+  perspective-origin: 50% 40%;
+  scroll-snap-type: none;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#appRoot .featured[data-view="3d"] .featured-rail:active {
+  cursor: grabbing;
+}
+
+#appRoot .featured[data-view="3d"] .featured-rail > .product-card,
+#appRoot .featured[data-view="3d"] .featured-rail > .product-card:hover {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+
+  width: clamp(168px, 78%, 230px);
+
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: none;
+  will-change: transform, opacity;
+}
+
+#appRoot .featured[data-view="3d"] .featured-rail.is-animating > .product-card {
+  transition:
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 520ms ease;
+}
+
+#appRoot .featured[data-view="3d"] .featured-rail > .product-card.is-focus {
+  box-shadow: 0 16px 36px rgb(0 0 0 / 16%);
+}
+
+#appRoot .featured[data-view="3d"] .featured-rail img {
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+#appRoot .featured[data-view="3d"] .featured-next {
+  right: 6px;
+}
+
+@media (min-width: 900px) {
+  #appRoot .featured[data-view="3d"] {
+    grid-template-columns: 240px minmax(0, 1fr);
+    column-gap: 24px;
+  }
+
+  #appRoot .featured[data-view="3d"] .featured-rail > .product-card {
+    width: 280px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .featured[data-view="3d"] .featured-rail.is-animating > .product-card {
+    transition: none;
+  }
+}
+
+/* =========================================================
+   14. TULISAN UNGGULAN YANG "MELOMPAT MEMUTAR"
+   Satu blok tulisan + tombol Jelajahi berpindah:
+   kiri (awal) -> atas (tengah) -> kanan (ujung).
+   Gerak kiri/atas memakai kurva berbeda agar jalurnya melengkung
+   seperti berjalan di pinggir lingkaran.
+   ========================================================= */
+
+#appRoot .featured {
+  position: relative;
+}
+
+/* Ruang judul di atas (2D). Selalu tersedia agar halaman tidak meloncat. */
+#appRoot .featured .featured-head {
+  display: block;
+  height: 46px;
+  max-height: none;
+  padding: 0;
+  opacity: 1;
+  overflow: visible;
+}
+
+#appRoot .featured[data-view="3d"] .featured-head {
+  display: none;
+}
+
+/* Panel di dalam rail hanya ruang kosong untuk tempat tulisan mendarat. */
+#appRoot .featured-rail > .featured-panel {
+  min-height: 1px;
+}
+
+#appRoot .featured-float,
+#appRoot .featured-float-cta {
+  position: absolute;
+  z-index: 70;
+  left: var(--page-pad, 16px);
+  top: 0;
+}
+
+#appRoot .featured[data-float-ready="true"] .featured-float,
+#appRoot .featured[data-float-ready="true"] .featured-float-cta {
+  transition:
+    left 600ms cubic-bezier(0.55, 0, 0.25, 1),
+    top 600ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+#appRoot .featured-float {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+#appRoot .featured-float__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+
+  color: var(--store-text);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#appRoot .featured-float__eyebrow::after {
+  content: "";
+  flex: 1 1 auto;
+  min-width: 12px;
+  max-width: 40px;
+  height: 1px;
+  background: currentColor;
+}
+
+#appRoot .featured-float h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+#appRoot .featured-float__text {
+  margin: 0;
+  color: var(--store-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+#appRoot .featured-float #resetCatalogBtn {
+  padding: 0;
+  font-size: 11px;
+}
+
+#appRoot .featured-float-cta {
+  padding: 5px 10px;
+
+  color: var(--store-text);
+  background: var(--store-surface, #fff);
+  border: 1px solid var(--store-text);
+  border-radius: 999px;
+
+  font: inherit;
+  font-size: 10.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Posisi ATAS: judul satu baris, penjelasan disembunyikan, tombol jadi tautan. */
+#appRoot .featured[data-text-spot="top"] .featured-float {
+  width: max-content;
+  max-width: 62%;
+  gap: 2px;
+}
+
+#appRoot .featured[data-text-spot="top"] .featured-float__text {
+  display: none;
+}
+
+#appRoot .featured[data-text-spot="top"] .featured-float h2 {
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+#appRoot .featured[data-text-spot="top"] .featured-float-cta {
+  padding: 0;
+  background: none;
+  border-color: transparent;
+  font-size: 11px;
+}
+
+@media (min-width: 900px) {
+  #appRoot .featured-float h2 {
+    font-size: 30px;
+  }
+
+  #appRoot .featured-float__eyebrow {
+    font-size: 10px;
+  }
+
+  #appRoot .featured-float__text {
+    font-size: 13px;
+  }
+
+  #appRoot .featured[data-text-spot="top"] .featured-float h2 {
+    font-size: 20px;
+  }
+}
+
+/* Panel samping 3D = ruang kosong (tulisan mendarat di sini). */
+#appRoot .featured[data-view="3d"] .featured-panel--side {
+  display: block;
+  min-height: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .featured[data-float-ready="true"] .featured-float,
+  #appRoot .featured[data-float-ready="true"] .featured-float-cta {
+    transition: none;
+  }
+}
+
+/* =========================================================
+   15. TANPA GARIS POTONG: kartu & bayangan menyatu dengan latar
+   ========================================================= */
+
+/* 3D: tepi kiri-kanan memudar, bukan dipotong lurus. */
+#appRoot .featured[data-view="3d"] .featured-stage {
+  overflow: visible;
+  overflow-x: clip;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
+}
+
+#appRoot .featured[data-view="3d"] .featured-rail > .product-card,
+#appRoot .featured[data-view="3d"] .featured-rail > .product-card:hover {
+  top: 14px;
+}
+
+#appRoot .featured[data-view="3d"] .featured-rail > .product-card.is-focus,
+#appRoot .rail--focus > .product-card.is-focus {
+  box-shadow: 0 8px 22px rgb(0 0 0 / 10%);
+}
+
+/* 2D: ruang bawah cukup agar bayangan tidak terpotong. */
+#appRoot .featured:not([data-view="3d"]) .featured-rail {
+  padding-bottom: 26px;
+}
+
+/* Foto produk: tepi foto memudar ke latar blur, tanpa garis batas. */
+#appRoot .product-thumb.has-backdrop img {
+  inset: 0;
+  width: auto;
+  max-width: none;
+  height: 100%;
+  margin-inline: auto;
+  object-fit: cover;
+
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 10%, #000 90%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 10%, #000 90%, transparent 100%);
+}
+
+#appRoot .product-thumb.has-backdrop::before {
+  opacity: 0.45;
+}
+
+/* =========================================================
+   16. BEST SELLER & PRODUK TERBARU: kartu seragam & rapat
+   ========================================================= */
+
+
+
+@media (min-width: 900px) {
+}
+
+/* =========================================================
+   17. ETALASE: lapisan dikurung per bagian
+   Tulisan yang melompat tidak boleh menembus header & kotak chat.
+   ========================================================= */
+
+#appRoot .featured {
+  isolation: isolate;
+}
