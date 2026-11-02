@@ -1,0 +1,10 @@
+# Library hasil `npm install` — bisa dipasang ulang kapan saja
+node_modules/
+
+# Kunci rahasia (API key) — JANGAN PERNAH di-upload ke GitHub
+.env
+.env.*
+!.env.example
+
+# Log
+*.log

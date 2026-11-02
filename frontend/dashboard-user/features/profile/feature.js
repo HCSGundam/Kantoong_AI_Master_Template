@@ -29,6 +29,8 @@ import {
 
 import "./profile.css";
 
+import { renderProfileCard } from "./profile-card.js";
+
 /**
  * Identitas fitur.
  *
@@ -59,28 +61,20 @@ const profileFeature = defineFeature({
   defaultSize: { width: 2, height: 2 },
 
   /**
-   * Ringkasan di kartu dashboard: nama dan peran jika sudah masuk,
-   * atau ajakan masuk jika belum.
+   * Tampilan kartu di dashboard (foto, nama, bio, angka, tombol).
+   * Tata letaknya mengikuti ukuran kartu: lihat profile-card.css.
    */
-  async summary() {
+  async renderCard() {
+    let user = null;
+
     try {
       const bridge = await import("../../integrations/auth-bridge.js");
-      const user = await bridge.getDashboardUser();
-
-      if (user) {
-        return {
-          title: user.name,
-          text: `${user.role} \u00B7 ${user.email}`,
-        };
-      }
+      user = await bridge.getDashboardUser();
     } catch {
-      // Layanan login tidak tersedia: tampilkan ajakan masuk.
+      // Layanan login tidak tersedia: tampilkan sebagai tamu.
     }
 
-    return {
-      title: "Belum masuk",
-      text: "Ketuk untuk masuk atau melihat akunmu.",
-    };
+    return renderProfileCard({ user });
   },
 
   tags: [

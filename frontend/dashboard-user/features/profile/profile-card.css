@@ -1,0 +1,454 @@
+/* ============================================================
+   KANTOONG CORE — PROFILE CARD
+   File: frontend/dashboard-user/features/profile/profile-card.css
+
+   Kartu Profil di dashboard. Tata letaknya mengikuti ukuran kartu
+   lewat atribut data-card-mode pada .dashboard-feature-card.
+   ============================================================ */
+
+/* ---------- Dasar ---------- */
+
+.dashboard-feature-card[data-custom-card] > .dashboard-feature-card__open {
+    display: block;
+
+    flex: 1 1 auto;
+
+    height: 100%;
+    padding: 0;
+    gap: 0;
+
+    overflow: hidden;
+    border-radius: inherit;
+}
+
+.dashboard-feature-card[data-custom-card="pending"] > .dashboard-feature-card__open > * {
+    visibility: hidden;
+}
+
+.kc-pcard {
+    --pc-bg: #000;
+    --pc-fg: #fff;
+    --pc-pill-bg: #fff;
+    --pc-pill-fg: #111;
+
+    position: absolute;
+    inset: 0;
+
+    display: block;
+
+    container-type: size;
+
+    color: var(--pc-fg);
+    background: var(--pc-bg);
+
+    border-radius: inherit;
+    overflow: hidden;
+
+    text-align: left;
+}
+
+.kc-pcard__media {
+    position: absolute;
+    inset: 0;
+
+    display: grid;
+    place-items: center;
+
+    color: #fff;
+    background: #000;
+
+    overflow: hidden;
+}
+
+.kc-pcard__media img {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    object-position: center top;
+
+    pointer-events: none;
+}
+
+.kc-pcard__letter {
+    font-size: clamp(1.25rem, 38cqmin, 4.5rem);
+    font-weight: 800;
+    line-height: 1;
+}
+
+.kc-pcard__panel {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    padding: 0.5rem;
+}
+
+.kc-pcard__name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.25;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kc-pcard__bio {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+
+    overflow: hidden;
+
+    font-size: 0.625rem;
+    line-height: 1.4;
+    opacity: 0.92;
+}
+
+/* Fade gradasi bila teks terpotong (diberi data-overflow oleh JS). */
+.kc-pcard__bio[data-overflow="true"] {
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+    mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+
+.kc-pcard__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.kc-pcard__stats {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    font-size: 0.625rem;
+    font-weight: 600;
+}
+
+.kc-pcard__stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1875rem;
+}
+
+.kc-pcard__icon {
+    flex: 0 0 auto;
+
+    width: 0.75rem;
+    height: 0.75rem;
+
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.kc-pcard__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1875rem;
+
+    padding: 0.1875rem 0.5rem;
+
+    color: var(--pc-pill-fg);
+    background: var(--pc-pill-bg);
+
+    border: 1px solid transparent;
+    border-radius: 999px;
+
+    font-size: 0.625rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ============================================================
+   MODE 1x1 — ikon: hanya foto/inisial + tombol
+   ============================================================ */
+
+.dashboard-feature-card[data-card-mode="1x1"] .kc-pcard__name,
+.dashboard-feature-card[data-card-mode="1x1"] .kc-pcard__bio,
+.dashboard-feature-card[data-card-mode="1x1"] .kc-pcard__stats {
+    display: none;
+}
+
+.dashboard-feature-card[data-card-mode="1x1"] .kc-pcard__panel {
+    padding: 0.25rem;
+}
+
+.dashboard-feature-card[data-card-mode="1x1"] .kc-pcard__footer {
+    display: block;
+}
+
+.dashboard-feature-card[data-card-mode="1x1"] .kc-pcard__cta {
+    display: flex;
+
+    padding: 0.125rem 0.25rem;
+
+    font-size: 0.5rem;
+}
+
+.dashboard-feature-card[data-card-mode="1x1"] .kc-pcard__icon {
+    width: 0.5rem;
+    height: 0.5rem;
+}
+
+/* ============================================================
+   MODE 2x2 (compact) dan 4x4 (large) — foto penuh + kotak kaca
+   ============================================================ */
+
+.dashboard-feature-card[data-card-mode="compact"] .kc-pcard__panel,
+.dashboard-feature-card[data-card-mode="large"] .kc-pcard__panel {
+    right: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.5rem;
+
+    padding: 0.5rem 0.625rem;
+
+    border-radius: 0.875rem;
+}
+
+/* Foto: kaca transparan + blur */
+.kc-pcard[data-photo="true"] .kc-pcard__panel {
+    background: rgba(255, 255, 255, 0.16);
+
+    border: 1px solid rgba(255, 255, 255, 0.38);
+
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+/* Tanpa foto: panel putih sesuai desain */
+.kc-pcard[data-photo="false"] .kc-pcard__panel {
+    color: #111;
+    background: #fff;
+
+    border: 1px solid #e5e5e5;
+}
+
+.kc-pcard[data-photo="false"] {
+    --pc-pill-bg: transparent;
+    --pc-pill-fg: #111;
+}
+
+.kc-pcard[data-photo="false"] .kc-pcard__cta {
+    border-color: #111;
+}
+
+.dashboard-feature-card[data-card-mode="large"] .kc-pcard__name {
+    font-size: 1.375rem;
+}
+
+.dashboard-feature-card[data-card-mode="large"] .kc-pcard__bio {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+
+    font-size: 0.9375rem;
+}
+
+.dashboard-feature-card[data-card-mode="large"] .kc-pcard__stats,
+.dashboard-feature-card[data-card-mode="large"] .kc-pcard__cta {
+    font-size: 0.875rem;
+}
+
+.dashboard-feature-card[data-card-mode="large"] .kc-pcard__cta {
+    padding: 0.5rem 1rem;
+}
+
+.dashboard-feature-card[data-card-mode="large"] .kc-pcard__icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.dashboard-feature-card[data-card-mode="large"] .kc-pcard__panel {
+    gap: 0.5rem;
+
+    padding: 1rem;
+}
+
+/* ============================================================
+   MODE HORIZONTAL (2x1) — foto kiri, teks kanan
+   ============================================================ */
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard,
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard {
+    display: flex;
+    gap: 0.5rem;
+
+    padding: 0.375rem;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard {
+    flex-direction: row;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard__media,
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__media {
+    position: relative;
+    inset: auto;
+
+    border-radius: 0.625rem;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard__media {
+    flex: 0 0 auto;
+
+    height: 100%;
+    aspect-ratio: 1;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard__panel,
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__panel {
+    position: static;
+
+    padding: 0;
+
+    color: var(--pc-fg);
+    background: none;
+    border: 0;
+
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard__panel {
+    flex: 1 1 auto;
+
+    min-width: 0;
+
+    justify-content: space-between;
+
+    padding: 0.125rem 0.125rem 0 0;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard__name {
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard__bio {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+
+    font-size: 0.5625rem;
+    line-height: 1.3;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard__stats {
+    gap: 0.25rem;
+
+    font-size: 0.5rem;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard__icon,
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__icon {
+    width: 0.5625rem;
+    height: 0.5625rem;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard__cta {
+    padding: 0.1875rem 0.4375rem;
+
+    font-size: 0.5rem;
+}
+
+/* ============================================================
+   MODE VERTICAL (1x2) — foto atas, teks bawah
+   ============================================================ */
+
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard {
+    flex-direction: column;
+}
+
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__media {
+    flex: 1 1 auto;
+
+    min-height: 0;
+}
+
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__panel {
+    flex: 0 0 auto;
+
+    gap: 0.125rem;
+}
+
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__name {
+    font-size: 0.625rem;
+    font-weight: 600;
+}
+
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__bio {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+
+    font-size: 0.5rem;
+    line-height: 1.3;
+}
+
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.1875rem;
+}
+
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__stats {
+    font-size: 0.5rem;
+}
+
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard__cta {
+    padding: 0.1875rem 0.25rem;
+
+    font-size: 0.5rem;
+}
+
+/* ============================================================
+   Varian warna kartu horizontal / vertikal
+   (foto: kartu putih, tombol hitam; tanpa foto: kartu hitam)
+   ============================================================ */
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard[data-photo="true"],
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard[data-photo="true"] {
+    --pc-bg: #fff;
+    --pc-fg: #111;
+    --pc-pill-bg: #111;
+    --pc-pill-fg: #fff;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard[data-photo="false"],
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard[data-photo="false"] {
+    --pc-bg: #000;
+    --pc-fg: #fff;
+    --pc-pill-bg: #fff;
+    --pc-pill-fg: #111;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard[data-photo="false"] .kc-pcard__media,
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard[data-photo="false"] .kc-pcard__media {
+    color: #111;
+    background: #fff;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard[data-photo="false"] .kc-pcard__cta,
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard[data-photo="false"] .kc-pcard__cta {
+    border-color: transparent;
+}
+
+.dashboard-feature-card[data-card-mode="horizontal"] .kc-pcard[data-photo="false"] .kc-pcard__panel,
+.dashboard-feature-card[data-card-mode="vertical"] .kc-pcard[data-photo="false"] .kc-pcard__panel {
+    color: #fff;
+}

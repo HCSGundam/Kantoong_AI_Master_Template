@@ -1,0 +1,147 @@
+// backend/ai-chat.js - Otak AI Chat Kantoong (Gemini API)
+//
+// Menerima pesan dari ai-brain.js lalu mengembalikan:
+//   { reply, product_ids, action }
+// sesuai kontrak yang sudah ditunggu frontend.
+
+const { GoogleGenAI } = require('@google/genai');
+
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MAX_MESSAGE_LENGTH = 3000;
+const MAX_HISTORY = 12;
+const MAX_PRODUCTS = 30;
+const MAX_PRODUCTS_IN_REPLY = 4;
+
+// Hanya aksi ini yang boleh dikirim ke frontend (sama dengan allowlist di ai-brain.js).
+const ALLOWED_ACTIONS = ['show-catalog', 'show-products'];
+
+const SYSTEM_PROMPT = `Kamu adalah Kantoong AI, konsultan belanja buatan Anachronos Indonesia yang hadir di toko online ini.
+
+Gaya bicara:
+- Bahasa Indonesia yang santai, hangat, dan sopan, seperti pegawai toko di mall yang menuntun pembeli.
+- Jawab singkat (2-4 kalimat). Ajukan satu pertanyaan balik bila kebutuhan pembeli belum jelas (ukuran, warna, budget, acara).
+
+Aturan wajib:
+- Hanya rekomendasikan produk dari DAFTAR PRODUK yang diberikan. Jangan mengarang produk, harga, stok, atau promo.
+- Masukkan id produk yang kamu rekomendasikan ke "product_ids" (maksimal ${MAX_PRODUCTS_IN_REPLY}).
+- Isi "action" dengan "show-products" bila kamu merekomendasikan produk, "show-catalog" bila pembeli ingin melihat semua produk, selain itu "none".
+- Kamu tidak bisa dan tidak boleh memproses pembayaran. Pembayaran selalu dilakukan pembeli sendiri.
+- Jangan meminta data sensitif (password, PIN, nomor kartu, OTP).
+- Bila pertanyaan di luar urusan belanja di toko ini, jawab singkat dengan ramah lalu arahkan kembali ke produk.`;
+
+const RESPONSE_SCHEMA = {
+    type: 'object',
+    properties: {
+        reply: { type: 'string' },
+        product_ids: { type: 'array', items: { type: 'string' } },
+        action: { type: 'string', enum: ['none', ...ALLOWED_ACTIONS] }
+    },
+    required: ['reply', 'product_ids', 'action']
+};
+
+let client = null;
+
+function getClient() {
+    if (!process.env.GEMINI_API_KEY) {
+        return null;
+    }
+    if (!client) {
+        client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    }
+    return client;
+}
+
+function cleanText(value, maxLength) {
+    return String(value ?? '').trim().slice(0, maxLength);
+}
+
+function cleanProducts(products) {
+    if (!Array.isArray(products)) {
+        return [];
+    }
+    return products
+        .slice(0, MAX_PRODUCTS)
+        .map(product => ({
+            id: cleanText(product?.id, 100),
+            name: cleanText(product?.name, 200),
+            category: cleanText(product?.category, 100),
+            price: Number(product?.price) || 0,
+            description: cleanText(product?.description, 250)
+        }))
+        .filter(product => product.id && product.name);
+}
+
+function buildContents(history, message) {
+    const turns = (Array.isArray(history) ? history : [])
+        .slice(-MAX_HISTORY)
+        .map(item => ({
+            role: item?.role === 'assistant' ? 'model' : 'user',
+            text: cleanText(item?.content, MAX_MESSAGE_LENGTH)
+        }))
+        .filter(turn => turn.text);
+
+    // Frontend sudah menyertakan pesan terbaru di history; jangan dikirim dua kali.
+    const last = turns[turns.length - 1];
+    if (last && last.role === 'user' && last.text === message) {
+        turns.pop();
+    }
+
+    // Percakapan untuk Gemini harus dimulai dari pembeli (bukan sapaan AI).
+    while (turns.length && turns[0].role === 'model') {
+        turns.shift();
+    }
+
+    return [...turns, { role: 'user', text: message }]
+        .map(turn => ({ role: turn.role, parts: [{ text: turn.text }] }));
+}
+
+async function handleChat(req, res) {
+    const message = cleanText(req.body?.message, MAX_MESSAGE_LENGTH);
+
+    if (!message) {
+        return res.status(400).json({ error: 'Pesan kosong.' });
+    }
+
+    const ai = getClient();
+
+    if (!ai) {
+        // Frontend akan otomatis memakai jawaban lokal sebagai cadangan.
+        return res.status(503).json({ error: 'GEMINI_API_KEY belum diisi di backend/.env.' });
+    }
+
+    const products = cleanProducts(req.body?.context?.products);
+    const productList = products.length
+        ? JSON.stringify(products)
+        : '(belum ada produk)';
+
+    try {
+        const response = await ai.models.generateContent({
+            model: MODEL,
+            contents: buildContents(req.body?.history, message),
+            config: {
+                systemInstruction: `${SYSTEM_PROMPT}\n\nDAFTAR PRODUK:\n${productList}`,
+                responseMimeType: 'application/json',
+                responseJsonSchema: RESPONSE_SCHEMA,
+                temperature: 0.7
+            }
+        });
+
+        const data = JSON.parse(response.text || '{}');
+        const knownIds = new Set(products.map(product => product.id));
+
+        res.json({
+            reply: cleanText(data.reply, MAX_MESSAGE_LENGTH) ||
+                'Maaf, aku belum menemukan jawaban yang pas. Boleh ceritakan lagi yang kamu cari?',
+            product_ids: (Array.isArray(data.product_ids) ? data.product_ids : [])
+                .map(String)
+                .filter(id => knownIds.has(id))
+                .slice(0, MAX_PRODUCTS_IN_REPLY),
+            action: ALLOWED_ACTIONS.includes(data.action) ? data.action : null
+        });
+    } catch (error) {
+        console.error('[Kantoong AI] Gagal memanggil Gemini:', error.message);
+        res.status(502).json({ error: 'AI sedang tidak bisa dihubungi.' });
+    }
+}
+
+module.exports = { handleChat };

@@ -22,7 +22,7 @@ const KantoongConfig = {
     // ========================================================
     business_id: "master_template_001",
 
-    app_name: "NAMA BISNIS ANDA",
+    app_name: "Miloat",
 
     // Warna utama untuk skin bisnis.
     // Engine/CSS perlu menerapkan nilai ini ke tampilan.
@@ -154,6 +154,12 @@ const KantoongConfig = {
     ai_name: "Asisten",
 
     ai_title: "Halo Kak!",
+
+    /*
+     * Alamat backend AI (Gemini). Jika backend mati atau API key
+     * belum diisi, chat otomatis memakai jawaban lokal sebagai cadangan.
+     */
+    ai_endpoint: "http://127.0.0.1:5000/api/chat",
 
     ai_greetings: [
         "Mau cari produk yang cocok untuk kebutuhanmu?",

@@ -1,180 +1,164 @@
 /**
- * KANTOONG CORE — PROFILE CARD PREVIEW
+ * KANTOONG CORE — PROFILE CARD
  * File: frontend/dashboard-user/features/profile/profile-card.js
  *
- * Mengubah komposisi kartu Profile berdasarkan ukuran sel grid.
- * Semua konten dibuat dengan DOM API; tidak memakai HTML mentah.
+ * Kartu Profil di dashboard. Satu struktur DOM yang dirapikan oleh CSS
+ * sesuai ukuran kartu (atribut data-card-mode pada kartu induk):
+ *
+ *   1x1         ikon: foto/inisial + tombol View Profile
+ *   horizontal  2x1 : foto kiri, nama + bio + angka + tombol kanan
+ *   vertical    1x2 : foto atas, nama + bio + angka + tombol bawah
+ *   compact     2x2 : foto penuh + kotak kaca (glassmorphism)
+ *   large       4x4 : seperti compact dengan tipografi lebih besar
+ *
+ * Seluruh teks dipasang lewat textContent (anti-XSS).
  */
 
-import { getProfileConfig } from "./profile-config.js";
+import "./profile-card.css";
 
-function element(tag, className, text = "") {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== "") node.textContent = String(text);
-  return node;
-}
+const SVG_NS = "http://www.w3.org/2000/svg";
 
-function getVariant({ width = 2, height = 2 } = {}) {
-  if (width <= 1 && height <= 1) return "icon";
-  if (width >= 4 && height >= 4) return "large";
-  if (width >= 4 && height <= 2) return "wide";
-  if (width <= 2 && height >= 4) return "tall";
-  if (width >= 4) return "wide";
-  if (height >= 4) return "tall";
-  return "compact";
-}
+function el(tag, className, text) {
+    const node = document.createElement(tag);
 
-function makeAvatar(profile, extraClass = "") {
-  const avatar = element(
-    "span",
-    `kc-profile-card__avatar${extraClass ? ` ${extraClass}` : ""}`
-  );
-  avatar.setAttribute("aria-hidden", "true");
-
-  if (profile.avatarUrl) {
-    try {
-      const url = new URL(profile.avatarUrl, window.location.origin);
-      if (url.protocol === "https:" || url.origin === window.location.origin) {
-        const image = document.createElement("img");
-        image.src = url.href;
-        image.alt = "";
-        image.loading = "lazy";
-        image.referrerPolicy = "no-referrer";
-        image.addEventListener("error", () => {
-          image.remove();
-          avatar.textContent = initials(profile.name);
-        }, { once: true });
-        avatar.append(image);
-        return avatar;
-      }
-    } catch {
-      // URL tidak valid: lanjutkan dengan avatar inisial.
+    if (className) {
+        node.className = className;
     }
-  }
 
-  avatar.textContent = initials(profile.name);
-  return avatar;
+    if (text !== undefined) {
+        node.textContent = text;
+    }
+
+    return node;
 }
 
-function initials(name = "") {
-  return String(name)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => Array.from(part)[0] ?? "")
-    .join("")
-    .toUpperCase() || "P";
+function icon(pathData) {
+    const svg = document.createElementNS(SVG_NS, "svg");
+
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    svg.classList.add("kc-pcard__icon");
+
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", pathData);
+
+    svg.append(path);
+
+    return svg;
 }
 
-function addStat(container, symbol, value, label) {
-  const stat = element("span", "kc-profile-card__stat");
-  const icon = element("span", "kc-profile-card__stat-icon", symbol);
-  const number = element("span", "kc-profile-card__stat-value", value);
-  stat.append(icon, number);
-  stat.setAttribute("aria-label", `${value} ${label}`);
-  container.append(stat);
+const ICON_PERSON =
+    "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 20a7.5 7.5 0 0 1 15 0";
+const ICON_POSTS =
+    "M8 8h11v11H8zM5 16V5h11";
+const ICON_ARROW = "M7 17 17 7M8 7h9v9";
+
+/** 0 -> "00", 1500 -> "1.5K", 90 -> "90". */
+export function formatCount(value) {
+    const number = Number(value) || 0;
+
+    if (number <= 0) {
+        return "00";
+    }
+
+    if (number >= 1_000_000) {
+        return `${(number / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+    }
+
+    if (number >= 1000) {
+        return `${(number / 1000).toFixed(1).replace(/\.0$/, "")}K`;
+    }
+
+    return String(number);
 }
 
-function createStats(profile) {
-  const stats = element("span", "kc-profile-card__stats");
-  addStat(stats, "♙", profile.followers, "pengikut");
-  addStat(stats, "▣", profile.posts, "postingan");
-  return stats;
+function createStat(pathData, value) {
+    const stat = el("span", "kc-pcard__stat");
+
+    stat.append(icon(pathData), el("span", "", formatCount(value)));
+
+    return stat;
 }
 
-function createActionLabel(label) {
-  const action = element("span", "kc-profile-card__action");
-  const arrow = element("span", "kc-profile-card__action-arrow", "↗");
-  const text = element("span", "kc-profile-card__action-text", label);
-  action.append(arrow, text);
-  return action;
+/**
+ * @param {object}  options
+ * @param {object|null} options.user  hasil getDashboardUser() atau null
+ */
+export function renderProfileCard({ user } = {}) {
+    const loggedIn = Boolean(user?.authenticated);
+
+    const name = loggedIn ? user.name : "Belum masuk";
+
+    const bio = loggedIn
+        ? user.bio || `${user.role} \u00B7 ${user.email}`
+        : "Masuk untuk melihat profil dan fitur pribadimu.";
+
+    const photo =
+        loggedIn && /^https?:\/\//i.test(user.avatarUrl ?? "")
+            ? user.avatarUrl
+            : "";
+
+    const root = el("span", "kc-pcard");
+
+    root.dataset.photo = String(Boolean(photo));
+    root.dataset.state = loggedIn ? "member" : "guest";
+
+    // --- media: foto atau inisial
+    const media = el("span", "kc-pcard__media");
+
+    const showLetter = () => {
+        root.dataset.photo = "false";
+
+        media.replaceChildren(
+            el(
+                "span",
+                "kc-pcard__letter",
+                (name.trim().charAt(0) || "P").toUpperCase()
+            )
+        );
+    };
+
+    if (photo) {
+        const image = document.createElement("img");
+
+        image.src = photo;
+        image.alt = "";
+        image.decoding = "async";
+        image.referrerPolicy = "no-referrer";
+        image.draggable = false;
+        image.addEventListener("error", showLetter);
+
+        media.append(image);
+    } else {
+        showLetter();
+    }
+
+    // --- panel: nama, bio, angka, tombol
+    const panel = el("span", "kc-pcard__panel");
+
+    const nameNode = el("span", "kc-pcard__name", name);
+    const bioNode = el("span", "kc-pcard__bio", bio);
+
+    bioNode.dataset.fade = "";
+
+    const footer = el("span", "kc-pcard__footer");
+
+    const stats = el("span", "kc-pcard__stats");
+
+    stats.append(
+        createStat(ICON_PERSON, user?.followers),
+        createStat(ICON_POSTS, user?.posts)
+    );
+
+    const cta = el("span", "kc-pcard__cta");
+
+    cta.append(icon(ICON_ARROW), el("span", "", loggedIn ? "View Profile" : "Masuk"));
+
+    footer.append(stats, cta);
+    panel.append(nameNode, bioNode, footer);
+
+    root.append(media, panel);
+
+    return root;
 }
-
-function createProfileCopy(profile, variant) {
-  const copy = element("span", "kc-profile-card__copy");
-  copy.append(
-    element("span", "kc-profile-card__name", profile.name),
-    element("span", "kc-profile-card__work", profile.work)
-  );
-
-  if (["wide", "tall", "large"].includes(variant)) {
-    copy.append(element("span", "kc-profile-card__bio", profile.bio));
-  }
-
-  return copy;
-}
-
-/** Dipanggil dashboard core setelah ukuran kartu ditentukan. */
-export function renderProfileCardPreview({ card, container, layout } = {}) {
-  if (!card || !container) return;
-
-  const config = getProfileConfig();
-  const profile = config.cardPreview;
-  const variant = getVariant(layout);
-
-  card.dataset.cardUi = "profile";
-  card.dataset.profileCardVariant = variant;
-  container.dataset.profileCardVariant = variant;
-  container.replaceChildren();
-  container.classList.add("kc-profile-card-preview-host");
-
-  const preview = element("span", "kc-profile-card-preview");
-  preview.dataset.profileCardVariant = variant;
-
-  if (variant === "icon") {
-    preview.append(makeAvatar(profile, "kc-profile-card__avatar--icon"));
-    preview.append(element("span", "kc-profile-card__micro-name", profile.name));
-    container.append(preview);
-    return;
-  }
-
-  if (variant === "wide") {
-    preview.classList.add("kc-profile-card-preview--wide");
-    preview.append(makeAvatar(profile, "kc-profile-card__avatar--wide"));
-    const details = element("span", "kc-profile-card__wide-details");
-    details.append(createProfileCopy(profile, variant));
-    const footer = element("span", "kc-profile-card__footer");
-    footer.append(createStats(profile), createActionLabel(profile.actionLabel));
-    details.append(footer);
-    preview.append(details);
-    container.append(preview);
-    return;
-  }
-
-  if (variant === "tall") {
-    preview.classList.add("kc-profile-card-preview--tall");
-    const portrait = element("span", "kc-profile-card__portrait");
-    portrait.append(makeAvatar(profile, "kc-profile-card__avatar--portrait"));
-    preview.append(portrait, createProfileCopy(profile, variant));
-    const footer = element("span", "kc-profile-card__footer");
-    footer.append(createStats(profile), createActionLabel(profile.actionLabel));
-    preview.append(footer);
-    container.append(preview);
-    return;
-  }
-
-  if (variant === "large") {
-    preview.classList.add("kc-profile-card-preview--large");
-    const portrait = element("span", "kc-profile-card__large-portrait");
-    portrait.append(makeAvatar(profile, "kc-profile-card__avatar--large"));
-    const glass = element("span", "kc-profile-card__glass");
-    glass.append(createProfileCopy(profile, variant));
-    const footer = element("span", "kc-profile-card__footer");
-    footer.append(createStats(profile), createActionLabel(profile.actionLabel));
-    glass.append(footer);
-    preview.append(portrait, glass);
-    container.append(preview);
-    return;
-  }
-
-  // Compact / ukuran perantara: avatar di bagian atas, identitas dan CTA ringkas.
-  preview.classList.add("kc-profile-card-preview--compact");
-  preview.append(makeAvatar(profile, "kc-profile-card__avatar--compact"));
-  preview.append(createProfileCopy(profile, "compact"));
-  preview.append(createActionLabel(profile.actionLabel));
-  container.append(preview);
-}
-
-export default renderProfileCardPreview;

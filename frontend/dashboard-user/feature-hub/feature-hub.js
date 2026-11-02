@@ -78,6 +78,23 @@ export function createFeatureHub({ api, contract = CLIENT_CONTRACT }) {
         });
     }
 
+    /** Beberapa fitur yang bisa ditambahkan (untuk pratinjau kartu). */
+    function getSuggestedFeatures(limit = 4) {
+        return filterByContract(api.getFeatures(), contract)
+            .filter((feature) => !api.isActive(feature.id))
+            .sort((a, b) => {
+                const stateA = canAddFeature(a) ? 0 : 1;
+                const stateB = canAddFeature(b) ? 0 : 1;
+
+                if (stateA !== stateB) {
+                    return stateA - stateB;
+                }
+
+                return (a.order ?? 999) - (b.order ?? 999);
+            })
+            .slice(0, limit);
+    }
+
     function render(query = hubState.query) {
         hubState.query = normalize(query);
 
@@ -189,5 +206,6 @@ export function createFeatureHub({ api, contract = CLIENT_CONTRACT }) {
         comingSoon,
         setFilter,
         getVisibleFeatures,
+        getSuggestedFeatures,
     };
 }

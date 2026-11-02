@@ -227,10 +227,9 @@ function getGridMetrics() {
     const firstCard = getElements(SELECTORS.card, grid)[0];
     const firstCardRect = firstCard?.getBoundingClientRect();
 
-    const rowHeight =
-        Number(DASHBOARD_USER_CONFIG.grid.rowHeight?.[
-            getDashboardState()?.gridProfile ?? "desktop"
-        ]) || firstCardRect?.height || 54;
+    // Sel grid persegi: tinggi baris = lebar kolom (lihat
+    // syncGridCellSize di dashboard-user.js).
+    const rowHeight = columnWidth;
 
     return {
         grid,

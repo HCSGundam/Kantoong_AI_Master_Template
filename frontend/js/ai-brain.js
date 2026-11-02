@@ -528,6 +528,40 @@ export function clearAIChatHistory() {
     emit("chat-history-cleared");
 }
 
+/**
+ * Memulai chat baru: percakapan sekarang disimpan ke arsip lokal
+ * (10 sesi terakhir) lalu layar chat dikosongkan.
+ */
+export function startNewChat() {
+    const archiveKey = `${HISTORY_KEY}:archive`;
+
+    try {
+        if (AIState.history.length > 1) {
+            const raw = localStorage.getItem(archiveKey);
+            const archive = raw ? JSON.parse(raw) : [];
+
+            archive.push({
+                endedAt: getTimestamp(),
+                messages: AIState.history
+            });
+
+            localStorage.setItem(
+                archiveKey,
+                JSON.stringify(archive.slice(-10))
+            );
+        }
+    } catch (error) {
+        console.warn(
+            "[KANTOONG AI] Arsip chat tidak dapat disimpan:",
+            error
+        );
+    }
+
+    clearAIChatHistory();
+
+    emit("chat-new");
+}
+
 /* ============================================================
    06. RENDER PESAN CHAT
    ============================================================ */
@@ -570,6 +604,22 @@ function renderMessage(message, options = {}) {
 
     wrapper.appendChild(bubble);
 
+    if (Array.isArray(message.attachments) && message.attachments.length) {
+        const list = createElement("div", "ai-message__attachments");
+
+        message.attachments.forEach((file) => {
+            list.appendChild(
+                createElement(
+                    "span",
+                    "ai-attachment-chip",
+                    `\u{1F4CE} ${String(file?.name ?? "lampiran")}`
+                )
+            );
+        });
+
+        wrapper.appendChild(list);
+    }
+
     const timestamp = createElement(
         "time",
         "ai-message__time",
@@ -586,6 +636,7 @@ function renderMessage(message, options = {}) {
 
         if (products.length) {
             wrapper.appendChild(renderProductCards(products));
+            wrapper.appendChild(createCatalogLink(products));
         }
     }
 
@@ -596,6 +647,36 @@ function renderMessage(message, options = {}) {
     }
 
     return wrapper;
+}
+
+/** Kotak abu-abu berisi huruf pertama bila foto tidak ada. */
+function createProductPlaceholder(name) {
+    return createElement(
+        "span",
+        "ai-product-card__ph",
+        (String(name ?? "").trim().charAt(0) || "P").toUpperCase()
+    );
+}
+
+/**
+ * Tautan di bawah foto produk: menampilkan produk yang sama pada etalase
+ * di belakang chat dan menurunkan kotak chat.
+ */
+function createCatalogLink(products) {
+    const link = createElement(
+        "button",
+        "ai-catalog-link",
+        "Lengkapnya bisa lihat di katalog \u2191"
+    );
+
+    link.type = "button";
+    link.dataset.aiAction = "show-matched";
+    link.dataset.productIds = products
+        .map(getProductId)
+        .filter(Boolean)
+        .join(",");
+
+    return link;
 }
 
 function renderProductCards(products) {
@@ -634,10 +715,16 @@ function renderProductCards(products) {
             image.referrerPolicy = "no-referrer";
 
             image.addEventListener("error", () => {
-                image.remove();
+                image.replaceWith(
+                    createProductPlaceholder(getProductName(product))
+                );
             }, { once: true });
 
             card.appendChild(image);
+        } else {
+            card.appendChild(
+                createProductPlaceholder(getProductName(product))
+            );
         }
 
         const information = createElement(
@@ -772,37 +859,35 @@ function renderInitialGreeting() {
    ============================================================ */
 
 function getDailySuggestionState() {
+    const today = getTodayKey();
+
     try {
         const raw = localStorage.getItem(SUGGESTIONS_KEY);
 
-        if (!raw) {
-            return {
-                date: getTodayKey(),
-                used: []
-            };
+        if (raw) {
+            const parsed = JSON.parse(raw);
+
+            if (parsed && parsed.date === today) {
+                const used = Array.isArray(parsed.used)
+                    ? parsed.used
+                    : [];
+
+                return {
+                    date: today,
+                    sent: parsed.sent === true || used.length > 0,
+                    used
+                };
+            }
         }
-
-        const parsed = JSON.parse(raw);
-
-        if (parsed.date !== getTodayKey()) {
-            return {
-                date: getTodayKey(),
-                used: []
-            };
-        }
-
-        return {
-            date: parsed.date,
-            used: Array.isArray(parsed.used)
-                ? parsed.used
-                : []
-        };
-    } catch {
-        return {
-            date: getTodayKey(),
-            used: []
-        };
+    } catch (error) {
+        console.warn(
+            "[KANTOONG AI] Status saran tidak dapat dibaca:",
+            error
+        );
     }
+
+    // Hari baru (lewat 00.00): saran muncul lagi dari awal.
+    return { date: today, sent: false, used: [] };
 }
 
 function saveDailySuggestionState(state) {
@@ -836,6 +921,16 @@ function shuffleArray(items) {
     return result;
 }
 
+const SUGGESTIONS_PER_VISIT = 3;
+
+/**
+ * Aturan saran chat:
+ * - Muncul 3 saran (diacak tiap kunjungan) HANYA sebelum pesan pertama
+ *   hari ini.
+ * - Setelah pengguna mengirim satu pesan (mengetik atau memilih saran),
+ *   saran hilang sampai pukul 00.00.
+ * - Pukul 00.00 saran kembali; riwayat chat tetap tersimpan.
+ */
 function renderSuggestions() {
     const { suggestions } = getElements();
 
@@ -845,53 +940,68 @@ function renderSuggestions() {
 
     suggestions.replaceChildren();
 
-    const availableSuggestions = AI_CONFIG.suggestions
-        .map(value => String(value).trim())
-        .filter(Boolean);
+    const state = getDailySuggestionState();
 
-    if (!availableSuggestions.length) {
+    suggestions.hidden = state.sent;
+
+    if (state.sent) {
         return;
     }
 
-    const state = getDailySuggestionState();
+    if (!AIState.sessionSuggestions) {
+        const pool = AI_CONFIG.suggestions
+            .map((item) => String(item ?? "").trim())
+            .filter(Boolean);
 
-    const unused = availableSuggestions.filter(
-        suggestion => !state.used.includes(suggestion)
-    );
+        AIState.sessionSuggestions = shuffleArray(pool)
+            .slice(0, SUGGESTIONS_PER_VISIT);
+    }
 
-    const pool = unused.length
-        ? unused
-        : availableSuggestions;
+    if (AIState.sessionSuggestions.length === 0) {
+        suggestions.hidden = true;
+        return;
+    }
 
-    const selected = shuffleArray(pool).slice(0, 4);
+    AIState.sessionSuggestions.forEach((text) => {
+        const chip = createElement("button", "ai-suggestion", text);
 
-    selected.forEach(suggestion => {
-        const button = createElement(
-            "button",
-            "ai-suggestion",
-            suggestion
-        );
+        chip.type = "button";
 
-        button.type = "button";
-
-        button.addEventListener("click", () => {
-            sendMessage(suggestion);
+        chip.addEventListener("click", () => {
+            sendMessage(text);
         });
 
-        suggestions.appendChild(button);
+        suggestions.appendChild(chip);
     });
 }
 
 function markSuggestionUsed(text) {
-    const suggestion = String(text).trim();
-
     const state = getDailySuggestionState();
 
-    if (!state.used.includes(suggestion)) {
-        state.used.push(suggestion);
+    state.sent = true;
+
+    if (text && !state.used.includes(text)) {
+        state.used.push(text);
     }
 
     saveDailySuggestionState(state);
+}
+
+/** Menjadwalkan kemunculan ulang saran tepat setelah 00.00. */
+function scheduleSuggestionReset() {
+    window.clearTimeout(AIState.suggestionResetTimer);
+
+    const now = new Date();
+    const midnight = new Date(now);
+
+    midnight.setHours(24, 0, 1, 0);
+
+    AIState.suggestionResetTimer = window.setTimeout(() => {
+        AIState.sessionSuggestions = null;
+
+        renderSuggestions();
+        scheduleSuggestionReset();
+    }, Math.max(1000, midnight - now));
 }
 
 /* ============================================================
@@ -1423,6 +1533,19 @@ function publishMatchedProducts(products, query) {
             .map(getProductId)
             .filter(Boolean)
     });
+
+    /*
+     * Kabar untuk etalase: produk pilihan AI muncul otomatis di
+     * bagian "Pilihan AI untuk kamu" di belakang kotak chat.
+     */
+    emit("ai-matched", {
+        query: String(query || ""),
+        products: safeProducts,
+        count: safeProducts.length,
+        ids: safeProducts
+            .map(getProductId)
+            .filter(Boolean)
+    });
 }
 
 function performResultAction(action, result) {
@@ -1461,23 +1584,34 @@ function performResultAction(action, result) {
 export async function sendMessage(rawText) {
     const text = String(rawText ?? "").trim();
 
-    if (!text || AIState.busy) {
+    // Lampiran dari kotak ketik (foto, dokumen, video).
+    const pendingAttachments =
+        window.KantoongChat?.peekAttachments?.() ?? [];
+
+    if ((!text && pendingAttachments.length === 0) || AIState.busy) {
         return;
     }
 
-    const message = text.slice(0, MAX_MESSAGE_LENGTH);
+    const attachments =
+        window.KantoongChat?.takeAttachments?.() ?? [];
+
+    const message = (text || "(lampiran)").slice(0, MAX_MESSAGE_LENGTH);
 
     const { input } = getElements();
 
     if (input) {
         input.value = "";
+
+        // Beri tahu kotak ketik agar tingginya dikembalikan.
+        input.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
     markSuggestionUsed(message);
 
     const userMessage = addHistoryMessage(
         "user",
-        message
+        message,
+        attachments.length ? { attachments } : {}
     );
 
     renderMessage(userMessage);
@@ -1528,6 +1662,12 @@ export async function sendMessage(rawText) {
         }
 
         result = normalizeAIResult(result);
+
+        if (attachments.length) {
+            result.reply +=
+                `\n\nLampiranmu (${attachments.length}) sudah kuterima. ` +
+                "Pembacaan lampiran oleh AI belum aktif di versi ini.";
+        }
 
         const productIds = result.products
             .map(getProductId)
@@ -1624,6 +1764,28 @@ function handleInputKeydown(event) {
 }
 
 function handleProductCardClick(event) {
+    const catalogLink = event.target.closest(
+        "[data-ai-action='show-matched']"
+    );
+
+    if (catalogLink) {
+        const ids = String(catalogLink.dataset.productIds || "")
+            .split(",")
+            .filter(Boolean);
+
+        // Etalase menampilkan produk pilihan AI, lalu chat diturunkan.
+        emit("ai-matched", {
+            query: "",
+            ids,
+            count: ids.length,
+            products: ids.map(findProduct).filter(Boolean)
+        });
+
+        emit("collapse");
+
+        return;
+    }
+
     const button = event.target.closest(
         "[data-product-id]"
     );
@@ -1745,6 +1907,7 @@ export function initAIBrain() {
 
     renderInitialGreeting();
     renderSuggestions();
+    scheduleSuggestionReset();
 
     emit("ai-ready", {
         title: AI_CONFIG.title,
@@ -1764,6 +1927,8 @@ export function destroyAIBrain() {
     if (!AIState.initialized) {
         return;
     }
+
+    window.clearTimeout(AIState.suggestionResetTimer);
 
     const elements = AIState.boundElements;
 
@@ -1855,6 +2020,7 @@ window.KantoongAIBrain = Object.freeze({
     sendMessage,
     addMessageToChat,
     clearHistory: clearAIChatHistory,
+    newChat: startNewChat,
 
     searchProducts: searchLocalProducts,
 

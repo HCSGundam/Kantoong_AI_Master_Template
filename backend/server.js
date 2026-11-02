@@ -1,6 +1,10 @@
 // backend/server.js - Sasis Backend Kantoong AI
+// Muat kunci rahasia dari backend/.env (tidak ikut ke GitHub)
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+
 const express = require('express');
 const cors = require('cors');
+const { handleChat } = require('./ai-chat');
 const app = express();
 const PORT = 5000;
 
@@ -17,15 +21,8 @@ app.get('/api/status', (req, res) => {
     });
 });
 
-// Endpoint untuk AI Chat (Nanti di sini tempat kita pasang API Gemini)
-app.post('/api/chat', (req, res) => {
-    const { business_id, message } = req.body;
-    
-    // Respon sementara (Dummy Agent) sebelum dihubungkan ke Gemini API
-    res.json({
-        reply: `[Backend AI Agent] Menerima pesan untuk bisnis [${business_id}]: "${message}". Sistem berjalan normal.`
-    });
-});
+// Endpoint AI Chat Kantoong (Gemini API) - lihat ai-chat.js
+app.post('/api/chat', handleChat);
 
 const fs = require('fs');
 const path = require('path');

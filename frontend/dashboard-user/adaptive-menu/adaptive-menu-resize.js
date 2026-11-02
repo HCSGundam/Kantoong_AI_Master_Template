@@ -11,6 +11,11 @@
  */
 
 export const SIZE_PRESETS = Object.freeze([
+    { width: 1, height: 1 },
+    { width: 2, height: 1 },
+    { width: 4, height: 1 },
+    { width: 1, height: 2 },
+    { width: 1, height: 3 },
     { width: 2, height: 2 },
     { width: 2, height: 3 },
     { width: 2, height: 4 },
@@ -28,6 +33,35 @@ export const SIZE_PRESETS = Object.freeze([
 /** Ukuran yang muat pada jumlah kolom grid saat ini. */
 export function getSizePresets(columns) {
     return SIZE_PRESETS.filter((preset) => preset.width <= columns);
+}
+
+/**
+ * Mode tampilan isi kartu berdasarkan ukurannya (kolom x baris).
+ *
+ *   1x1         ikon
+ *   horizontal  lebar >= 2, tinggi 1
+ *   vertical    lebar 1, tinggi >= 2
+ *   compact     2x2 dan sekitarnya
+ *   large       lebar >= 3 dan tinggi >= 3
+ */
+export function getCardMode(width, height) {
+    if (width <= 1 && height <= 1) {
+        return "1x1";
+    }
+
+    if (height <= 1) {
+        return "horizontal";
+    }
+
+    if (width <= 1) {
+        return "vertical";
+    }
+
+    if (width >= 3 && height >= 3) {
+        return "large";
+    }
+
+    return "compact";
 }
 
 export function formatSize(size) {

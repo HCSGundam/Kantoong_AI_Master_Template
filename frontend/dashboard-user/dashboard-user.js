@@ -31,8 +31,8 @@ import {
     normalizeDashboardCardSize,
 } from "./dashboard-user-config.js";
 
-import { getSizePresets, formatSize } from "./adaptive-menu/adaptive-menu-resize.js";
-import { createSummaryBox } from "./feature-system/feature-ui.js";
+import { getSizePresets, formatSize, getCardMode } from "./adaptive-menu/adaptive-menu-resize.js";
+import { applyTextFade, createSummaryBox } from "./feature-system/feature-ui.js";
 import { createFeatureHub } from "./feature-hub/feature-hub.js";
 import { initFeatureHub } from "./feature-hub/feature-hub-bootstrap.js";
 
@@ -496,6 +496,59 @@ function updateViewportProfile() {
     if (state.root) {
         state.root.dataset.gridProfile = state.gridProfile;
     }
+
+    syncGridCellSize();
+}
+
+/**
+ * Sel grid dibuat PERSEGI: tinggi baris = lebar kolom. Dengan begitu
+ * kartu 2x2 benar-benar persegi, 2x1 lebar, dan 1x2 tinggi seperti
+ * pada desain. Dihitung ulang setiap lebar grid berubah.
+ */
+function syncGridCellSize() {
+    const grid = state.elements.featureGrid;
+
+    if (!grid) {
+        return;
+    }
+
+    const width = grid.clientWidth;
+
+    if (width <= 0) {
+        return;
+    }
+
+    const gap = parseFloat(getComputedStyle(grid).columnGap) || 0;
+    const columns = Math.max(1, state.gridColumns);
+    const cell = (width - gap * (columns - 1)) / columns;
+
+    if (!Number.isFinite(cell) || cell <= 0) {
+        return;
+    }
+
+    const value = `${cell.toFixed(2)}px`;
+
+    grid.style.setProperty("--dashboard-grid-row-height", value);
+
+    state.elements.gridGuide?.style.setProperty(
+        "--dashboard-grid-row-height",
+        value
+    );
+}
+
+let gridResizeObserver = null;
+
+function observeGridSize() {
+    const grid = state.elements.featureGrid;
+
+    gridResizeObserver?.disconnect();
+
+    if (!grid || typeof ResizeObserver !== "function") {
+        return;
+    }
+
+    gridResizeObserver = new ResizeObserver(() => syncGridCellSize());
+    gridResizeObserver.observe(grid);
 }
 
 
@@ -1055,6 +1108,15 @@ function normalizeFeatureDescriptor(input) {
             ? input.summary
             : null,
 
+        /**
+         * Tampilan kartu khusus (mis. kartu Profil). Mengembalikan
+         * elemen yang dipasang di dalam kartu; tata letaknya mengikuti
+         * data-card-mode lewat CSS.
+         */
+        renderCard: typeof input.renderCard === "function"
+            ? input.renderCard
+            : null,
+
         tier: normalizeString(input.tier, "package"),
 
         publishedAt: normalizeString(input.publishedAt),
@@ -1304,7 +1366,7 @@ function createFeatureCard(feature, layoutEntry) {
         );
     }
 
-    hydrateCardSummary(card, feature);
+    hydrateCard(card, feature);
 
     if (state.mode === LAYOUT_MODE_EDIT) {
         revealCardEditControls(card, true);
@@ -1334,6 +1396,9 @@ function applyCardPosition(card, entry) {
 
     card.dataset.gridWidth = String(entry.width);
     card.dataset.gridHeight = String(entry.height);
+
+    // Mode tampilan isi kartu: 1x1, horizontal, vertical, compact, large.
+    card.dataset.cardMode = getCardMode(entry.width, entry.height);
 }
 
 
@@ -1401,6 +1466,7 @@ export function renderDashboardFeatures() {
 
     if (hubEntry) {
         grid.append(hubEntry);
+        renderHubEntryThumbs(hubEntry);
     }
 
     updateFeatureState();
@@ -1409,6 +1475,28 @@ export function renderDashboardFeatures() {
 }
 
 let hubEntryElement = null;
+
+/** Empat kotak kecil pratinjau fitur yang bisa ditambahkan. */
+function renderHubEntryThumbs(entry) {
+    const holder = entry.querySelector("[data-hub-entry-thumbs]");
+
+    if (!holder) {
+        return;
+    }
+
+    const suggestions = featureHub.getSuggestedFeatures(4);
+
+    const thumbs = Array.from({ length: 4 }, (_, index) => {
+        const thumb = document.createElement("span");
+
+        thumb.className = "dashboard-feature-hub-entry__thumb";
+        thumb.textContent = suggestions[index]?.icon ?? "";
+
+        return thumb;
+    });
+
+    holder.replaceChildren(...thumbs);
+}
 
 function getHubEntryElement() {
     if (!hubEntryElement) {
@@ -1420,8 +1508,46 @@ function getHubEntryElement() {
     return hubEntryElement;
 }
 
-/** Mengisi kotak ringkasan pada kartu (mis. nama akun, tema aktif). */
-async function hydrateCardSummary(card, feature) {
+/**
+ * Mengisi isi kartu setelah dibuat:
+ * - renderCard: tampilan khusus (kartu Profil dengan foto, dll).
+ * - summary   : kotak ringkasan sederhana (mis. tema aktif).
+ */
+async function hydrateCard(card, feature) {
+    if (typeof feature.renderCard === "function") {
+        if (card.dataset.customCard !== "ready") {
+            card.dataset.customCard = "pending";
+        }
+
+        try {
+            const content = await feature.renderCard({
+                dashboardApi: getDashboardApi(),
+            });
+
+            const openButton = card.querySelector(
+                '[data-action="open-feature"]'
+            );
+
+            if (!content || !openButton || !card.isConnected) {
+                return;
+            }
+
+            openButton.replaceChildren(content);
+            card.dataset.customCard = "ready";
+
+            requestAnimationFrame(() => applyTextFade(card));
+        } catch (error) {
+            card.removeAttribute("data-custom-card");
+
+            console.warn(
+                `[KANTOONG Dashboard] Kartu ${feature.id} gagal dirender:`,
+                error
+            );
+        }
+
+        return;
+    }
+
     const slot = card.querySelector("[data-feature-summary]");
 
     if (!slot || typeof feature.summary !== "function") {
@@ -1459,7 +1585,7 @@ export function refreshFeatureSummaries() {
         const feature = state.featureCatalog.get(card.dataset.featureId);
 
         if (feature) {
-            hydrateCardSummary(card, feature);
+            hydrateCard(card, feature);
         }
     }
 }
@@ -1560,6 +1686,18 @@ export function renderGridGuide() {
         "--dashboard-grid-columns",
         String(state.gridColumns)
     );
+
+    const gridRowHeight =
+        state.elements.featureGrid?.style.getPropertyValue(
+            "--dashboard-grid-row-height"
+        );
+
+    if (gridRowHeight) {
+        guide.style.setProperty(
+            "--dashboard-grid-row-height",
+            gridRowHeight
+        );
+    }
 
     guide.style.gridTemplateRows =
         `repeat(${totalRows}, var(--dashboard-grid-row-height))`;
@@ -3168,6 +3306,8 @@ export function initDashboardUser() {
         getElements: () => state.elements,
     });
 
+    observeGridSize();
+
     updateViewportProfile();
 
     loadThemePreference();
@@ -3261,6 +3401,9 @@ export function destroyDashboardUser() {
 
     featureHubController?.destroy();
     featureHubController = null;
+
+    gridResizeObserver?.disconnect();
+    gridResizeObserver = null;
 
     state.abortController?.abort();
 

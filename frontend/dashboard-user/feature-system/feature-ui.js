@@ -19,6 +19,21 @@ function span(className, text) {
 }
 
 /**
+ * Menandai elemen [data-fade] yang teksnya terpotong (data-overflow),
+ * agar CSS dapat memberi gradasi pudar di ujung teks.
+ * Panggil setelah elemen terpasang di halaman.
+ */
+export function applyTextFade(container) {
+    const nodes = container.querySelectorAll("[data-fade]");
+
+    for (const node of nodes) {
+        node.dataset.overflow = String(
+            node.scrollHeight > node.clientHeight + 1
+        );
+    }
+}
+
+/**
  * Kotak ringkasan di dalam kartu (mis. "Paket dalam perjalanan").
  *
  * @param {object} data

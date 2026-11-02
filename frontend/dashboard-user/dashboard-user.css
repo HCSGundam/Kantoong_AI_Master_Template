@@ -3324,6 +3324,7 @@ p {
 
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -3374,4 +3375,215 @@ p {
         max-height: min(46vh, 420px);
         max-height: min(46dvh, 420px);
     }
+}
+
+
+/* ============================================================
+   DESAIN FINAL: sel persegi, kartu Tambah Fitur 2x1, mode edit
+   ============================================================ */
+
+/* Tombol tema di header dipindah ke Pengaturan Aplikasi. */
+#dashboardThemeButton {
+    display: none !important;
+}
+
+/* Header: pensil berubah menjadi centang hitam saat mode edit. */
+.dashboard-icon-check {
+    display: none;
+}
+
+.dashboard-user[data-layout-mode="edit"] .dashboard-icon-check {
+    display: inline;
+}
+
+.dashboard-user[data-layout-mode="edit"] .dashboard-icon-pencil {
+    display: none;
+}
+
+.dashboard-user[data-layout-mode="edit"] #dashboardCustomizeButton {
+    color: #fff;
+    background: #151515;
+    border-color: #151515;
+}
+
+/* ---------- Kartu "Tambah Fitur": 2 kolom x 1 baris ---------- */
+
+.dashboard-feature-grid > .dashboard-feature-hub-entry {
+    grid-column: span 2;
+    grid-row: span 1;
+}
+
+.dashboard-feature-grid .dashboard-feature-hub-entry__button {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 0.25rem;
+
+    height: 100%;
+    padding: 0.375rem;
+
+    border-style: solid;
+    border-radius: var(--dashboard-card-radius, 1rem);
+}
+
+.dashboard-feature-hub-entry__thumbs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.25rem;
+
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.dashboard-feature-hub-entry__thumb {
+    display: grid;
+    place-items: center;
+
+    min-height: 0;
+
+    border: 1px solid var(--kc-color-border, #e2e2e2);
+    border-radius: 0.4375rem;
+
+    font-size: 0.75rem;
+    line-height: 1;
+
+    filter: grayscale(1);
+    overflow: hidden;
+}
+
+.dashboard-feature-hub-entry__row {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.dashboard-feature-grid .dashboard-feature-hub-entry__plus {
+    flex: 0 0 auto;
+
+    width: 1.375rem;
+    height: 1.375rem;
+}
+
+.dashboard-feature-grid .dashboard-feature-hub-entry__plus svg {
+    width: 0.875rem;
+    height: 0.875rem;
+
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+}
+
+.dashboard-feature-hub-entry__pill {
+    display: inline-flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+
+    min-height: 1.375rem;
+    padding: 0 0.5rem;
+
+    color: #fff;
+    background: #151515;
+
+    border-radius: 999px;
+
+    font-size: 0.5625rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.dashboard-feature-hub-entry__pill svg {
+    width: 0.625rem;
+    height: 0.625rem;
+
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.dashboard-feature-grid .dashboard-feature-hub-entry__title {
+    font-size: 0.5625rem;
+    font-weight: 600;
+}
+
+/* Layar lebar: kotak pratinjau dan teks boleh lebih besar. */
+@media (min-width: 900px) {
+    .dashboard-feature-hub-entry__thumb {
+        font-size: 1.25rem;
+    }
+
+    .dashboard-feature-hub-entry__pill,
+    .dashboard-feature-grid .dashboard-feature-hub-entry__title {
+        font-size: 0.75rem;
+    }
+
+    .dashboard-feature-grid .dashboard-feature-hub-entry__plus {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+/* ---------- Mode edit: hanya kartu terpilih yang punya kontrol ---------- */
+
+.dashboard-user[data-layout-mode="edit"]
+.dashboard-feature-card:not([data-layout-selected="true"])
+.dashboard-feature-card__archive,
+.dashboard-user[data-layout-mode="edit"]
+.dashboard-feature-card:not([data-layout-selected="true"])
+.dashboard-feature-card__resize-handle,
+.dashboard-user[data-layout-mode="edit"]
+.dashboard-feature-card:not([data-layout-selected="true"])
+.dashboard-feature-card__drag-handle {
+    display: none !important;
+}
+
+/* Kartu terpilih diredupkan; ikon arsip di tengah (sesuai desain). */
+.dashboard-user[data-layout-mode="edit"]
+.dashboard-feature-card[data-layout-selected="true"]::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+
+    background: rgba(20, 20, 44, 0.55);
+    border-radius: inherit;
+
+    pointer-events: none;
+}
+
+.dashboard-feature-card__archive {
+    top: 50%;
+    right: auto;
+    left: 50%;
+
+    width: 2.75rem;
+    height: 2.75rem;
+
+    color: #fff;
+    background: transparent;
+
+    transform: translate(-50%, -50%);
+}
+
+.dashboard-feature-card__archive svg {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+/* Pegangan: lingkaran putih di tepi kartu terpilih. */
+.dashboard-feature-card__resize-handle {
+    background: #fff;
+    border: 2px solid #151515;
+}
+
+/* Pegangan geser: pojok kiri-atas kartu terpilih. */
+.dashboard-user[data-layout-mode="edit"]
+.dashboard-feature-card__drag-handle {
+    z-index: 6;
 }

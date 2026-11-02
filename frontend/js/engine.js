@@ -1518,7 +1518,73 @@ window.KantoongCartBridge = {
  * melalui modul AI yang memiliki autentikasi dan otorisasi tersendiri.
  */
 
+/* ------------------------------------------------------------
+   Produk pilihan AI: etalase di belakang chat berganti otomatis
+   ------------------------------------------------------------ */
+
+const AI_PICKS_TITLE = "Pilihan AI untuk kamu";
+
+function showAIPicks(products) {
+  const title = document.getElementById("featuredTitle");
+  const reset = document.getElementById("resetCatalogBtn");
+
+  if (title) {
+    if (!title.dataset.defaultText) {
+      title.dataset.defaultText = title.textContent;
+    }
+
+    title.textContent = AI_PICKS_TITLE;
+  }
+
+  if (reset) {
+    reset.hidden = false;
+  }
+
+  renderProducts(products);
+
+  document
+    .getElementById("featuredSection")
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function resetAIPicks() {
+  const title = document.getElementById("featuredTitle");
+  const reset = document.getElementById("resetCatalogBtn");
+
+  if (title?.dataset.defaultText) {
+    title.textContent = title.dataset.defaultText;
+  }
+
+  if (reset) {
+    reset.hidden = true;
+  }
+
+  renderProducts();
+}
+
 function initAIEventBridge() {
+  document.addEventListener("kantoong:ai-matched", (event) => {
+    const ids = Array.isArray(event.detail?.ids)
+      ? event.detail.ids.map(String)
+      : [];
+
+    const picks = ids.length
+      ? state.products.filter((product) =>
+          ids.includes(String(getProductId(product)))
+        )
+      : Array.isArray(event.detail?.products)
+        ? event.detail.products
+        : [];
+
+    if (picks.length > 0) {
+      showAIPicks(picks);
+    }
+  });
+
+  document
+    .getElementById("resetCatalogBtn")
+    ?.addEventListener("click", resetAIPicks);
+
   document.addEventListener("kantoong:ai-search", (event) => {
     const query = event.detail?.query;
 
