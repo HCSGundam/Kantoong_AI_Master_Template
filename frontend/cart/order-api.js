@@ -12,6 +12,7 @@
 import { supabase } from '../js/supabase-client.js';
 import { CartConfig as CFG } from './cart-config.js';
 import * as Cart from './cart-store.js';
+import { getSalesRef } from '../js/sales-store.js';
 
 const RECEIPT_KEY = `kantoong:last-order:${CFG.business_id}`;
 const RECEIPT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // struk terakhir disimpan 7 hari di perangkat ini
@@ -49,6 +50,8 @@ export function buildOrderPayload() {
         payment_method: d.payment_method,
         note: t(d.note),
         service_fee: calc.serviceFee,
+        // Toko sales perujuk (30 hari): pesanan tercatat atas nama sales tsb.
+        sales_slug: getSalesRef(),
         items: Cart.getItems().map(it => ({ product_id: it.id, qty: it.qty, note: it.note }))
     };
 }
@@ -153,7 +156,12 @@ export async function submitOrder() {
         const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
         let data, error;
         try {
-            ({ data, error } = await supabase.rpc('create_order', { p: payload }).abortSignal(ctl.signal));
+            // create_order_v2 = create_order + atribusi sales (db/erp-foundation.sql).
+            // Bila database ERP belum dipasang, jatuh ke create_order biasa.
+            ({ data, error } = await supabase.rpc('create_order_v2', { p: payload }).abortSignal(ctl.signal));
+            if (error && (error.code === 'PGRST202' || error.code === '42883')) {
+                ({ data, error } = await supabase.rpc('create_order', { p: payload }).abortSignal(ctl.signal));
+            }
         } catch (e) {
             error = e;
         } finally {

@@ -65,12 +65,14 @@
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
+                    stroke-width="2.2"
+                    stroke-linejoin="round"
                 >
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                    <!-- Ikon menu: empat kotak membulat (gaya dashboard) -->
+                    <rect x="3" y="3" width="7.5" height="7" rx="2.2"></rect>
+                    <rect x="3" y="12.5" width="7.5" height="8.5" rx="2.2"></rect>
+                    <rect x="13.5" y="3" width="7.5" height="11" rx="2.2"></rect>
+                    <rect x="13.5" y="16.5" width="7.5" height="4" rx="2"></rect>
                 </svg>
             </button>
 
@@ -161,18 +163,12 @@
                 ></div>
             </section>
 
-            <!-- INFORMASI BRAND -->
+            <!-- INFORMASI BRAND: pita berjalan keunggulan / logo brand -->
             <section
                 class="brand-slot"
                 id="brandSlot"
                 aria-label="Informasi brand"
             ></section>
-
-            <!-- DERETAN KATEGORI (pil geser, sesuai sketsa).
-                 Ketuk = katalog di bawah tersaring ke kategori itu. -->
-            <nav class="category-strip" aria-label="Kategori produk">
-                <div class="scroll-x" id="categoryList"></div>
-            </nav>
 
             <!-- PRODUK UNGGULAN -->
             <section
@@ -261,6 +257,11 @@
                 <div class="section-head">
                     <h2 id="catalogTitle">Semua Produk</h2>
                 </div>
+
+                <!-- DERETAN KATEGORI: pil geser untuk menyaring katalog -->
+                <nav class="category-strip" aria-label="Kategori produk">
+                    <div class="scroll-x" id="categoryList"></div>
+                </nav>
 
                 <div class="catalog-grid" id="catalogGrid"></div>
             </section>

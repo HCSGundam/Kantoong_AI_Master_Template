@@ -110,8 +110,7 @@ body,
 
 #appRoot .app-header {
     color: var(--k-text);
-    background-color: color-mix(in srgb, var(--k-surface) 88%, transparent);
-    border-bottom-color: var(--k-border);
+    --header-glass: color-mix(in srgb, var(--k-surface) 80%, transparent);
 }
 
 #appRoot .header-title {

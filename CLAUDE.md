@@ -49,10 +49,16 @@ Dari depan terlihat seperti **e-commerce/marketplace biasa**, tapi di belakangny
   - `js/ai-brain.js`, `js/chat-sheet.js`, `js/agent-state.js`: AI chat. Saat ini masih berbasis aturan di browser, riwayat disimpan di localStorage.
   - `client-config.js`: identitas dan skin per brand (`business_id`, nama, warna)
   - `cart/`: keranjang dan order (`order.sql`)
-  - `auth/`: login dan kontrol akses
-  - `dashboard-admin/`: dashboard admin
+  - `auth/`: login (satu pintu login web)
+  - `dashboard-admin/`: hanya pengalih ke ERP. Editor produk lama sudah pindah ke ERP › Katalog Master (`erp/modules/product-editor.js`)
+  - Membuka ERP selalu minta password lagi + kunci otomatis 30 menit (`erp/core/erp-lock.js`). Mode demo hanya lewat `erp/erp.html?demo=1`. Tombol ERP di Profil hanya untuk anggota (`members`)
+  - `db/erp-security.sql`: sambung akun hanya bila email terverifikasi; produk/foto bisa dikelola dari ERP
   - `dashboard-user/`: dashboard user (sistem fitur modular, intent menu, navigation memory)
   - `db/owner-and-pin.sql`: SQL owner/PIN
+  - `db/erp-foundation.sql`: ERP Fase 1 (organisasi, anggota, target/komisi, gaji, toko per sales, approval, audit, leaderboard, RLS)
+  - `db/erp-phase2.sql`: ERP Fase 2 (gudang & stok, kasir POS, jurnal akuntansi, absensi jam-server, payroll). Stok/jurnal/kasir hanya lewat fungsi database
+  - `erp/`: aplikasi ERP (`erp.html`). `core/` = aturan akses & hitungan (murni, dites), `data/` = adapter Supabase + mode demo, `modules/` = satu file per dashboard
+  - `js/sales-store.js`: toko per sales (`/nama-sales`, nanti `nama-sales.kantoong.id`) + atribusi pesanan 30 hari
   - `js/supabase-client.js`: koneksi Supabase (hanya memakai publishable key)
 - `backend/server.js`: Express, port 5000. Endpoint `/api/chat` masih dummy, jadi AI asli belum tersambung.
 - `test/`: tes otomatis (Vitest)

@@ -1438,3 +1438,1094 @@
 #appRoot .featured {
   isolation: isolate;
 }
+
+/* =========================================================
+   18. MOTION: tulisan naik dari bawah saat discroll (gaya Canva)
+   Kelas .reveal / .is-revealed dipasang engine.js -> initScrollReveal.
+   Memakai animation (bukan transition) agar tidak bentrok dengan
+   gerakan melompat tulisan etalase.
+   ========================================================= */
+
+#appRoot .reveal:not(.is-revealed) {
+  opacity: 0;
+}
+
+#appRoot .reveal.is-revealed {
+  animation: kantoong-rise 820ms cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0ms) backwards;
+}
+
+@keyframes kantoong-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.9em);
+    filter: blur(6px);
+  }
+
+  60% {
+    filter: blur(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* =========================================================
+   19. DESKTOP 2D: kartu membesar saat disorot kursor
+   Hanya untuk perangkat dengan mouse; mode 3D punya aturan sendiri.
+   ========================================================= */
+
+@media (hover: hover) and (pointer: fine) {
+  #appRoot .rail--focus > .product-card {
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 260ms ease;
+  }
+
+  #appRoot .rail--focus > .product-card:hover {
+    z-index: 2;
+    transform: scale(1.05);
+    box-shadow: 0 14px 32px rgb(0 0 0 / 14%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .reveal:not(.is-revealed),
+  #appRoot .reveal.is-revealed {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* =========================================================
+   20. PITA BERJALAN DI BAWAH HERO (keunggulan / logo brand)
+   Bergerak kanan -> kiri tanpa henti. Berhenti saat disorot kursor.
+   ========================================================= */
+
+#appRoot .brand-slot:has(.brand-marquee) {
+  padding: 0;
+}
+
+#appRoot .brand-marquee {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 12px 0;
+}
+
+#appRoot .brand-marquee__label {
+  flex: none;
+  margin: 0 0 0 var(--page-pad, 16px);
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#appRoot .brand-marquee__viewport {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+
+  /* Tepi kiri-kanan memudar, item muncul & hilang dengan halus. */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
+#appRoot .brand-marquee__track {
+  display: flex;
+  width: max-content;
+  animation: kantoong-marquee var(--marquee-duration, 30s) linear infinite;
+}
+
+#appRoot .brand-marquee:hover .brand-marquee__track {
+  animation-play-state: paused;
+}
+
+#appRoot .brand-marquee__group {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+#appRoot .brand-marquee__item {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+
+  padding: 0 22px;
+  color: var(--store-text, #111);
+}
+
+#appRoot .brand-marquee__icon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#appRoot .brand-marquee__text {
+  display: grid;
+  gap: 1px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+#appRoot .brand-marquee__title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#appRoot .brand-marquee__sub {
+  color: var(--store-text-muted, #6b6b6b);
+  font-size: 10.5px;
+}
+
+#appRoot .brand-marquee__logo {
+  display: block;
+  height: 26px;
+  width: auto;
+  max-width: 110px;
+  object-fit: contain;
+  filter: grayscale(1);
+}
+
+@keyframes kantoong-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (min-width: 900px) {
+  #appRoot .brand-marquee__item {
+    padding: 0 40px;
+  }
+
+  #appRoot .brand-marquee__title {
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .brand-marquee__track {
+    animation: none;
+  }
+
+  #appRoot .brand-marquee__viewport {
+    overflow-x: auto;
+  }
+}
+
+/* Deretan kategori kini di dalam katalog "Semua Produk". */
+#appRoot #categorySection .category-strip {
+  padding: 0 0 10px;
+}
+
+#appRoot #categorySection .category-strip #categoryList {
+  padding-inline: 0;
+}
+
+@media (max-width: 640px) {
+  #appRoot #categorySection .category-strip #categoryList {
+    padding-inline: 10px;
+  }
+}
+
+/* =========================================================
+   21. KARTU: tanpa tombol "+", bisa diketuk -> popup
+   HP     : pengiriman di bawah garis (seperti sebelumnya).
+   Desktop: pengiriman pindah ke samping harga (sesuai foto).
+   ========================================================= */
+
+#appRoot .product-card {
+  cursor: pointer;
+}
+
+#appRoot .product-card:focus-visible {
+  outline: 2px solid var(--store-text, #111);
+  outline-offset: 3px;
+}
+
+@media (min-width: 900px) {
+  #appRoot .product-info {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "meta meta"
+      "name name"
+      "buy ship";
+    column-gap: 10px;
+  }
+
+  #appRoot .product-meta { grid-area: meta; }
+  #appRoot .product-name { grid-area: name; }
+
+  #appRoot .product-buy {
+    grid-area: buy;
+    align-self: end;
+  }
+
+  #appRoot .product-buy .product-price {
+    flex-direction: column;
+    align-items: flex-start;
+    row-gap: 0;
+  }
+
+  #appRoot .product-ship {
+    grid-area: ship;
+    align-self: end;
+
+    display: grid;
+    justify-items: start;
+    gap: 3px;
+
+    margin: 0;
+    padding: 6px 0 0;
+    border-top: 0;
+  }
+
+  #appRoot .product-ship > * + * {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+/* =========================================================
+   22. GALERI MEDIA: FLIP KARTU + TUMPUKAN KARTU MINI
+   Foto besar berganti dengan efek kartu dibalik. Tumpukan mini
+   dikipas; kartu aktif tertarik keluar ke atas.
+   ========================================================= */
+
+#appRoot .media-gallery {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #111;
+}
+
+#appRoot .media-gallery__stage {
+  position: absolute;
+  inset: 0;
+  perspective: 1400px;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+#appRoot .media-gallery__slide {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+
+  opacity: 0;
+  visibility: hidden;
+  backface-visibility: hidden;
+  transform-origin: 50% 50%;
+}
+
+#appRoot .media-gallery__slide.is-active,
+#appRoot .media-gallery__slide.is-leaving {
+  opacity: 1;
+  visibility: visible;
+}
+
+#appRoot .media-gallery__slide.is-active {
+  z-index: 2;
+}
+
+/* Latar buram dari foto yang sama (terlihat saat foto diperbesar utuh). */
+#appRoot .media-gallery__slide::before {
+  content: "";
+  position: absolute;
+  inset: -24px;
+  background: var(--slide-bg, none) center / cover no-repeat;
+  filter: blur(26px);
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+#appRoot .media-gallery__slide img,
+#appRoot .media-gallery__slide video {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+#appRoot .media-gallery__slide.is-empty {
+  display: grid;
+  place-items: center;
+  background: var(--store-surface-soft, #f2f2f2);
+}
+
+/* Flip kartu: yang lama berputar menjauh, yang baru berputar masuk. */
+#appRoot .media-gallery__stage[data-dir="next"] .is-leaving {
+  animation: kantoong-flip-out-next 300ms cubic-bezier(0.55, 0, 0.9, 0.4) forwards;
+}
+
+#appRoot .media-gallery__stage[data-dir="next"] .is-entering {
+  animation: kantoong-flip-in-next 420ms cubic-bezier(0.15, 0.8, 0.25, 1) 240ms backwards;
+}
+
+#appRoot .media-gallery__stage[data-dir="prev"] .is-leaving {
+  animation: kantoong-flip-out-prev 300ms cubic-bezier(0.55, 0, 0.9, 0.4) forwards;
+}
+
+#appRoot .media-gallery__stage[data-dir="prev"] .is-entering {
+  animation: kantoong-flip-in-prev 420ms cubic-bezier(0.15, 0.8, 0.25, 1) 240ms backwards;
+}
+
+@keyframes kantoong-flip-out-next {
+  to { transform: rotateY(-90deg) scale(0.9); }
+}
+
+@keyframes kantoong-flip-in-next {
+  from { transform: rotateY(90deg) scale(0.9); }
+}
+
+@keyframes kantoong-flip-out-prev {
+  to { transform: rotateY(90deg) scale(0.9); }
+}
+
+@keyframes kantoong-flip-in-prev {
+  from { transform: rotateY(-90deg) scale(0.9); }
+}
+
+/* Indikator garis ala story (dipakai di halaman produk). */
+#appRoot .media-gallery__dots {
+  position: absolute;
+  top: 12px;
+  left: 64px;
+  right: 64px;
+  z-index: 3;
+
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+
+#appRoot .media-gallery__dots[hidden] {
+  display: none;
+}
+
+#appRoot .media-gallery__dot {
+  flex: 1 1 0;
+  height: 3px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 40%);
+  transition: background-color 200ms ease;
+}
+
+#appRoot .media-gallery__dot.is-active {
+  background: #fff;
+}
+
+/* Kaki galeri: nama varian (kiri) + tumpukan kartu mini (kanan). */
+#appRoot .media-gallery__foot {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  z-index: 4;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+
+  pointer-events: none;
+}
+
+#appRoot .media-gallery__label {
+  min-width: 0;
+  max-width: 55%;
+  margin: 0;
+  padding: 6px 12px;
+  overflow: hidden;
+
+  color: #fff;
+  background: rgb(0 0 0 / 42%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#appRoot .media-gallery__label[hidden] {
+  display: none;
+}
+
+#appRoot .media-gallery__label.is-new {
+  animation: kantoong-rise 520ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#appRoot .media-deck {
+  --gap: min(16px, 120px / var(--n, 1));
+
+  position: relative;
+  flex: none;
+  width: calc(var(--gap) * (var(--n, 1) - 1) + 60px);
+  height: 74px;
+  margin-left: auto;
+  pointer-events: auto;
+}
+
+#appRoot .media-deck[hidden] {
+  display: none;
+}
+
+#appRoot .media-deck__card {
+  --offset: calc(var(--i, 0) - (var(--n, 1) - 1) / 2);
+
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+
+  width: 40px;
+  height: 54px;
+  margin-left: -20px;
+  padding: 0;
+
+  background: #333 center / cover no-repeat;
+  border: 2px solid rgb(255 255 255 / 70%);
+  border-radius: 9px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 35%);
+
+  transform-origin: 50% 130%;
+  transform:
+    translateX(calc(var(--offset) * var(--gap)))
+    rotate(calc(var(--offset) * 7deg));
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms ease;
+  cursor: grab;
+  touch-action: none;
+}
+
+/* Kartu aktif tertarik keluar dari tumpukan. */
+#appRoot .media-deck__card.is-out {
+  z-index: 5;
+  border-color: #fff;
+  transform:
+    translateX(calc(var(--offset) * var(--gap)))
+    translateY(-16px)
+    rotate(0deg)
+    scale(1.14);
+}
+
+#appRoot .media-deck__play {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: #fff;
+  font-size: 12px;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 50%);
+}
+
+/* =========================================================
+   23. POPUP KARTU BESAR (fase 2) — gaya kartu paket wisata
+   Teks (nama, harga, dll) di atas foto dengan fade gelap.
+   Kotak putih bawah: Chat AI | Keranjang + tombol hitam.
+   ========================================================= */
+
+#appRoot .quickview {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+#appRoot .quickview[hidden] {
+  display: none;
+}
+
+#appRoot .quickview__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 50%);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+#appRoot .quickview__frame {
+  position: relative;
+  width: min(400px, 100%);
+  height: min(700px, calc(100% - 64px));
+  margin-top: 44px;
+
+  opacity: 0;
+  transform: translateY(28px) scale(0.96);
+  transition:
+    opacity 240ms ease,
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#appRoot .quickview.is-open .quickview__backdrop {
+  opacity: 1;
+}
+
+#appRoot .quickview.is-open .quickview__frame {
+  opacity: 1;
+  transform: none;
+}
+
+/* Tutup: di luar kartu, pojok kanan atas. */
+#appRoot .quickview__close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+
+  color: #111;
+  background: #fff;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 25%);
+  cursor: pointer;
+}
+
+#appRoot .quickview__close svg,
+#appRoot .quickview__icon svg,
+#appRoot .quickview__more svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#appRoot .quickview__card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+
+  color: #fff;
+  background: #111;
+  border-radius: 30px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 40%);
+}
+
+#appRoot .quickview__media {
+  position: absolute;
+  inset: 0;
+}
+
+#appRoot .quickview .media-gallery__dots {
+  display: none;
+}
+
+/* Masking fade gelap dari atas ke bawah agar tulisan terbaca. */
+#appRoot .quickview__shade {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 72%) 0%,
+    rgb(0 0 0 / 48%) 30%,
+    rgb(0 0 0 / 0%) 58%,
+    rgb(0 0 0 / 0%) 70%,
+    rgb(0 0 0 / 35%) 100%
+  );
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+
+/* Teks di atas foto (tidak ikut berganti saat foto berganti). */
+#appRoot .quickview__text {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  right: 76px;
+  z-index: 4;
+
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+
+  pointer-events: none;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 25%);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+/* Aturan kartu versi desktop (pengiriman di samping harga) tidak berlaku
+   di popup: semua baris tetap bertumpuk rapi ke bawah seperti di HP. */
+#appRoot .quickview__text > * {
+  grid-area: auto;
+  grid-column: 1 / -1;
+  align-self: start;
+}
+
+#appRoot .quickview__eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  opacity: 0.85;
+}
+
+#appRoot .quickview__name {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+#appRoot .quickview__desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  opacity: 0.88;
+}
+
+#appRoot .quickview__text .product-meta,
+#appRoot .quickview__text .product-ship {
+  display: flex;
+  margin: 4px 0 0;
+  padding: 0;
+
+  color: rgb(255 255 255 / 88%);
+  border: 0;
+
+  font-size: 12.5px;
+}
+
+#appRoot .quickview__text .product-meta > * + *,
+#appRoot .quickview__text .product-ship > * + * {
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid rgb(255 255 255 / 45%);
+}
+
+#appRoot .quickview__text .product-rating strong {
+  color: #fff;
+}
+
+#appRoot .quickview__text .product-rating.is-empty {
+  color: rgb(255 255 255 / 88%);
+}
+
+#appRoot .quickview__text .product-rating.is-empty .product-rating__star {
+  color: rgb(255 255 255 / 55%);
+}
+
+#appRoot .quickview__text .product-icon {
+  width: 15px;
+  height: 15px;
+}
+
+#appRoot .quickview__price {
+  display: grid;
+  margin-top: 8px;
+}
+
+#appRoot .quickview__price small {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+#appRoot .quickview__now {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+#appRoot .quickview__now s {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+#appRoot .quickview__off {
+  align-self: center;
+  padding: 2px 8px;
+
+  color: #111;
+  background: #fff;
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Kanan atas: hati (wishlist) lalu perbesar foto di bawahnya. */
+#appRoot .quickview__side {
+  position: absolute;
+  top: 18px;
+  right: 16px;
+  z-index: 5;
+
+  display: grid;
+  gap: 10px;
+}
+
+#appRoot .quickview__side .quickview__icon {
+  position: static;
+
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-height: 0;
+  padding: 0;
+
+  color: #fff;
+  background: rgb(0 0 0 / 35%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 999px;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+#appRoot .quickview__side .product-like.is-liked svg {
+  fill: #fff;
+}
+
+#appRoot .quickview .media-gallery__foot {
+  bottom: 144px;
+  transition: opacity 300ms ease;
+}
+
+/* Kotak putih bawah: aksi abu + tombol hitam "Selengkapnya". */
+#appRoot .quickview__panel {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 5;
+
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px 10px;
+
+  color: var(--store-text, #111);
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 22%);
+
+  transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1), opacity 260ms ease;
+}
+
+#appRoot .quickview__more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-height: 50px;
+  padding: 0 16px;
+
+  color: #fff;
+  background: #151515;
+  border: 0;
+  border-radius: 14px;
+
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#appRoot .quickview__more:hover {
+  background: #000;
+}
+
+/* Tombol perbesar: tulisan & kotak turun, foto tampil utuh tanpa terhalang. */
+#appRoot .quickview__card.is-expanded .quickview__shade,
+#appRoot .quickview__card.is-expanded .quickview__text,
+#appRoot .quickview__card.is-expanded .media-gallery__foot {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#appRoot .quickview__card.is-expanded .media-deck {
+  pointer-events: none;
+}
+
+#appRoot .quickview__card.is-expanded .quickview__panel {
+  opacity: 0;
+  transform: translateY(calc(100% + 20px));
+  pointer-events: none;
+}
+
+#appRoot .quickview__card.is-expanded .media-gallery__slide::before {
+  opacity: 0.7;
+}
+
+#appRoot .quickview__card.is-expanded .media-gallery__slide img,
+#appRoot .quickview__card.is-expanded .media-gallery__slide video {
+  object-fit: contain;
+}
+
+/* Baris aksi sederhana, abu-abu: (orb) Chat Brand AI | (tas) Keranjang */
+#appRoot .product-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+#appRoot .product-cta__btn {
+  flex: 1 1 0;
+  min-width: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 38px;
+  padding: 4px 8px;
+
+  color: #6b6b6b;
+  background: none;
+  border: 0;
+  border-radius: 999px;
+
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#appRoot .product-cta__btn:hover {
+  color: var(--store-text, #111);
+  background: color-mix(in srgb, var(--store-text, #111) 5%, transparent);
+}
+
+/* Orb AI kecil */
+#appRoot .product-cta__orb {
+  flex: none;
+  gap: 2px;
+  width: 17px;
+  height: 17px;
+  background: #6b6b6b;
+  border-width: 0;
+  box-shadow: none;
+}
+
+#appRoot .product-cta__orb .product-ask__eye {
+  width: 2px;
+  height: 5px;
+}
+
+#appRoot .product-cta__btn:hover .product-cta__orb {
+  background: #111;
+}
+
+#appRoot .product-cta__icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#appRoot .product-cta__divider {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  background: #d8d8d8;
+}
+
+/* =========================================================
+   24. HALAMAN PRODUK PENUH (fase 3, alamat #produk/<id>)
+   Di atas header, di bawah chat (AI tetap mendampingi).
+   ========================================================= */
+
+#appRoot .product-page {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 180px;
+
+  color: var(--store-text, #111);
+  background: var(--store-bg, #fff);
+}
+
+#appRoot .product-page[hidden] {
+  display: none;
+}
+
+#appRoot .product-page__bar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: -66px;
+  padding: calc(18px + env(safe-area-inset-top, 0px)) 20px 10px;
+}
+
+#appRoot .product-page__back {
+  position: static;
+}
+
+#appRoot .product-page__crumb {
+  margin: 0;
+  padding: 6px 12px;
+
+  background: rgb(255 255 255 / 85%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#appRoot .product-page__hero {
+  position: relative;
+  margin: calc(8px + env(safe-area-inset-top, 0px)) 12px 0;
+  aspect-ratio: 4 / 5;
+  max-height: 72vh;
+  overflow: hidden;
+  border-radius: 26px;
+}
+
+#appRoot .product-page__media {
+  position: absolute;
+  inset: 0;
+}
+
+#appRoot .product-page__hero .media-gallery__foot {
+  bottom: 14px;
+}
+
+#appRoot .product-page__hero > .product-discount {
+  top: 64px;
+  left: 14px;
+  z-index: 4;
+}
+
+#appRoot .product-page__body {
+  padding: 4px 6px 0;
+}
+
+#appRoot .product-page__body .product-info {
+  padding: 14px 10px 4px;
+}
+
+#appRoot .product-page__body .product-name {
+  font-size: 20px;
+}
+
+#appRoot .product-page__body .product-buy .product-price {
+  font-size: 22px;
+}
+
+#appRoot .product-page__body .product-cta {
+  margin: 12px 6px 0;
+  padding: 4px;
+  background: color-mix(in srgb, var(--store-text, #111) 5%, transparent);
+  border-radius: 999px;
+}
+
+#appRoot .product-page__about {
+  padding: 18px 10px 0;
+}
+
+#appRoot .product-page__about h2 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+#appRoot .product-page__about p {
+  margin: 0;
+  color: var(--store-text-muted, #666);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+@media (min-width: 900px) {
+  #appRoot .product-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    align-content: start;
+    column-gap: 32px;
+    padding: 0 max(24px, calc((100% - 1100px) / 2)) 180px;
+  }
+
+  #appRoot .product-page[hidden] {
+    display: none;
+  }
+
+  #appRoot .product-page__bar {
+    grid-column: 1 / -1;
+    position: static;
+    margin-bottom: 0;
+    padding-inline: 0;
+  }
+
+  #appRoot .product-page__hero {
+    margin: 0;
+  }
+
+  #appRoot .product-page__body {
+    padding-top: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .quickview__card,
+  #appRoot .quickview__backdrop,
+  #appRoot .quickview__panel {
+    transition: none;
+  }
+}

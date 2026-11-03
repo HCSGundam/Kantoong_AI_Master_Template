@@ -1,26 +1,75 @@
 /**
- * KANTOONG CORE — PRODUCT SERVICE
- * File: frontend/dashboard-admin/services/product-detail-service.js
+ * KANTOONG ERP — LAYANAN PRODUK (katalog master)
+ * File: frontend/erp/data/product-service.js
  *
- * CRUD produk ke Supabase. Hak menulis dijaga oleh RLS (owner saja).
+ * Tambah/ubah/hapus produk, unggah foto, dan atur tampil di homepage
+ * (Produk Unggulan / Hero). Dipindah dari dashboard admin lama.
+ * Hak menulis dijaga RLS: owner, direktur, dan staf katalog
+ * (lihat db/erp-security.sql).
  */
 
 import { supabase } from "../../js/supabase-client.js";
-import { ADMIN_CONFIG } from "../dashboard-admin-config.js";
+import CFG from "../../client-config.js";
 
-const TABLE = ADMIN_CONFIG.tables.products;
+export const PRODUCT_CONFIG = Object.freeze({
+    businessId: CFG?.business_id ?? "master_template_001",
+    storage: Object.freeze({
+        bucket: "product-images",
+        maxFileBytes: 3 * 1024 * 1024,
+        allowedTypes: Object.freeze(["image/jpeg", "image/png", "image/webp"]),
+    }),
+    /** Hero slider menampilkan maksimal sekian produk. */
+    maxHeroSlides: 5,
+});
+
+const TABLE = "products";
+
+/** Tampil di homepage: is_featured (Produk Unggulan) & is_hero (hero slider). */
+export async function setPublication(productId, changes) {
+    const patch = {};
+    if (typeof changes.is_featured === "boolean") patch.is_featured = changes.is_featured;
+    if (typeof changes.is_hero === "boolean") patch.is_hero = changes.is_hero;
+    if (!Object.keys(patch).length) return null;
+
+    const { data, error } = await supabase.from(TABLE).update(patch).eq("id", productId).select().single();
+    if (error) throw error;
+    return data;
+}
 
 function text(value) {
     return String(value ?? "").trim();
 }
 
+export const GALLERY_LIMIT = 12;
+
 /**
- * Kolom tambahan kartu produk (db/product-card.sql). Hanya dikirim bila
- * diisi atau kolomnya sudah ada, agar admin tetap jalan sebelum SQL dijalankan.
+ * Galeri popup: [{ url, label }]. label = nama produk/varian di foto itu
+ * (contoh "Chocolate", "Ukuran 1 liter"). Menerima juga daftar URL lama.
+ * Item yang masih menunggu unggah membawa { file } dan belum punya url.
+ */
+export function normalizeGallery(value) {
+    const list = Array.isArray(value) ? value : [];
+
+    return list
+        .map((item) =>
+            typeof item === "string"
+                ? { url: text(item), label: "" }
+                : { url: text(item?.url), label: text(item?.label).slice(0, 40), file: item?.file }
+        )
+        .filter((item) => item.url || item.file);
+}
+
+/**
+ * Kolom tambahan kartu produk (db/product-card.sql & db/product-media.sql).
+ * Hanya dikirim bila diisi atau kolomnya sudah ada, agar admin tetap jalan
+ * sebelum SQL dijalankan.
  */
 function buildCardPatch(input) {
     const known = new Set(input.existing_keys ?? []);
     const compareAt = Number(input.compare_at_price);
+    const gallery = normalizeGallery(input.gallery)
+        .filter((item) => item.url)
+        .map(({ url, label }) => ({ url, label }));
     const values = {
         compare_at_price:
             text(input.compare_at_price) && Number.isFinite(compareAt) && compareAt > 0
@@ -28,6 +77,8 @@ function buildCardPatch(input) {
                 : null,
         ship_estimate: text(input.ship_estimate) || null,
         ship_from: text(input.ship_from) || null,
+        video_url: text(input.video_url) || null,
+        gallery: gallery.length ? gallery : null,
     };
 
     return Object.fromEntries(
@@ -79,6 +130,21 @@ export function validateProductInput(input) {
         return "Harga coret harus berupa angka 0 atau lebih.";
     }
 
+    const gallery = normalizeGallery(input.gallery);
+
+    if (gallery.length > GALLERY_LIMIT) {
+        return `Galeri foto maksimal ${GALLERY_LIMIT} foto.`;
+    }
+
+    const urls = [
+        text(input.video_url),
+        ...gallery.filter((item) => !item.file).map((item) => item.url),
+    ];
+
+    if (urls.some((url) => url && !/^https?:\/\//i.test(url))) {
+        return "URL video/foto galeri harus diawali https://";
+    }
+
     return "";
 }
 
@@ -98,7 +164,7 @@ export async function listProducts() {
 export async function createProduct(input) {
     const payload = {
         ...buildPayload(input),
-        business_id: ADMIN_CONFIG.businessId,
+        business_id: PRODUCT_CONFIG.businessId,
     };
 
     const { data, error } = await supabase
@@ -141,7 +207,7 @@ export async function deleteProduct(id) {
 }
 
 export async function uploadProductImage(file) {
-    const { bucket, maxFileBytes, allowedTypes } = ADMIN_CONFIG.storage;
+    const { bucket, maxFileBytes, allowedTypes } = PRODUCT_CONFIG.storage;
 
     if (!allowedTypes.includes(file.type)) {
         throw new Error("Format foto harus JPG, PNG, atau WebP.");

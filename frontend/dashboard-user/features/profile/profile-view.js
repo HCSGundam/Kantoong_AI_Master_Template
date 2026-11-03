@@ -259,9 +259,11 @@ function createLoginPanel() {
 function createAccountActions(user) {
   const group = createElement("div", "kc-profile__account-actions");
 
+  // Hanya anggota perusahaan; pelanggan tidak melihat tombol ini.
+  // ERP akan meminta password lagi setiap kali dibuka.
   if (user.isOwner) {
     const adminButton = createActionButton({
-      label: "Buka Dashboard Admin",
+      label: "Masuk Dashboard ERP 🔒",
       action: "open-admin",
       variant: "primary",
     });
@@ -637,6 +639,42 @@ export async function renderProfileView({
   const describeError = (error, fallback) =>
     context.auth?.describeError?.(error) ?? fallback;
 
+  // Batal login Google (tombol Kembali / tutup jendela Google): browser
+  // memulihkan halaman dalam keadaan terkunci. Buka kunci begitu pengguna
+  // kembali ke halaman, atau setelah 8 detik bila pengalihan tidak terjadi.
+  let redirectGuard = 0;
+
+  const releaseAfterRedirect = () => {
+    clearTimeout(redirectGuard);
+    setBusy(false);
+    showFeedback("");
+  };
+
+  const watchRedirect = () => {
+    const topWindow = (() => {
+      try {
+        return window.top || window;
+      } catch {
+        return window;
+      }
+    })();
+
+    const onReturn = (event) => {
+      if (event.type === "visibilitychange" && document.visibilityState !== "visible") {
+        return;
+      }
+
+      releaseAfterRedirect();
+      [window, topWindow].forEach((target) => target.removeEventListener("pageshow", onReturn));
+      document.removeEventListener("visibilitychange", onReturn);
+    };
+
+    [window, topWindow].forEach((target) => target.addEventListener("pageshow", onReturn));
+    document.addEventListener("visibilitychange", onReturn);
+
+    redirectGuard = window.setTimeout(releaseAfterRedirect, 8000);
+  };
+
   const handleClick = async (event) => {
     const target = event.target;
 
@@ -674,6 +712,7 @@ export async function renderProfileView({
 
       try {
         await auth.signInWithGoogle();
+        watchRedirect();
       } catch (error) {
         showFeedback(
           describeError(error, "Gagal masuk dengan Google."),

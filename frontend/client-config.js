@@ -99,28 +99,32 @@ const KantoongConfig = {
 
     /*
      * type:
-     * - "highlights" = menampilkan keunggulan bisnis
+     * - "marquee"    = pita berjalan kanan -> kiri tanpa henti (bawah hero)
+     * - "highlights" = kotak keunggulan bisnis (diam)
      * - "text"       = menampilkan teks bebas
      * - "none"       = menyembunyikan area informasi
+     *
+     * Item "marquee" bisa berupa:
+     * - keunggulan brand: { icon, title, sub }
+     *   icon: "truck" | "box" | "badge" | "lock" | "chat" | "heart"
+     * - logo/nama brand mitra: { logo: "url-logo.png", name: "Nama Brand" }
+     *   (contoh: label "TOP BRANDS" lalu deretan logo brand)
      */
     brand_slot: {
-        // Template dasar: "none" agar di bawah hero langsung deretan kategori.
-        // Ubah ke "highlights" bila klien ingin kotak keunggulan di bawah.
-        type: "none",
+        type: "marquee",
 
+        // Label kecil di kiri pita (opsional), misalnya "TOP BRANDS".
+        label: "",
+
+        // Lama satu putaran penuh (detik). Makin besar = makin pelan.
+        speed_seconds: 30,
+
+        // Isi sesuai keunggulan ASLI brand ini.
         items: [
-            {
-                title: "Kualitas",
-                sub: "Terjamin"
-            },
-            {
-                title: "Pengiriman",
-                sub: "Cepat"
-            },
-            {
-                title: "Layanan",
-                sub: "Ramah"
-            }
+            { icon: "truck", title: "Pengiriman Cepat", sub: "Aman sampai tujuan" },
+            { icon: "badge", title: "Kualitas Terjamin", sub: "Bahan pilihan terbaik" },
+            { icon: "chat", title: "Konsultasi AI", sub: "Tanya kapan saja" },
+            { icon: "lock", title: "Checkout Aman", sub: "Kamu yang bayar sendiri" }
         ],
 
         text: ""

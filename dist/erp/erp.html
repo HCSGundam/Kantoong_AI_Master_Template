@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex">
+    <title>Kantoong ERP</title>
+  <script type="module" crossorigin src="/assets/erp-7VhnGuDy.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-vYFxeodt.js">
+  <link rel="modulepreload" crossorigin href="/assets/client-config-60D0gHsc.js">
+  <link rel="stylesheet" crossorigin href="/assets/erp-DuHNLm57.css">
+</head>
+<body>
+    <!-- =========================================
+         LAYAR MASUK
+    ========================================== -->
+    <main class="erp-login" id="loginView" hidden>
+        <section class="erp-login__card">
+            <p class="erp-login__brand">KANTOONG ERP</p>
+            <h1 id="loginTitle">Masuk ke dashboard kerjamu</h1>
+            <p class="erp-muted">🔒 Khusus anggota perusahaan. Password selalu diminta setiap membuka ERP, dan ERP terkunci otomatis setelah 30 menit tidak dipakai.</p>
+
+            <form class="erp-form" id="loginForm">
+                <label class="erp-field">
+                    <span>Email</span>
+                    <input id="loginEmail" type="email" autocomplete="username" required>
+                </label>
+                <label class="erp-field">
+                    <span>Password</span>
+                    <input id="loginPassword" type="password" autocomplete="current-password" required>
+                </label>
+                <p class="erp-form__error" id="loginMessage" hidden></p>
+                <button class="erp-btn erp-btn--primary erp-btn--block" type="submit">Buka ERP</button>
+                <button class="erp-link" id="loginSwitch" type="button" hidden>Bukan akunmu? Ganti akun</button>
+                <a class="erp-link" href="/">← Kembali ke toko</a>
+            </form>
+
+            <div class="erp-login__demo" id="loginDemo" hidden>
+                <p class="erp-login__demo-title">Coba mode demo <span class="erp-badge">DATA CONTOH</span></p>
+                <p class="erp-muted">Pilih peran untuk melihat batas akses tiap jabatan. Data fiktif, tersimpan di perangkat ini saja.</p>
+                <div class="erp-personas" id="demoPersonas"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- =========================================
+         APLIKASI ERP
+    ========================================== -->
+    <div class="erp-app" id="appView" hidden>
+        <aside class="erp-nav" id="erpNav" aria-label="Menu modul">
+            <div class="erp-nav__brand">
+                <span class="erp-nav__logo" aria-hidden="true">K</span>
+                <span>Kantoong ERP</span>
+            </div>
+            <nav class="erp-nav__list" id="navList"></nav>
+            <div class="erp-nav__upcoming">
+                <p class="erp-nav__heading">Segera hadir</p>
+                <ul id="navUpcoming"></ul>
+            </div>
+        </aside>
+
+        <div class="erp-nav-backdrop" id="navBackdrop" hidden></div>
+
+        <div class="erp-main">
+            <header class="erp-top">
+                <button class="erp-icon-btn erp-top__menu" id="navToggle" type="button" aria-label="Buka menu" aria-controls="erpNav" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" class="erp-icon" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                </button>
+
+                <div class="erp-top__title" id="topTitle"></div>
+
+                <div class="erp-top__right">
+                    <span class="erp-badge" id="demoBadge" hidden>DATA CONTOH</span>
+                    <select class="erp-persona-switch" id="personaSwitch" aria-label="Ganti peran demo" hidden></select>
+                    <div class="erp-user" id="userChip"></div>
+                    <button class="erp-btn erp-btn--sm" id="logoutBtn" type="button" title="Kunci ERP & kembali ke toko">Kunci</button>
+                </div>
+            </header>
+
+            <main class="erp-page" id="pageRoot" tabindex="-1"></main>
+        </div>
+    </div>
+
+    <div class="erp-toast" id="erpToast" role="status" aria-live="polite" hidden></div>
+
+</body>
+</html>

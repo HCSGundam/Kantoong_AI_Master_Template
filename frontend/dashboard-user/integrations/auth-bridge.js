@@ -16,7 +16,8 @@
 
 import { supabase } from "../../js/supabase-client.js";
 
-const ADMIN_PATH = "/dashboard-admin/dashboard-admin.html";
+// Dashboard perusahaan (ERP). Membukanya selalu minta password lagi.
+const ADMIN_PATH = "/erp/erp.html";
 
 function getTopWindow() {
     try {
@@ -59,21 +60,37 @@ export function describeAuthError(error) {
     return message || "Gagal masuk. Coba lagi.";
 }
 
-async function checkIsOwner(userId) {
+/**
+ * Apakah akun ini anggota perusahaan (owner/karyawan di tabel members)?
+ * Pelanggan biasa -> null (tidak melihat tombol dashboard sama sekali).
+ * Cadangan: tabel owners lama bila database ERP belum dipasang.
+ */
+async function getCompanyAccess(userId) {
     try {
+        const linked = await supabase.rpc("erp_link_me");
+
+        if (!linked.error && linked.data) {
+            const { data: member } = await supabase
+                .from("members")
+                .select("full_name, position_title, level, is_active")
+                .eq("id", linked.data)
+                .maybeSingle();
+
+            if (member?.is_active) {
+                return { title: member.position_title || "Anggota", name: member.full_name };
+            }
+            return null;
+        }
+
         const { data, error } = await supabase
             .from("owners")
             .select("user_id")
             .eq("user_id", userId)
             .maybeSingle();
 
-        if (error) {
-            return false;
-        }
-
-        return Boolean(data);
+        return !error && data ? { title: "Owner", name: "" } : null;
     } catch {
-        return false;
+        return null;
     }
 }
 
@@ -90,17 +107,19 @@ export async function getDashboardUser() {
     const user = data.session.user;
     const meta = user.user_metadata ?? {};
     const email = user.email ?? "";
-    const isOwner = await checkIsOwner(user.id);
+    const company = await getCompanyAccess(user.id);
 
     return {
         authenticated: true,
         id: user.id,
         name: String(
-            meta.full_name || meta.name || email.split("@")[0] || "Pengguna"
+            meta.full_name || meta.name || company?.name || email.split("@")[0] || "Pengguna"
         ),
         email,
-        role: isOwner ? "Owner" : "Pelanggan",
-        isOwner,
+        role: company ? company.title : "Pelanggan",
+        // isOwner dipertahankan agar kompatibel: artinya "anggota perusahaan".
+        isOwner: Boolean(company),
+        isStaff: Boolean(company),
         avatarUrl: String(meta.avatar_url || meta.picture || ""),
     };
 }

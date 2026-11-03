@@ -1150,3 +1150,52 @@
     width: 22px;
     height: 22px;
 }
+
+/* ---------- Tepi percakapan memudar (tanpa garis potong) ----------
+   Pesan yang tergulir di bawah judul "Konsultasi AI" atau di atas
+   saran/kotak ketik tidak terpotong tajam, tapi memudar halus. */
+.kc-messages {
+    padding-top: 16px;
+    padding-bottom: 30px;
+
+    -webkit-mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 22px,
+        #000 calc(100% - 44px),
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 22px,
+        #000 calc(100% - 44px),
+        transparent 100%
+    );
+}
+
+/* Saran pertanyaan menempel di atas fade pesan, dengan kabut lembut
+   sehingga terlihat menyatu, bukan menabrak isi chat. */
+.kc-suggestions {
+    position: relative;
+    z-index: 1;
+
+    margin-top: -14px;
+    padding-top: 10px;
+
+    background: linear-gradient(
+        to bottom,
+        transparent 0,
+        color-mix(in srgb, var(--kc-surface) 85%, transparent) 10px,
+        var(--kc-surface) 100%
+    );
+}
+
+/* Kapsul abu kotak ketik: tepi atas dilembutkan dengan bayangan halus. */
+.kc-composer {
+    padding-top: 4px;
+}
+
+.kc-composer__row {
+    box-shadow: 0 -6px 14px -6px color-mix(in srgb, var(--kc-text) 10%, transparent);
+}
