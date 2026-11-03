@@ -8,6 +8,7 @@
  */
 
 import { extendSeedPhase2 } from "./demo-seed-phase2.js";
+import { enrichOrdersPhase3, extendSeedPhase3 } from "./demo-seed-phase3.js";
 
 const SAMPLE_PRODUCTS = [
     { id: "demo-p1", name: "Produk Contoh A", price: 15000, category: "Minuman" },
@@ -198,7 +199,9 @@ export function buildDemoSeed(realProducts = [], now = new Date()) {
         { id: 2, actor_id: "m-wati", table_name: "members", record_id: "m-maya", action: "INSERT", changes: { full_name: "Maya Putri", position_title: "Sales" }, at: iso(240) },
     ];
 
-    return extendSeedPhase2({
+    // Urutan penting: pesanan dilengkapi (voucher, HP, status kirim) dulu,
+    // lalu Fase 2 membuat jurnal, lalu Fase 3 menambah PO, tiket, CRM.
+    return extendSeedPhase3(extendSeedPhase2(enrichOrdersPhase3({
         version: DEMO_VERSION,
         created_at: now.toISOString(),
         units,
@@ -211,11 +214,11 @@ export function buildDemoSeed(realProducts = [], now = new Date()) {
         orders,
         approvals,
         audit,
-    }, now);
+    }, now), now), now);
 }
 
 /** Naikkan bila bentuk data demo berubah (data lama di perangkat diganti). */
-export const DEMO_VERSION = 5;
+export const DEMO_VERSION = 6;
 
 /** Persona yang bisa dipilih di layar masuk demo (untuk menunjukkan batas akses). */
 export const DEMO_PERSONAS = Object.freeze([
@@ -227,5 +230,7 @@ export const DEMO_PERSONAS = Object.freeze([
     { id: "m-fajar", label: "Keuangan", note: "jurnal, laba rugi & neraca" },
     { id: "m-joko", label: "Staf Gudang", note: "stok, mutasi & opname" },
     { id: "m-dewi", label: "Kasir Outlet", note: "jualan di kasir POS" },
+    { id: "m-nadia", label: "Customer Service", note: "tiket keluhan & retur" },
+    { id: "m-reza", label: "Marketing", note: "voucher & data pelanggan" },
     { id: "m-lina", label: "Staf Katalog", note: "mengatur kode barang" },
 ]);

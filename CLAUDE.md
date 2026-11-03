@@ -46,12 +46,18 @@ Dari depan terlihat seperti **e-commerce/marketplace biasa**, tapi di belakangny
 ## Struktur kode saat ini
 - `frontend/`: web (HTML/CSS/JavaScript biasa, dibangun dengan **Vite**)
   - `index.html` + `js/engine.js`: storefront/homepage
-  - `js/ai-brain.js`, `js/chat-sheet.js`, `js/agent-state.js`: AI chat. Saat ini masih berbasis aturan di browser, riwayat disimpan di localStorage.
+  - `js/ai-brain.js`, `js/chat-sheet.js`, `js/agent-state.js`: AI chat (Gemini lewat backend, cadangan jawaban lokal).
+  - `js/kantoong-assistant.js`: **asisten universal**. Satu baris script memasang chat yang sama di halaman mana pun (toko, ERP, brand lain). Markup tunggal di `js/assistant-markup.js`, konteks & izin memori di `js/assistant-context.js`. Jangan menyalin markup chat ke HTML.
+  - Memori asisten: lintas brand HANYA bila user memilih "Ingat di semua toko" (UU PDP). Login + izin → disinkron ke `db/assistant-memory.sql` (teks saja, RLS milik sendiri). Menu + › "Hapus memori asisten"
+  - Di atas keranjang/dashboard user chat mengecil jadi orb (`kantoong:overlay`); di ERP mulai sebagai orb
+  - Riwayat Chat AI (`js/assistant-history.js`): tombol kisi di bar judul → kartu per sesi (pratinjau mini + produk, jam, judul, tanggal). Kartu redup; hidup (menyala, membesar, isi bergulir) saat di-hover (desktop) / di tengah saat digulir (HP). Data: arsip lokal dari "Chat baru" (30 hari, maks 30 sesi), `openArchived` di ai-brain. Belum disinkron ke server
+  - Desktop (≥900px): chat terbuka menempel di samping, halaman menyempit (`js/assistant-dock.js`). Mode melayang (mode awal, tarik naik setengah/penuh seperti HP)/samping/belah, sisi kiri/kanan, tombol X (desktop) = kembali ke "Halo Kak" (lempar kotak "Halo Kak"), tepi bisa ditarik. "Panggung": kartu produk di chat disorot → kartu sama di halaman menyala (`kantoong:stage-focus`). Kartu produk TETAP disimpan di chat (untuk riwayat)
   - `client-config.js`: identitas dan skin per brand (`business_id`, nama, warna)
   - `cart/`: keranjang dan order (`order.sql`)
   - `auth/`: login (satu pintu login web)
   - `dashboard-admin/`: hanya pengalih ke ERP. Editor produk lama sudah pindah ke ERP › Katalog Master (`erp/modules/product-editor.js`)
   - Membuka ERP selalu minta password lagi + kunci otomatis 30 menit (`erp/core/erp-lock.js`). Mode demo hanya lewat `erp/erp.html?demo=1`. Tombol ERP di Profil hanya untuk anggota (`members`)
+  - `db/erp-phase3.sql`: ERP Fase 3 (supplier & PO, alur kirim pesanan + resi, tiket CS & retur, voucher di checkout, CRM dengan izin pemasaran UU PDP)
   - `db/erp-security.sql`: sambung akun hanya bila email terverifikasi; produk/foto bisa dikelola dari ERP
   - `dashboard-user/`: dashboard user (sistem fitur modular, intent menu, navigation memory)
   - `db/owner-and-pin.sql`: SQL owner/PIN
@@ -60,7 +66,7 @@ Dari depan terlihat seperti **e-commerce/marketplace biasa**, tapi di belakangny
   - `erp/`: aplikasi ERP (`erp.html`). `core/` = aturan akses & hitungan (murni, dites), `data/` = adapter Supabase + mode demo, `modules/` = satu file per dashboard
   - `js/sales-store.js`: toko per sales (`/nama-sales`, nanti `nama-sales.kantoong.id`) + atribusi pesanan 30 hari
   - `js/supabase-client.js`: koneksi Supabase (hanya memakai publishable key)
-- `backend/server.js`: Express, port 5000. Endpoint `/api/chat` masih dummy, jadi AI asli belum tersambung.
+- `backend/server.js` + `backend/ai-chat.js`: Express port 5000, `/api/chat` ke Gemini (kunci di backend/.env). Prompt memakai konteks halaman, brand, nama user, izin memori
 - `test/`: tes otomatis (Vitest)
 - `dist/`: hasil build. Jangan diedit manual.
 

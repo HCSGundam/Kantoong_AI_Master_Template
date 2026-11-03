@@ -230,3 +230,36 @@
         transition: none !important;
     }
 }
+
+/* ========================================= */
+/* 8. PANGGUNG AI                            */
+/* Produk yang dibicarakan AI menyala di     */
+/* halaman (engine.js: focusStageCard).      */
+/* ========================================= */
+
+.product-card.is-stage-focus {
+    border-radius: 18px;
+    box-shadow:
+        0 0 0 2px #3b82f6,
+        0 12px 32px color-mix(in srgb, #3b82f6 35%, transparent);
+    transition: box-shadow 200ms ease;
+}
+
+.product-card.is-stage-new {
+    animation: stage-glow 2.4s ease-out 1;
+}
+
+@keyframes stage-glow {
+    0%, 40% {
+        box-shadow: 0 0 0 2px #3b82f6, 0 10px 30px color-mix(in srgb, #3b82f6 40%, transparent);
+    }
+    100% {
+        box-shadow: 0 0 0 0 transparent;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .product-card.is-stage-new {
+        animation: none;
+    }
+}

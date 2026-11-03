@@ -115,6 +115,8 @@ let pushed = false;
 function open(startView = 'cart', data) {
     page.classList.add('is-open');
     page.setAttribute('aria-hidden', 'false');
+    // Asisten AI mengecil jadi orb agar tidak menutupi tombol "Buat pesanan".
+    window.dispatchEvent(new CustomEvent('kantoong:overlay', { detail: { name: 'cart', open: true } }));
     go(startView, data);
     if (!pushed) {
         try { history.pushState({ kantoongCart: 1 }, ''); pushed = true; } catch { /* diblokir */ }
@@ -126,6 +128,7 @@ function close({ fromPop = false } = {}) {
     if (!isOpen()) return;
     page.classList.remove('is-open');
     page.setAttribute('aria-hidden', 'true');
+    window.dispatchEvent(new CustomEvent('kantoong:overlay', { detail: { name: 'cart', open: false } }));
     if (pushed && !fromPop) { pushed = false; try { history.back(); } catch { /* abaikan */ } }
     else pushed = false;
     document.getElementById('btnCart')?.focus({ preventScroll: true });

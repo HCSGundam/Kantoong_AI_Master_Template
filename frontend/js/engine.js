@@ -853,6 +853,28 @@ function scrollToCatalog() {
     ?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+/**
+ * Tombol AI di produk: LAMPIRKAN produk (foto, nama, harga) ke kotak chat,
+ * tanpa mengirim. Pembeli lalu menulis sendiri keinginannya, mis.
+ * "yang mirip ini tapi warna hitam". Ditangani chat-sheet.js.
+ */
+function attachProductToChat(product) {
+  if (!product) return;
+  emit("product-selected", { product });
+  window.dispatchEvent(
+    new CustomEvent("kantoong:attach-product", {
+      detail: {
+        product: {
+          id: getProductId(product),
+          name: getProductName(product),
+          price: getProductPrice(product),
+          image_url: getProductImage(product),
+        },
+      },
+    })
+  );
+}
+
 function askConsultation(text) {
   window.dispatchEvent(
     new CustomEvent("kantoong:consult", {
@@ -1352,8 +1374,7 @@ function createProductCard(product, index) {
     makeElement("span", "product-ask__eye")
   );
   askButton.addEventListener("click", () => {
-    emit("product-selected", { product });
-    askConsultation(`Ceritakan tentang ${name}`);
+    attachProductToChat(product);
   });
 
   corner.append(likeButton, askButton);
@@ -1759,8 +1780,7 @@ function createProductActions(product, { onChat } = {}) {
   chat.append(orb, makeElement("span", "", `Chat ${brand} AI`));
   chat.addEventListener("click", () => {
     onChat?.();
-    emit("product-selected", { product });
-    askConsultation(`Ceritakan tentang ${getProductName(product)}`);
+    attachProductToChat(product);
   });
 
   const cart = makeElement("button", "product-cta__btn");
@@ -2425,9 +2445,11 @@ function layoutCarousel(rail, { animate = true } = {}) {
     const facing = Math.cos(radians); // 1 = depan, -1 = belakang
     const visible = Math.abs(angle) < 125;
 
+    // Posisi dibulatkan ke piksel utuh: angka pecahan membuat kartu 3D
+    // tampak bergetar/kabur di layar laptop.
     card.style.transform =
-      `translateX(calc(-50% + ${(Math.sin(radians) * spreadX).toFixed(1)}px)) ` +
-      `translateZ(${((facing - 1) * depth).toFixed(1)}px) ` +
+      `translateX(calc(-50% + ${Math.round(Math.sin(radians) * spreadX)}px)) ` +
+      `translateZ(${Math.round((facing - 1) * depth)}px) ` +
       `rotateY(${(angle * 0.55).toFixed(1)}deg)`;
     card.style.opacity = visible ? String(0.35 + 0.65 * Math.max(0, facing)) : "0";
     card.style.zIndex = String(Math.round(100 + facing * 100));
@@ -2522,6 +2544,50 @@ function initCarouselGestures(rail) {
 
   rail.addEventListener("pointerup", release);
   rail.addEventListener("pointercancel", release);
+
+  // Usap dua jari di touchpad laptop (kiri-kanan) = memutar, tanpa ditekan.
+  // Usapan atas-bawah dibiarkan untuk scroll halaman.
+  // Getaran kecil jari yang diam di touchpad DIABAIKAN: putaran baru
+  // dimulai setelah usapan mendatar terkumpul > WHEEL_START px.
+  const WHEEL_START = 14;
+  let wheelSnap = 0;
+  let wheelPending = 0;
+  let wheelTurning = false;
+
+  rail.addEventListener(
+    "wheel",
+    (event) => {
+      if (!active() || state.dragging) return;
+
+      const px = event.deltaMode === 1 ? event.deltaX * 16 : event.deltaX;
+      const py = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
+
+      // Harus jelas mendatar, bukan scroll atas-bawah yang sedikit miring.
+      if (Math.abs(px) < 1 || Math.abs(px) < Math.abs(py) * 1.5) return;
+
+      event.preventDefault();
+
+      clearTimeout(wheelSnap);
+      wheelSnap = setTimeout(() => {
+        wheelPending = 0;
+        if (!wheelTurning) return;
+        wheelTurning = false;
+        state.pos = Math.round(state.pos);
+        layoutCarousel(rail);
+      }, 160);
+
+      if (!wheelTurning) {
+        wheelPending += px;
+        if (Math.abs(wheelPending) < WHEEL_START) return;
+        wheelTurning = true;
+      }
+
+      const { width } = getCarouselGeometry(rail);
+      state.pos += px / (width * 0.9);
+      layoutCarousel(rail, { animate: false });
+    },
+    { passive: false }
+  );
 
   // Setelah memutar, ketukan tidak dianggap klik tombol di kartu.
   // Ketuk kartu samping = putar kartu itu ke depan.
@@ -3267,6 +3333,40 @@ function showAIPicks(products) {
   document
     .getElementById("featuredSection")
     ?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // Kartu pilihan AI menyala sebentar: "ini yang kumaksud".
+  requestAnimationFrame(() => {
+    $$("#featuredSection .product-card").forEach((card) => {
+      card.classList.remove("is-stage-new");
+      void card.offsetWidth;
+      card.classList.add("is-stage-new");
+    });
+  });
+}
+
+/** Sorot satu kartu produk di halaman (bukan di chat). id kosong = lepas sorotan. */
+function focusStageCard(id) {
+  $$(".product-card.is-stage-focus").forEach((card) => card.classList.remove("is-stage-focus"));
+
+  if (!id) return;
+
+  const cards = $$(`.product-card[data-product-id="${CSS.escape(id)}"]`)
+    .filter((card) => !card.closest("#chatPanel"));
+  const card = cards.find((item) => item.closest(".featured-rail")) || cards[0];
+
+  if (!card) return;
+
+  card.classList.add("is-stage-focus");
+
+  const rail = card.closest(".featured-rail");
+
+  if (rail && isCarouselMode(getShowcase(rail))) {
+    rotateCarouselTo(rail, getRailCards(rail).indexOf(card));
+  } else if (rail) {
+    scrollRailToCard(rail, getRailCards(rail).indexOf(card));
+  }
+
+  (rail || card).scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function resetAIPicks() {
@@ -3306,6 +3406,13 @@ function initAIEventBridge() {
   document
     .getElementById("resetCatalogBtn")
     ?.addEventListener("click", resetAIPicks);
+
+  // Panggung: kartu produk di chat disorot -> kartu yang sama di halaman
+  // diputar/digeser ke depan dan menyala (desktop, chat di samping).
+  window.addEventListener("kantoong:stage-focus", (event) => {
+    focusStageCard(String(event.detail?.id ?? ""));
+  });
+  window.addEventListener("kantoong:stage-blur", () => focusStageCard(""));
 
   document.addEventListener("kantoong:ai-search", (event) => {
     const query = event.detail?.query;

@@ -52,8 +52,27 @@ export function buildOrderPayload() {
         service_fee: calc.serviceFee,
         // Toko sales perujuk (30 hari): pesanan tercatat atas nama sales tsb.
         sales_slug: getSalesRef(),
+        // Voucher diperiksa ulang & dipotong di server (create_order_v2).
+        voucher_code: calc.voucherOk ? d.voucher.code : '',
         items: Cart.getItems().map(it => ({ product_id: it.id, qty: it.qty, note: it.note }))
     };
+}
+
+// ------------------------------------------------------------
+// Cek voucher (fungsi erp_check_voucher di erp-phase3.sql)
+// ------------------------------------------------------------
+export async function checkVoucher(code) {
+    const clean = String(code || '').trim().toUpperCase();
+    if (!/^[A-Z0-9]{3,20}$/.test(clean)) return { valid: false, message: 'Kode voucher tidak valid.' };
+    try {
+        const { data, error } = await supabase.rpc('erp_check_voucher', { p_code: clean, p_subtotal: Cart.calculate().itemsTotal });
+        if (error) {
+            return { valid: false, message: error.code === 'PGRST202' ? 'Voucher belum aktif di toko ini.' : 'Gagal memeriksa voucher. Coba lagi.' };
+        }
+        return data || { valid: false, message: 'Kode voucher tidak ditemukan.' };
+    } catch {
+        return { valid: false, message: 'Tidak bisa terhubung ke server.' };
+    }
 }
 
 // ------------------------------------------------------------
@@ -142,7 +161,7 @@ export async function submitOrder() {
             const receipt = makeReceipt({
                 orderCode: 'DEMO-' + Math.random().toString(36).slice(2, 7).toUpperCase(),
                 simulated: true,
-                totals: { items_total: c.itemsTotal, shipping_cost: c.shippingCost, service_fee: c.serviceFee, total: c.total }
+                totals: { items_total: c.itemsTotal, shipping_cost: c.shippingCost, service_fee: c.serviceFee, voucher_code: c.voucherOk ? c.voucher.code : '', voucher_discount: c.voucherDiscount, total: c.total }
             });
             saveReceipt(receipt);
             Cart.completeOrder();
@@ -174,7 +193,8 @@ export async function submitOrder() {
 
         const totals = {
             items_total: Number(data.items_total), shipping_cost: Number(data.shipping_cost),
-            service_fee: Number(data.service_fee), total: Number(data.total)
+            service_fee: Number(data.service_fee), total: Number(data.total),
+            voucher_code: data.voucher_code || '', voucher_discount: Number(data.voucher_discount) || 0
         };
         const receipt = makeReceipt({ orderCode: data.order_code, simulated: false, totals });
         receipt.price_changed = Math.abs(totals.total - localTotal) > 0.5; // harga di server berbeda dari yang terlihat di keranjang

@@ -1855,3 +1855,105 @@ code {
     .erp-grid2 { grid-template-columns: minmax(0, 1fr); }
     .erp-imgpick { align-items: flex-start; }
 }
+
+/* =============================================================
+   FASE 3: PEMBELIAN, LOGISTIK, CS, MARKETING, CRM
+   ============================================================= */
+
+.erp-lines {
+    display: grid;
+    gap: 3px;
+    margin: 0;
+    padding: 8px 0;
+    list-style: none;
+    border-block: 1px dashed var(--e-border);
+    font-size: 13px;
+}
+
+.erp-lines li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.erp-lines li span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.erp-dialog--wide { width: min(680px, calc(100% - 24px)); }
+
+.erp-grid3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.erp-field select:not([name]),
+.erp-po-line select,
+.erp-po-line input,
+.erp-grid3 select {
+    width: 100%;
+    min-height: 40px;
+    padding: 8px 10px;
+    color: var(--e-text);
+    background: var(--e-surface);
+    border: 1px solid var(--e-border);
+    border-radius: 12px;
+    font: inherit;
+}
+
+.erp-po-lines {
+    display: grid;
+    gap: 8px;
+}
+
+.erp-po-line {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 80px 120px auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.erp-po-total {
+    margin: 0;
+    font-size: 16px;
+    text-align: right;
+}
+
+.erp-notes {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.erp-notes li {
+    padding: 8px 10px;
+    background: var(--e-soft);
+    border-radius: 10px;
+    font-weight: 400;
+}
+
+.erp-notes p { margin: 4px 0 0; }
+
+.erp-chips--sm { gap: 4px; margin-top: 4px; align-items: center; }
+
+.erp-member--crm { align-items: flex-start; }
+
+.erp-crm__side {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    max-width: 45%;
+}
+
+.erp-label p { margin: 2px 0; font-size: 14px; }
+
+@media (max-width: 640px) {
+    .erp-grid3 { grid-template-columns: minmax(0, 1fr); }
+    .erp-po-line { grid-template-columns: minmax(0, 1fr) 64px; }
+    .erp-po-line input[name="cost"] { grid-column: 1; }
+    .erp-member--crm { flex-direction: column; }
+    .erp-crm__side { max-width: none; justify-content: flex-start; }
+}

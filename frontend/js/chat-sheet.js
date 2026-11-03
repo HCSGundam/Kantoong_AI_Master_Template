@@ -21,6 +21,9 @@
  *
  * EVENT YANG DITERIMA (window):
  *   kantoong:consult     -> buka chat (kirim pesan bila ada detail.text)
+ *   kantoong:attach-product -> buka chat & LAMPIRKAN produk (foto, nama, harga)
+ *                              ke kotak ketik. TIDAK dikirim otomatis: pembeli
+ *                              menulis sendiri keinginannya (warna, model, dll).
  *   kantoong:collapse    -> turunkan chat ke posisi peek
  *   kantoong:ai-matched  -> bila penuh, turunkan ke tengah agar etalase
  *                           di belakang terlihat
@@ -92,7 +95,14 @@ function initChatSheet() {
         target: null,
         raf: 0,
         nextH: 0,
+        startX: 0,
+        dx: 0,
+        throwing: false,
     };
+
+    /** Desktop: kotak "Halo Kak" dilempar ke kiri/kanan = chat menempel di sisi itu. */
+    const desktopQuery = window.matchMedia("(min-width: 900px)");
+    const THROW_DISTANCE = 80;
 
     /** File lampiran yang menunggu dikirim. */
     let pending = [];
@@ -222,6 +232,9 @@ function initChatSheet() {
         drag.active = true;
         drag.id = event.pointerId;
         drag.startY = event.clientY;
+        drag.startX = event.clientX;
+        drag.dx = 0;
+        drag.throwing = false;
         drag.startH = panel.getBoundingClientRect().height;
         drag.lastY = event.clientY;
         drag.lastT = performance.now();
@@ -242,6 +255,28 @@ function initChatSheet() {
         if (!drag.active || event.pointerId !== drag.id) return;
 
         const dy = drag.startY - event.clientY;
+        const dx = event.clientX - drag.startX;
+
+        if (
+            !drag.moved && !drag.throwing && state === "peek" && desktopQuery.matches &&
+            Math.abs(dx) >= 8 && Math.abs(dx) > Math.abs(dy) * 1.5
+        ) {
+            drag.throwing = true;
+            panel.classList.add("is-dragging");
+        }
+
+        if (drag.throwing) {
+            drag.dx = dx;
+            panel.style.setProperty("--kc-throw-x", `${dx}px`);
+
+            // Bayangan sisi tujuan, agar user tahu chat akan menempel di mana.
+            const root = document.documentElement;
+            if (Math.abs(dx) >= THROW_DISTANCE) root.dataset.kcThrow = dx < 0 ? "left" : "right";
+            else delete root.dataset.kcThrow;
+
+            event.preventDefault();
+            return;
+        }
 
         if (!drag.moved) {
             if (Math.abs(dy) < 5) return;
@@ -288,6 +323,23 @@ function initChatSheet() {
             cancelAnimationFrame(drag.raf);
             drag.raf = 0;
             setHeightVar(drag.nextH);
+        }
+
+        if (drag.throwing) {
+            drag.throwing = false;
+            panel.classList.remove("is-dragging");
+            panel.style.removeProperty("--kc-throw-x");
+            delete document.documentElement.dataset.kcThrow;
+
+            if (!cancelled && Math.abs(drag.dx) >= THROW_DISTANCE) {
+                // Didengar assistant-dock.js: tentukan sisi dulu, baru dibuka.
+                window.dispatchEvent(new CustomEvent("kantoong:dock-throw", {
+                    detail: { side: drag.dx < 0 ? "left" : "right" },
+                }));
+                snapTo("mid", { focus: true });
+            }
+
+            return;
         }
 
         if (!drag.moved) {
@@ -432,6 +484,43 @@ function initChatSheet() {
             const chip = document.createElement("span");
             chip.className = "kc-attach";
 
+            // Lampiran produk dari tombol AI di kartu/popup/halaman produk.
+            if (entry.product) {
+                chip.classList.add("kc-attach--product");
+
+                const thumb = document.createElement(entry.product.image_url ? "img" : "span");
+                thumb.className = "kc-attach__thumb";
+                if (entry.product.image_url) {
+                    thumb.alt = "";
+                    thumb.src = entry.product.image_url;
+                } else {
+                    thumb.textContent = String(entry.product.name || "P").charAt(0);
+                }
+
+                const text = document.createElement("span");
+                text.className = "kc-attach__name";
+
+                const title = document.createElement("strong");
+                title.textContent = entry.product.name;
+                text.append(title);
+
+                if (entry.product.price) {
+                    const price = document.createElement("small");
+                    price.textContent = `Rp ${Number(entry.product.price).toLocaleString("id-ID")}`;
+                    text.append(price);
+                }
+
+                const remove = document.createElement("button");
+                remove.type = "button";
+                remove.className = "kc-attach__remove";
+                remove.setAttribute("aria-label", `Hapus ${entry.product.name}`);
+                remove.textContent = "\u00D7";
+                remove.addEventListener("click", () => removeAttachment(index));
+
+                chip.append(thumb, text, remove);
+                return chip;
+            }
+
             if (entry.file.type.startsWith("image/")) {
                 const image = document.createElement("img");
 
@@ -486,6 +575,30 @@ function initChatSheet() {
     function clearAttachments() {
         pending.forEach((entry) => entry.url && URL.revokeObjectURL(entry.url));
         pending = [];
+
+        renderAttachments();
+    }
+
+    /** Lampirkan produk (maks 3, tanpa duplikat). Tidak mengirim pesan. */
+    function attachProduct(product) {
+        if (!product?.id) return;
+
+        if (!pending.some((entry) => entry.product?.id === String(product.id))) {
+            if (pending.length >= MAX_FILES) {
+                notify(`Maksimal ${MAX_FILES} lampiran.`);
+                return;
+            }
+
+            pending.push({
+                url: "",
+                product: {
+                    id: String(product.id),
+                    name: String(product.name || "Produk").slice(0, 80),
+                    price: Number(product.price) || 0,
+                    image_url: String(product.image_url || ""),
+                },
+            });
+        }
 
         renderAttachments();
     }
@@ -682,6 +795,12 @@ function initChatSheet() {
             window.KantoongAIBrain?.newChat?.();
         }
 
+        // Hak pengguna (UU PDP): hapus memori asisten. Ditangani kantoong-assistant.js.
+        if (item.dataset.kcAction === "forget-memory") {
+            clearAttachments();
+            window.dispatchEvent(new CustomEvent("kantoong:forget-memory"));
+        }
+
         closeStartMenu();
     });
 
@@ -821,6 +940,19 @@ function initChatSheet() {
 
         if (!event.detail?.text) {
             textarea?.focus({ preventScroll: true });
+        }
+    });
+
+    // Tombol AI di produk: lampirkan produk, buka chat, siap diketik (tidak dikirim).
+    window.addEventListener("kantoong:attach-product", (event) => {
+        attachProduct(event.detail?.product);
+
+        if (minimized) restoreFromOrb();
+        snapTo(window.innerWidth < 900 ? "full" : "mid");
+
+        if (textarea) {
+            textarea.placeholder = "Ceritakan yang kamu cari: warna, ukuran, model…";
+            window.setTimeout(() => textarea.focus({ preventScroll: true }), 320);
         }
     });
 
@@ -1023,21 +1155,23 @@ function initChatSheet() {
         open: (name = "mid") => snapTo(name, { focus: true }),
         collapse: () => snapTo("peek"),
         minimize: () => minimizeToOrb(),
+        restore: () => restoreFromOrb(),
+        isMinimized: () => minimized,
         getState: () => state,
         getLastFiles: () => [...lastFiles],
 
         peekAttachments: () =>
-            pending.map(({ file }) => ({
-                name: file.name,
-                type: file.type,
-                size: file.size,
-            })),
+            pending.map(({ file, product }) => (product
+                ? { name: product.name, type: "product", product }
+                : { name: file.name, type: file.type, size: file.size })),
+
+        attachProduct: (product) => attachProduct(product),
 
         takeAttachments() {
             const meta = this.peekAttachments();
 
             // File asli disimpan untuk pengunggahan nanti.
-            lastFiles = pending.map((entry) => entry.file);
+            lastFiles = pending.filter((entry) => entry.file).map((entry) => entry.file);
 
             clearAttachments();
 

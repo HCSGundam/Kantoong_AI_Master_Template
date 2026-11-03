@@ -35,8 +35,16 @@ import * as pos from "./modules/pos.js";
 import * as finance from "./modules/finance.js";
 import * as hr from "./modules/hr.js";
 import * as payroll from "./modules/payroll.js";
+import * as purchasing from "./modules/purchasing.js";
+import * as logistics from "./modules/logistics.js";
+import * as cs from "./modules/cs.js";
+import * as marketing from "./modules/marketing.js";
+import * as crm from "./modules/crm.js";
 
-const RENDERERS = { workspace, cockpit, sales, team, catalog, approvals, org, inventory, pos, finance, hr, payroll };
+const RENDERERS = {
+    workspace, cockpit, sales, team, catalog, approvals, org, inventory, pos, finance, hr, payroll,
+    purchasing, logistics, cs, marketing, crm,
+};
 const DEMO_KEY = "kantoong_erp_demo_persona";
 
 const $ = (id) => document.getElementById(id);

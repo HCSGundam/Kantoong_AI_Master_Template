@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex">
     <title>Kantoong ERP</title>
-  <script type="module" crossorigin src="/assets/erp-7VhnGuDy.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <script type="module" crossorigin src="/assets/erp-D9jdYwXv.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/preload-helper-DD1OZmLC.js">
   <link rel="modulepreload" crossorigin href="/assets/supabase-client-vYFxeodt.js">
-  <link rel="modulepreload" crossorigin href="/assets/client-config-60D0gHsc.js">
-  <link rel="stylesheet" crossorigin href="/assets/erp-DuHNLm57.css">
+  <link rel="modulepreload" crossorigin href="/assets/kantoong-assistant-BMSch86h.js">
+  <link rel="stylesheet" crossorigin href="/assets/erp-BiJR9TJ1.css">
 </head>
 <body>
     <!-- =========================================
@@ -84,5 +84,22 @@
 
     <div class="erp-toast" id="erpToast" role="status" aria-live="polite" hidden></div>
 
+
+    <!-- Asisten AI Kantoong: sama dengan di toko, nyambung lintas halaman & brand.
+         Di ERP mulai sebagai orb agar tidak menutupi tabel. -->
+    <script>
+        window.KantoongAssistantContext = {
+            surface: "erp",
+            startMinimized: true,
+            greetings: ["Ada yang bisa kubantu di dashboard kerjamu?"],
+            suggestions: [
+                "Cara menambah karyawan baru?",
+                "Bagaimana membuat purchase order?",
+                "Cara mengatur target & komisi sales?",
+                "Bagaimana proses retur pelanggan?",
+                "Apa bedanya Tim & Target dengan Ruang Kerjaku?"
+            ]
+        };
+    </script>
 </body>
 </html>

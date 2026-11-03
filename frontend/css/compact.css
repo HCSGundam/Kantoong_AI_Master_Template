@@ -1174,6 +1174,13 @@
   will-change: transform, opacity;
 }
 
+/* Kartu 3D tidak memakai efek hover kartu biasa (foto di-zoom, kartu naik):
+   menggambar ulang foto di dalam kartu yang sedang diputar 3D membuat
+   Chrome di laptop "salah gambar" (kartu transparan bergaris). */
+#appRoot .featured[data-view="3d"] .featured-rail > .product-card:hover .product-thumb img {
+  transform: none;
+}
+
 #appRoot .featured[data-view="3d"] .featured-rail.is-animating > .product-card {
   transition:
     transform 520ms cubic-bezier(0.22, 1, 0.36, 1),

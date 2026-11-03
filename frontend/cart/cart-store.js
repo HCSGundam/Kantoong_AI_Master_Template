@@ -9,6 +9,7 @@
 // ============================================================
 
 import { CartConfig as CFG } from './cart-config.js';
+import { voucherDiscount } from '../erp/core/marketing.js';
 
 const CART_KEY = `kantoong:cart:v2:${CFG.business_id}`;
 const DRAFT_KEY = `kantoong:checkout:${CFG.business_id}`;
@@ -63,8 +64,21 @@ const emptyDraft = () => ({
     courier_code: '',
     service: '',
     payment_method: '',
-    note: ''
+    note: '',
+    voucher: null
 });
+
+// Voucher yang sudah dicek server: {code, title, kind, value, max_discount, min_purchase}.
+// Potongan dihitung ulang dari subtotal terbaru; server memeriksa lagi saat pesanan dibuat.
+function sanitizeVoucher(v) {
+    if (!v || typeof v !== 'object' || !/^[A-Z0-9]{3,20}$/.test(String(v.code || ''))) return null;
+    const kind = v.kind === 'persen' ? 'persen' : 'nominal';
+    const num = (x) => Math.max(0, Number(x) || 0);
+    return {
+        code: String(v.code), title: str(v.title, 80), kind, value: num(v.value),
+        max_discount: v.max_discount ? num(v.max_discount) : null, min_purchase: num(v.min_purchase)
+    };
+}
 
 function sanitizeDraft(d) {
     const base = emptyDraft();
@@ -79,7 +93,8 @@ function sanitizeDraft(d) {
         courier_code: str(d.courier_code, 30),
         service: str(d.service, 60),
         payment_method: str(d.payment_method, 40),
-        note: str(d.note, 500)
+        note: str(d.note, 500),
+        voucher: sanitizeVoucher(d.voucher)
     };
 }
 
@@ -211,7 +226,7 @@ export function updateDraft(patch = {}) {
     const next = JSON.parse(JSON.stringify(draft));
     if (patch.customer) Object.assign(next.customer, patch.customer);
     if (patch.address) Object.assign(next.address, patch.address);
-    ['courier_code', 'service', 'payment_method', 'note'].forEach(k => { if (k in patch) next[k] = patch[k]; });
+    ['courier_code', 'service', 'payment_method', 'note', 'voucher'].forEach(k => { if (k in patch) next[k] = patch[k]; });
     draft = sanitizeDraft(next);
     commitDraft();
 }
@@ -237,6 +252,9 @@ export function calculate() {
     const freeShipping = shippingOriginal > 0 && min > 0 && subtotal >= min;
     const shippingCost = freeShipping ? 0 : shippingOriginal;
     const serviceFee = items.length ? (Number(CFG.service_fee) || 0) : 0;
+    const voucher = draft.voucher;
+    const voucherOk = Boolean(voucher) && subtotal >= (voucher.min_purchase || 0);
+    const discount = voucherOk ? voucherDiscount(voucher, subtotal) : 0;
 
     return {
         count: count(),
@@ -245,7 +263,10 @@ export function calculate() {
         shippingCost,
         freeShipping,
         serviceFee,
-        total: subtotal + shippingCost + serviceFee
+        voucher,
+        voucherOk,
+        voucherDiscount: discount,
+        total: subtotal - discount + shippingCost + serviceFee
     };
 }
 
@@ -282,6 +303,7 @@ export function completeOrder() {
     items = [];
     draft.note = '';
     draft.payment_method = '';
+    draft.voucher = null;
     storage.write(CART_KEY, items);
     commitDraft();
 }

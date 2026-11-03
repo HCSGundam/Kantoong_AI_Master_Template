@@ -21,6 +21,7 @@
  */
 
 import CFG from "../client-config.js";
+import { assistantContext, brandName, currentSurface, historyStorageKey } from "./assistant-context.js";
 
 /* ============================================================
    01. KONFIGURASI
@@ -45,7 +46,9 @@ const AI_CONFIG = Object.freeze({
         "KANTOONG AI"
     ),
 
-    greetings: Array.isArray(CFG?.ai_greetings)
+    greetings: Array.isArray(window.KantoongAssistantContext?.greetings)
+        ? window.KantoongAssistantContext.greetings
+        : Array.isArray(CFG?.ai_greetings)
         ? CFG.ai_greetings
         : Array.isArray(CFG?.aiGreetings)
             ? CFG.aiGreetings
@@ -55,7 +58,9 @@ const AI_CONFIG = Object.freeze({
                 "Selamat datang! Aku siap membantumu."
             ],
 
-    suggestions: Array.isArray(CFG?.ai_suggestions)
+    suggestions: Array.isArray(window.KantoongAssistantContext?.suggestions)
+        ? window.KantoongAssistantContext.suggestions
+        : Array.isArray(CFG?.ai_suggestions)
         ? CFG.ai_suggestions
         : Array.isArray(CFG?.aiSuggestions)
             ? CFG.aiSuggestions
@@ -127,8 +132,9 @@ const AIState = {
 
 const STORAGE_PREFIX = "kantoong:chat:";
 
-const HISTORY_KEY =
-    `${STORAGE_PREFIX}${AI_CONFIG.businessId}`;
+// Satu asisten untuk seluruh jaringan Kantoong: bila pengguna mengizinkan,
+// riwayat disimpan di kunci bersama sehingga nyambung di semua brand.
+const historyKey = () => historyStorageKey() || `${STORAGE_PREFIX}${AI_CONFIG.businessId}`;
 
 const MAX_MESSAGE_LENGTH = 3000;
 
@@ -408,7 +414,7 @@ function getProductSearchText(product) {
 
 function readHistory() {
     try {
-        const raw = localStorage.getItem(HISTORY_KEY);
+        const raw = localStorage.getItem(historyKey());
 
         if (!raw) {
             return [];
@@ -465,7 +471,7 @@ function saveHistory() {
 
     try {
         localStorage.setItem(
-            HISTORY_KEY,
+            historyKey(),
             JSON.stringify(AIState.history)
         );
     } catch (error) {
@@ -474,6 +480,10 @@ function saveHistory() {
             error
         );
     }
+
+    window.dispatchEvent(new CustomEvent("kantoong:assistant-history", {
+        detail: { history: AIState.history }
+    }));
 }
 
 function addHistoryMessage(who, text, extra = {}) {
@@ -488,6 +498,8 @@ function addHistoryMessage(who, text, extra = {}) {
         who,
         text: String(text ?? "").slice(0, MAX_MESSAGE_LENGTH),
         timestamp: getTimestamp(),
+        brand: brandName(),
+        surface: currentSurface(),
         ...extra
     };
 
@@ -506,7 +518,7 @@ export function clearAIChatHistory() {
     AIState.history = [];
 
     try {
-        localStorage.removeItem(HISTORY_KEY);
+        localStorage.removeItem(historyKey());
     } catch (error) {
         console.warn(
             "[KANTOONG AI] Tidak dapat menghapus riwayat lokal:",
@@ -525,38 +537,98 @@ export function clearAIChatHistory() {
     emit("chat-history-cleared");
 }
 
-/**
- * Memulai chat baru: percakapan sekarang disimpan ke arsip lokal
- * (10 sesi terakhir) lalu layar chat dikosongkan.
- */
-export function startNewChat() {
-    const archiveKey = `${HISTORY_KEY}:archive`;
+/* ---------- Arsip sesi chat (Riwayat Chat AI) ---------- */
+
+const MAX_ARCHIVED_CHATS = 30;
+const archiveKey = () => `${historyKey()}:archive`;
+
+/** Sesi lama, urut dari yang terlama. Sesi > historyDays dibuang. */
+function readArchive() {
+    const minimumTimestamp =
+        getTimestamp() - AI_CONFIG.historyDays * 24 * 60 * 60 * 1000;
 
     try {
-        if (AIState.history.length > 1) {
-            const raw = localStorage.getItem(archiveKey);
-            const archive = raw ? JSON.parse(raw) : [];
+        const parsed = JSON.parse(localStorage.getItem(archiveKey()) || "[]");
 
-            archive.push({
-                endedAt: getTimestamp(),
-                messages: AIState.history
-            });
+        return (Array.isArray(parsed) ? parsed : []).filter(entry =>
+            entry &&
+            Array.isArray(entry.messages) &&
+            entry.messages.length > 0 &&
+            Number(entry.endedAt) >= minimumTimestamp
+        );
+    } catch {
+        return [];
+    }
+}
 
-            localStorage.setItem(
-                archiveKey,
-                JSON.stringify(archive.slice(-10))
-            );
-        }
+function writeArchive(archive) {
+    try {
+        localStorage.setItem(
+            archiveKey(),
+            JSON.stringify(archive.slice(-MAX_ARCHIVED_CHATS))
+        );
     } catch (error) {
         console.warn(
             "[KANTOONG AI] Arsip chat tidak dapat disimpan:",
             error
         );
     }
+}
+
+/** Percakapan yang layak diarsipkan: user pernah menulis sesuatu. */
+const hasUserMessage = messages =>
+    messages.some(message => message.who === "user");
+
+/**
+ * Memulai chat baru: percakapan sekarang disimpan ke arsip lokal
+ * lalu layar chat dikosongkan.
+ */
+export function startNewChat() {
+    if (hasUserMessage(AIState.history)) {
+        const archive = readArchive();
+
+        archive.push({
+            endedAt: getTimestamp(),
+            messages: AIState.history
+        });
+
+        writeArchive(archive);
+    }
 
     clearAIChatHistory();
 
     emit("chat-new");
+}
+
+/**
+ * Buka lagi sesi lama dari riwayat. Percakapan yang sedang terbuka
+ * ikut disimpan ke arsip agar tidak hilang.
+ */
+export function openArchivedChat(index) {
+    const archive = readArchive();
+    const picked = archive[index];
+
+    if (!picked) {
+        return false;
+    }
+
+    archive.splice(index, 1);
+
+    if (hasUserMessage(AIState.history)) {
+        archive.push({
+            endedAt: getTimestamp(),
+            messages: AIState.history
+        });
+    }
+
+    writeArchive(archive);
+    reloadAssistantHistory(picked.messages);
+
+    emit("chat-opened", {
+        message_count: picked.messages.length
+    });
+
+    return true;
 }
 
 /* ============================================================
@@ -601,10 +673,36 @@ function renderMessage(message, options = {}) {
 
     wrapper.appendChild(bubble);
 
+    if (message.brand && message.brand !== brandName()) {
+        wrapper.appendChild(
+            createElement("span", "ai-message__origin", `di ${message.brand}`)
+        );
+    }
+
     if (Array.isArray(message.attachments) && message.attachments.length) {
         const list = createElement("div", "ai-message__attachments");
 
         message.attachments.forEach((file) => {
+            // Produk terlampir tampil sebagai kartu kecil berfoto.
+            if (file?.type === "product" && file.product) {
+                const card = createElement("span", "ai-attachment-product");
+                if (isSafeImageURL(file.product.image_url)) {
+                    const image = document.createElement("img");
+                    image.src = file.product.image_url;
+                    image.alt = "";
+                    image.loading = "lazy";
+                    card.appendChild(image);
+                }
+                const info = createElement("span", "ai-attachment-product__info");
+                info.appendChild(createElement("strong", "", String(file.product.name ?? "Produk")));
+                if (file.product.price) {
+                    info.appendChild(createElement("small", "", `Rp ${Number(file.product.price).toLocaleString("id-ID")}`));
+                }
+                card.appendChild(info);
+                list.appendChild(card);
+                return;
+            }
+
             list.appendChild(
                 createElement(
                     "span",
@@ -837,11 +935,14 @@ function renderInitialGreeting() {
 
     const greetings = AI_CONFIG.greetings;
 
-    const greeting = greetings.length
+    const baseGreeting = greetings.length
         ? greetings[
             Math.floor(Math.random() * greetings.length)
         ]
         : "Halo! Ada yang bisa aku bantu?";
+
+    const firstName = String(window.KantoongAssistantContext?.userName || "").split(" ")[0];
+    const greeting = firstName ? `Hai ${firstName}! ${baseGreeting}` : baseGreeting;
 
     const message = addHistoryMessage(
         "ai",
@@ -1304,7 +1405,10 @@ function buildAPIHistory() {
                 ? "assistant"
                 : "user",
 
-            content: message.text
+            // Pesan dari brand lain diberi tanda agar AI menyebut sumbernya dengan jujur.
+            content: message.brand && message.brand !== brandName()
+                ? `[di ${message.brand}] ${message.text}`
+                : message.text
         }));
 }
 
@@ -1357,7 +1461,8 @@ async function requestRemoteAI(message, requestId) {
                 history: buildAPIHistory(),
 
                 context: {
-                    products: buildProductContext()
+                    products: buildProductContext(),
+                    assistant: assistantContext()
                 }
             })
         });
@@ -1553,7 +1658,19 @@ export async function sendMessage(rawText) {
     const attachments =
         window.KantoongChat?.takeAttachments?.() ?? [];
 
-    const message = (text || "(lampiran)").slice(0, MAX_MESSAGE_LENGTH);
+    const products = attachments.filter((entry) => entry.type === "product");
+    const files = attachments.filter((entry) => entry.type !== "product");
+
+    // Yang tampil di gelembung: tulisan pembeli apa adanya.
+    const message = (text || (products.length ? "Aku tertarik dengan produk ini." : "(lampiran)"))
+        .slice(0, MAX_MESSAGE_LENGTH);
+
+    // Yang dibaca AI: tulisan pembeli + produk yang dilampirkan sebagai konteks.
+    const promptForAI = products.length
+        ? `${message}\n\n[Produk yang dilampirkan pembeli: ${products
+            .map((entry) => `${entry.product.name} (Rp ${Number(entry.product.price || 0).toLocaleString("id-ID")})`)
+            .join("; ")}]`.slice(0, MAX_MESSAGE_LENGTH + 400)
+        : message;
 
     const { input } = getElements();
 
@@ -1591,7 +1708,7 @@ export async function sendMessage(rawText) {
         if (AI_CONFIG.endpoint) {
             try {
                 result = await requestRemoteAI(
-                    message,
+                    promptForAI,
                     requestId
                 );
             } catch (error) {
@@ -1615,14 +1732,14 @@ export async function sendMessage(rawText) {
         }
 
         if (!result) {
-            result = buildLocalReply(message);
+            result = buildLocalReply(products.length ? `${message} ${products.map((entry) => entry.product.name).join(" ")}` : message);
         }
 
         result = normalizeAIResult(result);
 
-        if (attachments.length) {
+        if (files.length) {
             result.reply +=
-                `\n\nLampiranmu (${attachments.length}) sudah kuterima. ` +
+                `\n\nLampiranmu (${files.length}) sudah kuterima. ` +
                 "Pembacaan lampiran oleh AI belum aktif di versi ini.";
         }
 
@@ -2011,13 +2128,44 @@ export function addMessageToChat(who, text, extra = {}) {
     return message;
 }
 
+/**
+ * Muat ulang riwayat dari penyimpanan (dipakai saat izin memori berubah
+ * atau saat riwayat dari server digabungkan). messages opsional: bila
+ * diisi, ditulis dulu ke penyimpanan.
+ */
+export function reloadAssistantHistory(messages = null) {
+    if (Array.isArray(messages)) {
+        try {
+            localStorage.setItem(historyKey(), JSON.stringify(messages.slice(-AI_CONFIG.maxHistoryMessages)));
+        } catch {
+            // abaikan
+        }
+    }
+
+    AIState.history = readHistory();
+    renderInitialGreeting();
+}
+
 window.KantoongAIBrain = Object.freeze({
     init: initAIBrain,
+    reload: reloadAssistantHistory,
+    getHistory: () => AIState.history.slice(),
     destroy: destroyAIBrain,
     sendMessage,
     addMessageToChat,
     clearHistory: clearAIChatHistory,
     newChat: startNewChat,
+    getArchive: () => readArchive().map(entry => ({ ...entry, messages: entry.messages.slice() })),
+    openArchived: openArchivedChat,
+
+    /** Nama & foto produk untuk pratinjau riwayat (null bila sudah tidak ada). */
+    describeProduct(productId) {
+        const product = findProduct(productId);
+
+        return product
+            ? { name: getProductName(product), image: getProductImage(product) }
+            : null;
+    },
 
     searchProducts: searchLocalProducts,
 

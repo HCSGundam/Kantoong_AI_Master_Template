@@ -247,6 +247,17 @@ export function renderCheckoutView(ctx) {
             <div class="summary-row"><span>Total harga (${c.count} barang)</span><strong>${rupiah(c.itemsTotal)}</strong></div>
             <div class="summary-row"><span>Ongkos kirim</span><strong>${shipText}</strong></div>
             ${c.serviceFee > 0 ? `<div class="summary-row"><span>Biaya layanan</span><strong>${rupiah(c.serviceFee)}</strong></div>` : ''}
+            ${c.voucher ? `
+                <div class="summary-row summary-voucher">
+                    <span>Voucher <strong>${esc(c.voucher.code)}</strong>${c.voucherOk ? '' : ' <em>(belum memenuhi minimal belanja)</em>'}</span>
+                    <strong>−${rupiah(c.voucherDiscount)}</strong>
+                </div>
+                <button type="button" class="voucher-remove" data-act="voucher-remove">Hapus voucher</button>` : `
+                <div class="voucher-box">
+                    <input type="text" id="coVoucher" maxlength="20" placeholder="Punya kode voucher?" aria-label="Kode voucher" autocomplete="off">
+                    <button type="button" data-act="voucher-apply">Pakai</button>
+                </div>`}
+            <p class="field-error" id="coVoucherMsg" hidden></p>
             <div class="summary-row is-total"><span>Total tagihan</span><span>${rupiah(c.total)}</span></div>
             ${c.freeShipping ? `<div class="summary-saving">Kamu hemat ${rupiah(c.shippingOriginal)} dari gratis ongkir.</div>` : ''}`;
         const cta = footer.querySelector('.cart-cta');
@@ -315,8 +326,29 @@ export function renderCheckoutView(ctx) {
         }
     };
 
-    body.onclick = (e) => {
+    body.onclick = async (e) => {
         if (e.target.closest('[data-act="edit-cart"]')) ctx.go('cart');
+
+        if (e.target.closest('[data-act="voucher-remove"]')) {
+            Cart.updateDraft({ voucher: null });
+            drawSummary();
+        }
+
+        const apply = e.target.closest('[data-act="voucher-apply"]');
+        if (apply) {
+            const input = $('#coVoucher');
+            apply.disabled = true;
+            const res = await API.checkVoucher(input?.value);
+            apply.disabled = false;
+            if (res.valid) {
+                Cart.updateDraft({ voucher: res });
+                drawSummary();
+            } else {
+                const msg = $('#coVoucherMsg');
+                msg.textContent = res.message || 'Voucher tidak berlaku.';
+                msg.hidden = false;
+            }
+        }
     };
 
     const submit = async () => {
@@ -392,6 +424,7 @@ export function renderSuccessView(ctx, receipt) {
                 <div class="summary-row"><span>Total harga</span><strong>${rupiah(t.items_total)}</strong></div>
                 <div class="summary-row"><span>Ongkos kirim${receipt.shipping ? ` (${esc(receipt.shipping.courier_name)} ${esc(receipt.shipping.service)})` : ''}</span><strong>${rupiah(t.shipping_cost)}</strong></div>
                 ${t.service_fee > 0 ? `<div class="summary-row"><span>Biaya layanan</span><strong>${rupiah(t.service_fee)}</strong></div>` : ''}
+                ${t.voucher_discount > 0 ? `<div class="summary-row"><span>Voucher ${esc(t.voucher_code || '')}</span><strong>−${rupiah(t.voucher_discount)}</strong></div>` : ''}
                 <div class="summary-row is-total"><span>Total tagihan</span><span>${rupiah(t.total)}</span></div>
             </div>
         </section>

@@ -1199,3 +1199,670 @@
 .kc-composer__row {
     box-shadow: 0 -6px 14px -6px color-mix(in srgb, var(--kc-text) 10%, transparent);
 }
+
+
+/* ---------- Lampiran produk (tombol AI di produk) ---------- */
+.kc-attach--product {
+    gap: 8px;
+    /* Ruang untuk tombol × di pojok kanan atas agar tidak menimpa nama. */
+    padding-right: 28px;
+}
+
+.kc-attach--product .kc-attach__thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.kc-attach--product .kc-attach__name {
+    display: grid;
+    line-height: 1.25;
+}
+
+.kc-attach--product .kc-attach__name small {
+    color: var(--kc-muted);
+    font-size: 0.75rem;
+}
+
+.ai-attachment-product {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 240px;
+    padding: 6px 10px 6px 6px;
+    background: var(--kc-surface, #fff);
+    border: 1px solid var(--kc-line, #e6e6e6);
+    border-radius: 14px;
+}
+
+.ai-attachment-product img {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.ai-attachment-product__info {
+    display: grid;
+    min-width: 0;
+    line-height: 1.25;
+    text-align: left;
+}
+
+.ai-attachment-product__info strong {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.85rem;
+}
+
+.ai-attachment-product__info small {
+    color: var(--kc-muted, #6b6b6b);
+    font-size: 0.75rem;
+}
+
+/* =========================================================
+   ASISTEN UNIVERSAL (dipasang kantoong-assistant.js)
+   ========================================================= */
+
+/* Halaman tanpa kerangka toko (ERP, dll): lapisan setinggi layar. */
+.kc-host {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    pointer-events: none;
+}
+
+.kc-host > .kc-sheet,
+.kc-host > .kc-float-orb {
+    pointer-events: auto;
+}
+
+@media (min-width: 900px) {
+    .kc-host > .kc-sheet {
+        left: auto;
+        width: min(440px, calc(100% - 32px));
+        right: 16px;
+    }
+}
+
+/* Saat keranjang / dashboard terbuka, orb & chat tampil di atasnya. */
+body.kc-overlay-open .kc-float-orb,
+body.kc-overlay-open .kc-sheet {
+    z-index: 200;
+}
+
+/* =========================================================
+   DESKTOP: CHAT MENEMPEL DI SAMPING (assistant-dock.js)
+   Pola HP (tarik naik: peek/setengah/penuh) diputar 90°:
+   samping (1/3) / belah (1/2), di kiri atau kanan; atau melayang.
+   Di HP tetap lembar dari bawah.
+   ========================================================= */
+.kc-dock-tools,
+.kc-dock-edge {
+    display: none;
+}
+
+@media (min-width: 900px) {
+    html {
+        --kc-dock-w: 440px;
+        --kc-dock-pad: 440px;
+    }
+
+    /* Kotak "Halo Kak" bisa dilempar ke kiri/kanan. */
+    .kc-sheet {
+        transform: translateX(calc(-50% + var(--kc-throw-x, 0px)));
+    }
+
+    body {
+        transition:
+            padding-right 300ms cubic-bezier(0.22, 1, 0.36, 1),
+            padding-left 300ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    html.kc-docked body {
+        box-sizing: border-box;
+    }
+
+    /* Chat = panel setinggi layar yang menempel ke tepi layar (tanpa celah
+       atas/bawah/luar). Hanya sudut sisi dalam yang membulat. Halaman diberi
+       jarak kecil dari chat; latar body = latar halaman, jadi jarak itu
+       terlihat seperti padding halaman, bukan celah. Tepi halaman TIDAK
+       diberi fade: bayangan lembut chat yang memberi efek memudar. */
+    html {
+        --kc-dock-radius: 26px;
+        --kc-dock-gap: 10px;
+    }
+
+    html.kc-docked body:has(#appRoot) {
+        background-color: var(--container-bg, #ffffff);
+    }
+
+    /* Hanya banner hero: sisi yang menghadap chat memudar halus ke latar,
+       agar ujung fotonya tidak terlihat seperti garis lurus. Bagian halaman
+       lain tidak di-fade. Gradasi bertahap = tanpa batas fade yang terlihat. */
+    html.kc-docked[data-kc-dock-side="right"] #heroTrack {
+        -webkit-mask-image: linear-gradient(to left, transparent 0, rgba(0, 0, 0, 0.35) 12px, rgba(0, 0, 0, 0.8) 22px, #000 32px);
+        mask-image: linear-gradient(to left, transparent 0, rgba(0, 0, 0, 0.35) 12px, rgba(0, 0, 0, 0.8) 22px, #000 32px);
+    }
+
+    html.kc-docked[data-kc-dock-side="left"] #heroTrack {
+        -webkit-mask-image: linear-gradient(to right, transparent 0, rgba(0, 0, 0, 0.35) 12px, rgba(0, 0, 0, 0.8) 22px, #000 32px);
+        mask-image: linear-gradient(to right, transparent 0, rgba(0, 0, 0, 0.35) 12px, rgba(0, 0, 0, 0.8) 22px, #000 32px);
+    }
+
+    html.kc-docked[data-kc-dock-side="right"] body {
+        padding-right: calc(var(--kc-dock-pad) + var(--kc-dock-gap));
+    }
+
+    html.kc-docked[data-kc-dock-side="left"] body {
+        padding-left: calc(var(--kc-dock-pad) + var(--kc-dock-gap));
+    }
+
+    html.kc-dock-resizing body,
+    html.kc-dock-resizing .kc-sheet {
+        transition: none;
+        user-select: none;
+    }
+
+    html.kc-docked .kc-sheet.kc-sheet--docked {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        z-index: 90;
+
+        width: var(--kc-dock-w);
+        height: auto;
+
+        border: 0;
+        transform: none;
+    }
+
+    html.kc-docked[data-kc-dock-side="right"] .kc-sheet--docked {
+        right: 0;
+        left: auto;
+        border-radius: var(--kc-dock-radius) 0 0 var(--kc-dock-radius);
+        box-shadow: -14px 0 36px rgba(0, 0, 0, 0.1);
+    }
+
+    html.kc-docked[data-kc-dock-side="left"] .kc-sheet--docked {
+        right: auto;
+        left: 0;
+        border-radius: 0 var(--kc-dock-radius) var(--kc-dock-radius) 0;
+        box-shadow: 14px 0 36px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Menempel, bukan lembar geser: pegangan atas tidak perlu. */
+    html.kc-docked .kc-sheet--docked .kc-sheet__handle {
+        visibility: hidden;
+        height: 0;
+        margin-bottom: 4px;
+    }
+
+    /* Tombol mode & pindah sisi di bar judul: tampil setiap chat terbuka,
+       termasuk mode melayang (agar bisa kembali ke samping). */
+    .kc-sheet[data-open="true"] .kc-dock-tools {
+        display: flex;
+        gap: 2px;
+        margin: 0 8px 0 0;
+        padding: 3px;
+        background: var(--kc-soft);
+        border-radius: 999px;
+    }
+
+    .kc-dock-tool {
+        display: inline-grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        color: var(--kc-muted);
+        background: transparent;
+        border: 0;
+        border-radius: 999px;
+        cursor: pointer;
+    }
+
+    .kc-dock-tool svg {
+        width: 17px;
+        height: 17px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    html[data-kc-dock-size="float"] .kc-dock-swap {
+        display: none;
+    }
+
+    /* Tombol X (tutup -> kotak "Halo Kak"), paling ujung. Di HP chat
+       diturunkan lewat garis pegangan, jadi X hanya di desktop. */
+    .kc-sheet[data-open="true"] #chatCloseBtn {
+        display: inline-grid;
+        width: 36px;
+        height: 36px;
+    }
+
+    .kc-dock-tool:hover {
+        color: var(--kc-text);
+    }
+
+    .kc-dock-tool[aria-pressed="true"] {
+        color: var(--kc-surface);
+        background: var(--kc-text);
+    }
+
+    /* Tepi dalam chat: tarik untuk mengubah lebar. */
+    html.kc-docked .kc-sheet--docked .kc-dock-edge {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        z-index: 5;
+        display: block;
+        width: 14px;
+        cursor: col-resize;
+        touch-action: none;
+    }
+
+    html.kc-docked[data-kc-dock-side="right"] .kc-dock-edge {
+        left: 0;
+    }
+
+    html.kc-docked[data-kc-dock-side="left"] .kc-dock-edge {
+        right: 0;
+    }
+
+    .kc-dock-edge::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 5px;
+        width: 4px;
+        height: 44px;
+        background: color-mix(in srgb, var(--kc-text) 18%, transparent);
+        border-radius: 999px;
+        transform: translateY(-50%);
+        transition: background 150ms, height 150ms;
+    }
+
+    .kc-dock-edge:hover::after,
+    .kc-dock-edge:focus-visible::after,
+    html.kc-dock-resizing .kc-dock-edge::after {
+        height: 72px;
+        background: color-mix(in srgb, var(--kc-text) 45%, transparent);
+    }
+
+    /* Saat dilempar: bayangan sisi tujuan. */
+    html[data-kc-throw]::after {
+        content: "";
+        position: fixed;
+        top: 16px;
+        bottom: 16px;
+        z-index: 85;
+        width: calc(var(--kc-dock-w) - 32px);
+        background: color-mix(in srgb, #3b82f6 12%, transparent);
+        border: 2px dashed color-mix(in srgb, #3b82f6 55%, transparent);
+        border-radius: 26px;
+        pointer-events: none;
+    }
+
+    html[data-kc-throw="right"]::after {
+        right: 16px;
+    }
+
+    html[data-kc-throw="left"]::after {
+        left: 16px;
+    }
+}
+
+/* Izin memori lintas brand (UU PDP). Hanya terlihat saat chat terbuka. */
+.kc-sheet[data-open="false"] .kc-consent {
+    display: none;
+}
+
+.kc-consent {
+    flex: none;
+    margin: 4px 16px 6px;
+    padding: 12px 14px;
+    color: var(--kc-text);
+    background: var(--kc-soft);
+    border-radius: 16px;
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+.kc-consent p {
+    margin: 0 0 10px;
+}
+
+.kc-consent__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.kc-consent button {
+    min-height: 34px;
+    padding: 4px 14px;
+    color: var(--kc-text);
+    background: var(--kc-surface);
+    border: 1px solid var(--kc-line);
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.kc-consent .kc-consent__yes {
+    color: var(--kc-surface);
+    background: var(--kc-text);
+    border-color: var(--kc-text);
+}
+
+/* Label sumber: pesan dari brand lain di jaringan Kantoong. */
+.ai-message__origin {
+    align-self: inherit;
+    margin-top: 2px;
+    color: var(--kc-muted);
+    font-size: 0.7rem;
+}
+
+/* Ukuran huruf asisten sama di semua halaman (ERP tidak memakai CSS toko). */
+.kc-host {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.kc-host .kc-composer textarea {
+    font-size: 14px;
+}
+
+/* =========================================================
+   RIWAYAT CHAT AI (assistant-history.js)
+   Kartu catatan: redup & blur; "hidup" = menyala, membesar,
+   isi chat bergulir atas-bawah.
+   ========================================================= */
+
+.kc-history-btn {
+    width: 36px;
+    height: 36px;
+    margin: 0 8px 0 auto;
+}
+
+.kc-history-btn[aria-pressed="true"] {
+    color: var(--kc-surface);
+    background: var(--kc-text);
+    border-color: var(--kc-text);
+}
+
+.kc-history {
+    display: none;
+}
+
+.kc-sheet[data-view="history"] :is(.kc-messages, .kc-suggestions, .kc-consent, .kc-composer) {
+    display: none;
+}
+
+.kc-sheet[data-open="true"][data-view="history"] .kc-history {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0 16px 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+
+.kc-history__head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 0 12px;
+    background: var(--kc-surface);
+}
+
+.kc-history__note {
+    margin: 0;
+    color: var(--kc-muted);
+    font-size: 0.8rem;
+}
+
+.kc-history__new {
+    min-height: 32px;
+    padding: 4px 14px;
+    color: var(--kc-surface);
+    background: var(--kc-text);
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.kc-history__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 14px;
+    padding-top: 6px;
+}
+
+/* Chat lebar (belah/penuh di desktop): kartu menyesuaikan, minimal 2 kolom. */
+@media (min-width: 900px) {
+    .kc-history__grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+.kc-history__empty {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
+    color: var(--kc-muted);
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.kc-hcard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    padding: 0;
+    color: var(--kc-text);
+    background: none;
+    border: 0;
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.kc-hcard__preview {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 5 / 6;
+    margin-bottom: 8px;
+    overflow: hidden;
+    background: var(--kc-surface);
+    border: 1px solid var(--kc-line);
+    border-radius: 20px;
+    transform-origin: center;
+    transition:
+        transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 320ms ease;
+}
+
+/* Lapisan redup + blur (hilang saat kartu hidup). */
+.kc-hcard__preview::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(1.5px);
+    backdrop-filter: blur(1.5px);
+    transition: opacity 320ms ease;
+    pointer-events: none;
+}
+
+.kc-hcard.is-current .kc-hcard__preview::after,
+.kc-hcard.is-live .kc-hcard__preview::after {
+    opacity: 0;
+}
+
+.kc-hcard.is-live .kc-hcard__preview {
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+    transform: scale(1.06);
+}
+
+.kc-hcard.is-opening .kc-hcard__preview {
+    transform: scale(1.14);
+    transition-duration: 220ms;
+}
+
+.kc-hcard:focus-visible .kc-hcard__preview {
+    outline: 2px solid #3b82f6;
+    outline-offset: 3px;
+}
+
+/* Isi chat mini; bergulir atas -> bawah -> atas saat hidup. */
+.kc-hcard__track {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 10px 28px;
+    font-size: 8.5px;
+    line-height: 1.35;
+    text-align: left;
+}
+
+.kc-hcard.is-live .kc-hcard__track {
+    animation: kc-hcard-scroll 5.5s ease-in-out 0.25s infinite;
+}
+
+@keyframes kc-hcard-scroll {
+    0%, 12% {
+        transform: translateY(0);
+    }
+
+    50%, 62% {
+        transform: translateY(var(--kc-track-dist, 0px));
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+.kc-hcard__msg {
+    max-width: 82%;
+    padding: 5px 7px;
+    border-radius: 9px;
+}
+
+.kc-hcard__msg p {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow-wrap: anywhere;
+}
+
+.kc-hcard__msg--ai {
+    align-self: flex-start;
+    background: var(--kc-soft);
+    border: 1px solid var(--kc-line);
+}
+
+.kc-hcard__msg--user {
+    align-self: flex-end;
+    color: var(--kc-surface);
+    background: var(--kc-text);
+}
+
+.kc-hcard__products {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.kc-hcard__product {
+    width: 26px;
+    height: 26px;
+    overflow: hidden;
+    background: var(--kc-line);
+    border-radius: 6px;
+}
+
+.kc-hcard__product img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.kc-hcard__product.is-gone {
+    background:
+        linear-gradient(45deg, transparent 45%, var(--kc-muted) 47%, var(--kc-muted) 53%, transparent 55%),
+        var(--kc-soft);
+}
+
+.kc-hcard__time {
+    position: absolute;
+    right: 10px;
+    bottom: 8px;
+    z-index: 1;
+    padding: 1px 6px;
+    color: var(--kc-muted);
+    background: var(--kc-surface);
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+
+.kc-hcard__badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 1;
+    padding: 2px 8px;
+    color: var(--kc-surface);
+    background: #3b82f6;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+}
+
+.kc-hcard__title {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.kc-hcard__date {
+    color: var(--kc-muted);
+    font-size: 0.72rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kc-hcard.is-live .kc-hcard__track {
+        animation: none;
+    }
+
+    .kc-hcard__preview {
+        transition: none;
+    }
+}

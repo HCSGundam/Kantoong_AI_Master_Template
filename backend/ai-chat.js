@@ -15,7 +15,7 @@ const MAX_PRODUCTS_IN_REPLY = 4;
 // Hanya aksi ini yang boleh dikirim ke frontend (sama dengan allowlist di ai-brain.js).
 const ALLOWED_ACTIONS = ['show-catalog', 'show-products'];
 
-const SYSTEM_PROMPT = `Kamu adalah Kantoong AI, konsultan belanja buatan Anachronos Indonesia yang hadir di toko online ini.
+const SYSTEM_PROMPT = `Kamu adalah Kantoong AI, asisten pribadi buatan Anachronos Indonesia. Kamu adalah asisten YANG SAMA di semua toko, halaman, dan dashboard jaringan Kantoong: seperti teman sekaligus pemandu profesional yang menemani pengguna ke mana pun.
 
 Gaya bicara:
 - Bahasa Indonesia yang santai, hangat, dan sopan, seperti pegawai toko di mall yang menuntun pembeli.
@@ -71,6 +71,37 @@ function cleanProducts(products) {
         .filter(product => product.id && product.name);
 }
 
+// Asisten yang sama di semua halaman & brand jaringan Kantoong.
+// Konteks dikirim ai-brain.js (assistant-context.js); semua nilai dibersihkan.
+const SURFACE_RULES = {
+    store: 'Pengguna sedang menjelajah toko. Bantu menemukan produk yang cocok.',
+    product: 'Pengguna sedang melihat detail satu produk. Bantu menimbang produk itu & alternatifnya.',
+    cart: 'Pengguna sedang di keranjang/checkout. Bantu yakinkan pilihan & jelaskan ongkir/voucher; jangan pernah memproses pembayaran.',
+    dashboard: 'Pengguna sedang di dashboard akunnya. Bantu soal akun, pesanan, dan preferensinya.',
+    erp: 'Pengguna adalah KARYAWAN di dashboard kerja ERP. Jadilah asisten kerja: jelaskan cara memakai menu ERP ' +
+        '(Ruang Kerjaku, Tim & Target, Katalog Master, Gudang & Stok, Kasir POS, Keuangan, HR & Absensi, Payroll, ' +
+        'Pembelian, Logistik, Customer Service, Marketing, CRM, Organisasi & Akses) langkah demi langkah. ' +
+        'Kamu TIDAK punya akses ke angka/data perusahaan: jangan mengarang omzet, gaji, stok, atau nama karyawan; ' +
+        'arahkan ke menu yang tepat. Jangan pernah membuka data pribadi orang lain.'
+};
+
+function describeContext(raw) {
+    const ctx = raw && typeof raw === 'object' ? raw : {};
+    const surface = Object.prototype.hasOwnProperty.call(SURFACE_RULES, ctx.surface) ? ctx.surface : 'store';
+    const brand = cleanText(ctx.brand, 60) || 'toko ini';
+    const name = cleanText(ctx.user_name, 60);
+
+    return [
+        `KONTEKS SAAT INI: pengguna berada di ${cleanText(ctx.surface_label, 40) || surface} milik brand "${brand}".`,
+        SURFACE_RULES[surface],
+        name ? `Nama pengguna: ${name}. Sapa dengan namanya sesekali secara wajar.` : 'Nama pengguna belum diketahui (tamu).',
+        ctx.network_memory
+            ? 'Pengguna MENGIZINKAN memori lintas toko Kantoong. Riwayat bisa berasal dari brand lain (ditandai "[di Nama Brand]"). ' +
+              'Bila memakai preferensi dari brand lain, sebutkan sumbernya dengan halus, misalnya "karena kamu suka ... di toko X".'
+            : 'Memori hanya untuk toko ini; jangan mengaku mengingat obrolan di toko lain.'
+    ].join('\n');
+}
+
 function buildContents(history, message) {
     const turns = (Array.isArray(history) ? history : [])
         .slice(-MAX_HISTORY)
@@ -119,7 +150,7 @@ async function handleChat(req, res) {
             model: MODEL,
             contents: buildContents(req.body?.history, message),
             config: {
-                systemInstruction: `${SYSTEM_PROMPT}\n\nDAFTAR PRODUK:\n${productList}`,
+                systemInstruction: `${SYSTEM_PROMPT}\n\n${describeContext(req.body?.context?.assistant)}\n\nDAFTAR PRODUK:\n${productList}`,
                 responseMimeType: 'application/json',
                 responseJsonSchema: RESPONSE_SCHEMA,
                 temperature: 0.7

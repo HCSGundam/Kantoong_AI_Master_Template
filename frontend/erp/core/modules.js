@@ -90,6 +90,41 @@ export const MODULES = Object.freeze([
         allow: () => true,
     },
     {
+        key: "purchasing",
+        label: "Pembelian",
+        hint: "Supplier & purchase order",
+        icon: "M3 6h18l-2 9H6zM6 15l-1.5-9M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM17 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2z",
+        allow: (member) => member.level >= 3 || hasRole(member, "gudang", "keuangan"),
+    },
+    {
+        key: "logistics",
+        label: "Logistik & Pengiriman",
+        hint: "Kemas, kirim, resi pesanan online",
+        icon: "M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+        allow: (member) => member.level >= 3 || hasRole(member, "gudang", "cs", "keuangan"),
+    },
+    {
+        key: "cs",
+        label: "Customer Service",
+        hint: "Keluhan, pertanyaan & retur",
+        icon: "M4 5h16v11H9l-5 4zM8 9h8M8 12h5",
+        allow: () => true,
+    },
+    {
+        key: "marketing",
+        label: "Marketing",
+        hint: "Voucher & promo",
+        icon: "M3 11v3l12 5V6L3 11zM15 9a3 3 0 0 1 0 6M6 15l1 4h3l-1-3",
+        allow: (member) => member.level >= 3 || hasRole(member, "marketing", "keuangan"),
+    },
+    {
+        key: "crm",
+        label: "CRM Pelanggan",
+        hint: "Data & segmen pelanggan",
+        icon: "M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20a6 6 0 0 1 12 0M16 4h5M16 8h5M18 12h3",
+        allow: (member) => member.level >= 3 || hasRole(member, "cs", "marketing", "sales"),
+    },
+    {
         key: "org",
         label: "Organisasi & Akses",
         hint: "Divisi, tim, jabatan & hak akses",
@@ -100,11 +135,6 @@ export const MODULES = Object.freeze([
 
 /** Modul tahap berikutnya: tampil abu-abu "Segera" agar peta ERP terlihat utuh. */
 export const UPCOMING_MODULES = Object.freeze([
-    { key: "purchasing", label: "Pembelian", phase: 3 },
-    { key: "logistics", label: "Logistik & Pengiriman", phase: 3 },
-    { key: "cs", label: "Customer Service", phase: 3 },
-    { key: "marketing", label: "Marketing", phase: 3 },
-    { key: "crm", label: "CRM Pelanggan", phase: 3 },
     { key: "production", label: "Produksi", phase: 4 },
     { key: "research", label: "AI Research & Second Brain", phase: 4 },
 ]);
