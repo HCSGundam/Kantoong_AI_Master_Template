@@ -26,6 +26,7 @@ import { brandName, getMemoryScope, historyStorageKey, setMemoryScope } from "./
 import { initAssistantDock } from "./assistant-dock.js";
 import { initAssistantHistory } from "./assistant-history.js";
 import { initChatProductGestures } from "./chat-product-gestures.js";
+import { initAiTelemetry } from "./ai-telemetry.js";
 
 const context = (window.KantoongAssistantContext = window.KantoongAssistantContext || {});
 if (!context.surface) context.surface = location.pathname.includes("/erp/") ? "erp" : "store";
@@ -290,6 +291,7 @@ async function start() {
     initAssistantDock();
     initAssistantHistory();
     initChatProductGestures();
+    initAiTelemetry();
 
     showConsent();
     syncFromServer();

@@ -9,6 +9,7 @@
 
 import { extendSeedPhase2 } from "./demo-seed-phase2.js";
 import { enrichOrdersPhase3, extendSeedPhase3 } from "./demo-seed-phase3.js";
+import { extendSeedPhase4 } from "./demo-seed-phase4.js";
 
 const SAMPLE_PRODUCTS = [
     { id: "demo-p1", name: "Produk Contoh A", price: 15000, category: "Minuman" },
@@ -200,8 +201,9 @@ export function buildDemoSeed(realProducts = [], now = new Date()) {
     ];
 
     // Urutan penting: pesanan dilengkapi (voucher, HP, status kirim) dulu,
-    // lalu Fase 2 membuat jurnal, lalu Fase 3 menambah PO, tiket, CRM.
-    return extendSeedPhase3(extendSeedPhase2(enrichOrdersPhase3({
+    // lalu Fase 2 membuat jurnal, lalu Fase 3 menambah PO, tiket, CRM,
+    // lalu Fase 4 menambah aktivitas AI anonim.
+    return extendSeedPhase4(extendSeedPhase3(extendSeedPhase2(enrichOrdersPhase3({
         version: DEMO_VERSION,
         created_at: now.toISOString(),
         units,
@@ -214,11 +216,11 @@ export function buildDemoSeed(realProducts = [], now = new Date()) {
         orders,
         approvals,
         audit,
-    }, now), now), now);
+    }, now), now), now), now);
 }
 
 /** Naikkan bila bentuk data demo berubah (data lama di perangkat diganti). */
-export const DEMO_VERSION = 6;
+export const DEMO_VERSION = 7;
 
 /** Persona yang bisa dipilih di layar masuk demo (untuk menunjukkan batas akses). */
 export const DEMO_PERSONAS = Object.freeze([

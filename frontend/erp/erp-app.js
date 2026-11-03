@@ -40,10 +40,11 @@ import * as logistics from "./modules/logistics.js";
 import * as cs from "./modules/cs.js";
 import * as marketing from "./modules/marketing.js";
 import * as crm from "./modules/crm.js";
+import * as brain from "./modules/brain.js";
 
 const RENDERERS = {
     workspace, cockpit, sales, team, catalog, approvals, org, inventory, pos, finance, hr, payroll,
-    purchasing, logistics, cs, marketing, crm,
+    purchasing, logistics, cs, marketing, crm, brain,
 };
 const DEMO_KEY = "kantoong_erp_demo_persona";
 

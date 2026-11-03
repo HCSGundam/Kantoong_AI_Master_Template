@@ -1770,6 +1770,9 @@ export async function sendMessage(rawText) {
 
         emit("ai-response", {
             text: result.reply,
+            // Pertanyaan pembeli: hanya dipakai ai-telemetry.js untuk mengambil
+            // kata katalog/kebutuhan (tidak pernah disimpan utuh).
+            question: message,
             product_ids: productIds,
             action: result.action
         });

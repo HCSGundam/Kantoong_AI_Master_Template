@@ -21,6 +21,7 @@ import {
 import { leaderboard, periodStart } from "../core/metrics.js";
 import { phase2Methods } from "./demo-adapter-phase2.js";
 import { phase3Methods } from "./demo-adapter-phase3.js";
+import { phase4Methods } from "./demo-adapter-phase4.js";
 
 const STORE_KEY = "kantoong_erp_demo_v1";
 const listeners = new Set();
@@ -88,6 +89,7 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
         mode: "demo",
         ...phase2,
         ...phase3Methods({ db: () => db, save, me, audit }),
+        ...phase4Methods({ db: () => db, save, me }),
 
         async getSession() {
             const member = me();

@@ -125,6 +125,14 @@ export const MODULES = Object.freeze([
         allow: (member) => member.level >= 3 || hasRole(member, "cs", "marketing", "sales"),
     },
     {
+        key: "brain",
+        label: "Second Brain",
+        hint: "Neuron brand-mu di Anachronos Digital Mall (khusus owner)",
+        icon: "M12 4a3 3 0 0 0-3 3 3 3 0 0 0-3 3 3 3 0 0 0 1 5.5V17a3 3 0 0 0 5 2.2A3 3 0 0 0 17 17v-1.5A3 3 0 0 0 18 10a3 3 0 0 0-3-3 3 3 0 0 0-3-3zM12 4v16",
+        // Hanya OWNER (level 5). Direksi, marketing, & staf tidak boleh.
+        allow: (member) => member.level >= 5,
+    },
+    {
         key: "org",
         label: "Organisasi & Akses",
         hint: "Divisi, tim, jabatan & hak akses",
@@ -136,7 +144,6 @@ export const MODULES = Object.freeze([
 /** Modul tahap berikutnya: tampil abu-abu "Segera" agar peta ERP terlihat utuh. */
 export const UPCOMING_MODULES = Object.freeze([
     { key: "production", label: "Produksi", phase: 4 },
-    { key: "research", label: "AI Research & Second Brain", phase: 4 },
 ]);
 
 /** Modul yang boleh dibuka seseorang (urutan sesuai MODULES). */

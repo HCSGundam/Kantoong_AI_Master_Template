@@ -11,6 +11,7 @@ import { supabase } from "../../js/supabase-client.js";
 import { unitPath } from "../core/org.js";
 import { phase2SupabaseMethods } from "./supabase-adapter-phase2.js";
 import { phase3SupabaseMethods } from "./supabase-adapter-phase3.js";
+import { phase4SupabaseMethods } from "./supabase-adapter-phase4.js";
 import { createProduct, deleteProduct, setPublication, updateProduct, uploadProductImage } from "./product-service.js";
 
 const MEMBER_FIELDS =
@@ -41,6 +42,7 @@ export function createSupabaseAdapter() {
         mode: "supabase",
         ...phase2SupabaseMethods(),
         ...phase3SupabaseMethods(),
+        ...phase4SupabaseMethods(),
 
         async getSession() {
             const { data } = await supabase.auth.getUser();

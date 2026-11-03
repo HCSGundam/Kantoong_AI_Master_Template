@@ -59,6 +59,7 @@ Dari depan terlihat seperti **e-commerce/marketplace biasa**, tapi di belakangny
   - `dashboard-admin/`: hanya pengalih ke ERP. Editor produk lama sudah pindah ke ERP › Katalog Master (`erp/modules/product-editor.js`)
   - Membuka ERP selalu minta password lagi + kunci otomatis 30 menit (`erp/core/erp-lock.js`). Mode demo hanya lewat `erp/erp.html?demo=1`. Tombol ERP di Profil hanya untuk anggota (`members`)
   - `db/erp-phase3.sql`: ERP Fase 3 (supplier & PO, alur kirim pesanan + resi, tiket CS & retur, voucher di checkout, CRM dengan izin pemasaran UU PDP)
+  - `db/erp-phase4.sql`: ERP Fase 4A (tabel `ai_events` anonim + `log_ai_events()`; baca HANYA owner level 5; hapus otomatis 90 hari). Menu ERP "Second Brain" (`erp/modules/brain.js` + kanvas `brain-neuron.js`): 1 brand = 1 neuron berdenyut, klik = panel ringkas. Hanya brand sendiri; peta banyak neuron hanya di web terpisah Anachronos Digital Mall. Hitungan di `erp/core/research.js`. Toko mencatat lewat `js/ai-telemetry.js`: tanpa nama/HP/email/isi chat, kata kunci hanya kata katalog/kebutuhan. Fase 4B (Produksi) belum
   - `db/erp-security.sql`: sambung akun hanya bila email terverifikasi; produk/foto bisa dikelola dari ERP
   - `dashboard-user/`: dashboard user (sistem fitur modular, intent menu, navigation memory)
   - `db/owner-and-pin.sql`: SQL owner/PIN
@@ -67,6 +68,7 @@ Dari depan terlihat seperti **e-commerce/marketplace biasa**, tapi di belakangny
   - `erp/`: aplikasi ERP (`erp.html`). `core/` = aturan akses & hitungan (murni, dites), `data/` = adapter Supabase + mode demo, `modules/` = satu file per dashboard
   - `js/sales-store.js`: toko per sales (`/nama-sales`, nanti `nama-sales.kantoong.id`) + atribusi pesanan 30 hari
   - `js/supabase-client.js`: koneksi Supabase (hanya memakai publishable key)
+- **Anachronos Digital Mall** (web internal owner, Second Brain 3D) ada di proyek TERPISAH `C:\Anachronos_Digital_Mall` (Vite + three.js, port 5180). Jangan dibuat di dalam Kantoong
 - `backend/server.js` + `backend/ai-chat.js`: Express port 5000, `/api/chat` ke Gemini (kunci di backend/.env). Prompt memakai konteks halaman, brand, nama user, izin memori
 - `test/`: tes otomatis (Vitest)
 - `dist/`: hasil build. Jangan diedit manual.

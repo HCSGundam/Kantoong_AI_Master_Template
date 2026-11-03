@@ -4,8 +4,22 @@
     {
       "name": "kantoong-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5173
+    },
+    {
+      "name": "anachronos-mall",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "C:/Anachronos_Digital_Mall",
+        "run",
+        "dev"
+      ],
+      "port": 5180
     }
   ]
 }
