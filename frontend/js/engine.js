@@ -2669,7 +2669,55 @@ function setShowcaseView(section, view) {
   }
 }
 
-/** Tombol 2D/3D dan panah "berikutnya" (dipasang sekali per bagian). */
+/**
+ * Panah "<" / ">" satu langkah. 3D: putar satu kartu. 2D: geser selebar
+ * satu kartu (bukan "kartu ke tengah": di layar lebar kartu berikutnya
+ * sering sudah di kiri, sehingga tujuannya minus dan rail tidak bergerak).
+ * Mentok di ujung = kembali ke ujung lainnya.
+ */
+function stepShowcase(section, direction) {
+  const rail = getShowcaseRail(section);
+
+  if (!rail) return;
+
+  if (isCarouselMode(section)) {
+    const state = getCarousel(rail);
+    state.pos = Math.round(state.pos) + direction;
+    layoutCarousel(rail);
+    return;
+  }
+
+  const cards = getRailCards(rail);
+  const step =
+    (cards[1] ? cards[1].offsetLeft - cards[0].offsetLeft : 0) ||
+    cards[0]?.offsetWidth ||
+    rail.clientWidth * 0.8;
+  const max = rail.scrollWidth - rail.clientWidth;
+
+  if (direction > 0 && rail.scrollLeft >= max - 2) {
+    rail.scrollTo({ left: 0, behavior: "smooth" });
+  } else if (direction < 0 && rail.scrollLeft <= 2) {
+    rail.scrollTo({ left: max, behavior: "smooth" });
+  } else {
+    rail.scrollBy({ left: direction * step, behavior: "smooth" });
+  }
+}
+
+/** Panah "sebelumnya" di kiri: dibuat di sini agar ada di semua etalase. */
+function ensurePrevButton(section) {
+  const next = section.querySelector(".featured-next");
+
+  if (!next || section.querySelector(".featured-prev")) return;
+
+  const prev = makeElement("button", "featured-prev");
+  prev.type = "button";
+  prev.hidden = next.hidden;
+  prev.setAttribute("aria-label", "Produk sebelumnya");
+  prev.appendChild(makeIcon("", ["M15 5l-7 7 7 7"]));
+  next.before(prev);
+}
+
+/** Tombol 2D/3D dan panah "<" / ">" (dipasang sekali per bagian). */
 function initShowcaseControls(section) {
   const rail = getShowcaseRail(section);
 
@@ -2678,29 +2726,14 @@ function initShowcaseControls(section) {
   section.dataset.controlsReady = "true";
   section.dataset.view = readFeaturedView(section.dataset.viewKey || section.id || "featured");
   initCarouselGestures(rail);
+  ensurePrevButton(section);
 
   section.querySelector(".featured-view")?.addEventListener("click", () => {
     setShowcaseView(section, isCarouselMode(section) ? "2d" : "3d");
   });
 
-  section.querySelector(".featured-next")?.addEventListener("click", () => {
-    if (isCarouselMode(section)) {
-      const state = getCarousel(rail);
-      state.pos = Math.round(state.pos) + 1;
-      layoutCarousel(rail);
-      return;
-    }
-
-    const cards = getRailCards(rail);
-    const active = toNumber(rail.dataset.active, 0);
-
-    if (active >= cards.length - 1) {
-      rail.scrollTo({ left: 0, behavior: "smooth" });
-      return;
-    }
-
-    scrollRailToCard(rail, active + 1);
-  });
+  section.querySelector(".featured-next")?.addEventListener("click", () => stepShowcase(section, 1));
+  section.querySelector(".featured-prev")?.addEventListener("click", () => stepShowcase(section, -1));
 
   section.querySelector(".featured-float-cta")?.addEventListener("click", scrollToCatalog);
 }
@@ -2733,8 +2766,9 @@ function decorateShowcaseRail(rail) {
   const controls = section.querySelector(".featured-controls");
   if (controls) controls.hidden = cards.length < 2;
 
-  const next = section.querySelector(".featured-next");
-  if (next) next.hidden = cards.length < 2;
+  section.querySelectorAll(".featured-next, .featured-prev").forEach((arrow) => {
+    arrow.hidden = cards.length < 2;
+  });
 
   getCarousel(rail).pos = 0;
   rail.scrollLeft = 0;
@@ -3244,7 +3278,8 @@ function addToCart(product, quantity = 1) {
     cart: state.cart,
   });
 
-  showToast(`${getProductName(product)} ditambahkan ke keranjang.`);
+  // Notifikasi "masuk keranjang" ditampilkan cart/cart.js setelah barang
+  // benar-benar masuk; engine tidak menampilkan notifikasi kedua.
 }
 
 function initCart() {
@@ -3311,18 +3346,38 @@ window.KantoongCartBridge = {
    ------------------------------------------------------------ */
 
 const AI_PICKS_TITLE = "Pilihan AI untuk kamu";
+const AI_PICKS_EYEBROW = "✦ Dari obrolanmu";
+const AI_PICKS_TEXT = "Kartu yang menyala dipilih AI untukmu. Ketuk untuk melihat detailnya.";
+
+/** Ganti teks etalase; teks asli toko disimpan agar bisa dikembalikan. */
+function swapFeaturedText(id, text) {
+  const element = document.getElementById(id);
+
+  if (!element) return;
+
+  if (element.dataset.defaultText === undefined) {
+    element.dataset.defaultText = element.textContent;
+    element.dataset.defaultHidden = String(element.hidden);
+  }
+
+  if (text === null) {
+    element.textContent = element.dataset.defaultText;
+    element.hidden = element.dataset.defaultHidden === "true";
+  } else {
+    element.textContent = text;
+    element.hidden = false;
+  }
+}
 
 function showAIPicks(products) {
-  const title = document.getElementById("featuredTitle");
+  const section = document.getElementById("featuredSection");
   const reset = document.getElementById("resetCatalogBtn");
 
-  if (title) {
-    if (!title.dataset.defaultText) {
-      title.dataset.defaultText = title.textContent;
-    }
+  swapFeaturedText("featuredTitle", AI_PICKS_TITLE);
+  swapFeaturedText("featuredEyebrow", AI_PICKS_EYEBROW);
+  swapFeaturedText("featuredText", AI_PICKS_TEXT);
 
-    title.textContent = AI_PICKS_TITLE;
-  }
+  if (section) section.dataset.aiPicks = "true";
 
   if (reset) {
     reset.hidden = false;
@@ -3330,18 +3385,16 @@ function showAIPicks(products) {
 
   renderProducts(products);
 
-  document
-    .getElementById("featuredSection")
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  section?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // Kartu pilihan AI menyala sebentar: "ini yang kumaksud".
-  requestAnimationFrame(() => {
-    $$("#featuredSection .product-card").forEach((card) => {
-      card.classList.remove("is-stage-new");
-      void card.offsetWidth;
-      card.classList.add("is-stage-new");
-    });
+  // Kartu pilihan AI MENYALA TERUS ("ini yang kumaksud") sampai diklik
+  // atau etalase dikembalikan ke awal. Dipasang langsung (kartu sudah
+  // dirender), tidak menunggu frame berikutnya.
+  $$("#featuredSection .product-card").forEach((card) => {
+    card.classList.add("is-ai-pick");
   });
+
+  if (section) requestAnimationFrame(() => positionFeaturedFloat(section));
 }
 
 /** Sorot satu kartu produk di halaman (bukan di chat). id kosong = lepas sorotan. */
@@ -3370,18 +3423,22 @@ function focusStageCard(id) {
 }
 
 function resetAIPicks() {
-  const title = document.getElementById("featuredTitle");
+  const section = document.getElementById("featuredSection");
   const reset = document.getElementById("resetCatalogBtn");
 
-  if (title?.dataset.defaultText) {
-    title.textContent = title.dataset.defaultText;
-  }
+  swapFeaturedText("featuredTitle", null);
+  swapFeaturedText("featuredEyebrow", null);
+  swapFeaturedText("featuredText", null);
+
+  if (section) delete section.dataset.aiPicks;
 
   if (reset) {
     reset.hidden = true;
   }
 
   renderProducts();
+
+  if (section) requestAnimationFrame(() => positionFeaturedFloat(section));
 }
 
 function initAIEventBridge() {
@@ -3413,6 +3470,15 @@ function initAIEventBridge() {
     focusStageCard(String(event.detail?.id ?? ""));
   });
   window.addEventListener("kantoong:stage-blur", () => focusStageCard(""));
+
+  // Kartu pilihan AI yang menyala padam setelah user mengkliknya.
+  document.addEventListener(
+    "click",
+    (event) => {
+      event.target.closest?.(".product-card.is-ai-pick")?.classList.remove("is-ai-pick");
+    },
+    true
+  );
 
   document.addEventListener("kantoong:ai-search", (event) => {
     const query = event.detail?.query;

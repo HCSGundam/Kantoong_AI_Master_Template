@@ -245,21 +245,4 @@
     transition: box-shadow 200ms ease;
 }
 
-.product-card.is-stage-new {
-    animation: stage-glow 2.4s ease-out 1;
-}
-
-@keyframes stage-glow {
-    0%, 40% {
-        box-shadow: 0 0 0 2px #3b82f6, 0 10px 30px color-mix(in srgb, #3b82f6 40%, transparent);
-    }
-    100% {
-        box-shadow: 0 0 0 0 transparent;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .product-card.is-stage-new {
-        animation: none;
-    }
-}
+/* Kartu pilihan AI menyala terus: lihat .is-ai-pick di compact.css. */

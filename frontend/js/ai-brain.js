@@ -1876,9 +1876,11 @@ function handleProductCardClick(event) {
         return;
     }
 
-    sendMessage(
-        `Tolong jelaskan produk ${getProductName(product)}`
-    );
+    // Ketuk kartu = buka pop-up produk (sama seperti di etalase), TIDAK
+    // mengirim pesan otomatis. Tanya AI = tarik kartu ke atas
+    // (chat-product-gestures.js). Di luar toko, kantoong-assistant.js
+    // membuka produk di tab toko.
+    window.KantoongEngine?.openQuickView?.(getProductId(product));
 }
 
 function handleConsultEvent(event) {

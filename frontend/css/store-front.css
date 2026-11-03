@@ -335,28 +335,7 @@
    08. CATALOG CONTROLS
    ========================================================= */
 
-#resetCatalogBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  min-height: 38px;
-  padding: 8px 12px;
-
-  color: var(--store-text);
-  background: var(--store-surface);
-
-  border: 1px solid var(--store-border);
-  border-radius: var(--store-radius-sm);
-
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-#resetCatalogBtn:hover {
-  background: var(--store-surface-soft);
-}
+/* Tombol "Kembali ke awal" (mode Pilihan AI): lihat .featured-reset di compact.css. */
 
 /* =========================================================
    09. RESPONSIVE — TABLET

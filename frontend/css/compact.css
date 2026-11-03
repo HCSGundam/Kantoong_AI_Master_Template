@@ -469,8 +469,7 @@
   transition: max-height 220ms ease, opacity 180ms ease, padding 220ms ease;
 }
 
-#appRoot .featured[data-layout="middle"] .featured-head,
-#appRoot .featured #resetCatalogBtn:not([hidden]) {
+#appRoot .featured[data-layout="middle"] .featured-head {
   max-height: 64px;
   padding-bottom: 4px;
   opacity: 1;
@@ -964,8 +963,9 @@
   isolation: isolate;
 }
 
-/* Panah bulat "berikutnya" di kanan (sesuai desain). */
-#appRoot .featured-next {
+/* Panah bulat "berikutnya" di kanan & "sebelumnya" di kiri (sesuai desain). */
+#appRoot .featured-next,
+#appRoot .featured-prev {
   position: absolute;
   top: 50%;
   right: 8px;
@@ -988,12 +988,23 @@
   cursor: pointer;
 }
 
+#appRoot .featured-prev {
+  right: auto;
+  left: 8px;
+}
+
+/* 2D: judul etalase ada di kiri saat awal & di kanan saat ujung, jadi
+   panah di sisi itu disembunyikan agar tidak menimpa judul. 3D (berputar
+   tanpa ujung): kedua panah selalu tampil. */
 #appRoot .featured-next[hidden],
-#appRoot .featured[data-layout="end"] .featured-next {
+#appRoot .featured-prev[hidden],
+#appRoot .featured[data-view="2d"][data-layout="end"] .featured-next,
+#appRoot .featured[data-view="2d"][data-layout="start"] .featured-prev {
   display: none;
 }
 
-#appRoot .featured-next svg {
+#appRoot .featured-next svg,
+#appRoot .featured-prev svg {
   width: 18px;
   height: 18px;
   fill: none;
@@ -1200,14 +1211,43 @@
   right: 6px;
 }
 
+#appRoot .featured[data-view="3d"] .featured-prev {
+  left: 6px;
+}
+
 @media (min-width: 900px) {
   #appRoot .featured[data-view="3d"] {
     grid-template-columns: 240px minmax(0, 1fr);
     column-gap: 24px;
   }
 
-  #appRoot .featured[data-view="3d"] .featured-rail > .product-card {
+  /* :hover ikut ditulis: tanpa ini aturan hover versi HP (maks 230px)
+     menang dan kartu MENGECIL saat disentuh kursor. */
+  #appRoot .featured[data-view="3d"] .featured-rail > .product-card,
+  #appRoot .featured[data-view="3d"] .featured-rail > .product-card:hover {
     width: 280px;
+  }
+}
+
+/* 3D: kartu yang disentuh kursor membesar sedikit (zoom in), sama seperti
+   mode 2D. Memakai `scale` terpisah agar tidak menimpa posisi 3D (transform
+   diatur engine.js). */
+@media (hover: hover) and (pointer: fine) {
+  #appRoot .featured[data-view="3d"] .featured-rail > .product-card,
+  #appRoot .featured[data-view="3d"] .featured-rail > .product-card:hover {
+    transition: scale 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  #appRoot .featured[data-view="3d"] .featured-rail.is-animating > .product-card,
+  #appRoot .featured[data-view="3d"] .featured-rail.is-animating > .product-card:hover {
+    transition:
+      transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 520ms ease,
+      scale 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  #appRoot .featured[data-view="3d"] .featured-rail > .product-card:hover {
+    scale: 1.05;
   }
 }
 
@@ -1308,10 +1348,6 @@
   line-height: 1.45;
 }
 
-#appRoot .featured-float #resetCatalogBtn {
-  padding: 0;
-  font-size: 11px;
-}
 
 #appRoot .featured-float-cta {
   padding: 5px 10px;
@@ -1389,9 +1425,45 @@
    ========================================================= */
 
 /* 3D: tepi kiri-kanan memudar, bukan dipotong lurus. */
+/* Mode 2D: kartu di ujung kiri & kanan memudar halus (gradasi bertahap,
+   sama seperti tepi banner hero), bukan terpotong lurus saat digeser.
+   Dipasang di rail, jadi tombol panah ">" tidak ikut memudar. */
+#appRoot .featured[data-view="2d"] .featured-rail {
+  --rail-fade: 24px;
+  -webkit-mask-image: linear-gradient(90deg,
+    transparent 0,
+    rgb(0 0 0 / 35%) calc(var(--rail-fade) * 0.375),
+    rgb(0 0 0 / 80%) calc(var(--rail-fade) * 0.69),
+    #000 var(--rail-fade),
+    #000 calc(100% - var(--rail-fade)),
+    rgb(0 0 0 / 80%) calc(100% - var(--rail-fade) * 0.69),
+    rgb(0 0 0 / 35%) calc(100% - var(--rail-fade) * 0.375),
+    transparent 100%);
+  mask-image: linear-gradient(90deg,
+    transparent 0,
+    rgb(0 0 0 / 35%) calc(var(--rail-fade) * 0.375),
+    rgb(0 0 0 / 80%) calc(var(--rail-fade) * 0.69),
+    #000 var(--rail-fade),
+    #000 calc(100% - var(--rail-fade)),
+    rgb(0 0 0 / 80%) calc(100% - var(--rail-fade) * 0.69),
+    rgb(0 0 0 / 35%) calc(100% - var(--rail-fade) * 0.375),
+    transparent 100%);
+}
+
+@media (min-width: 900px) {
+  #appRoot .featured[data-view="2d"] .featured-rail {
+    --rail-fade: 40px;
+  }
+}
+
 #appRoot .featured[data-view="3d"] .featured-stage {
   overflow: visible;
   overflow-x: clip;
+}
+
+/* Fade tepi 3D dipasang di rail (bukan stage), agar panah "<" / ">"
+   di dalam stage tidak ikut pudar. */
+#appRoot .featured[data-view="3d"] .featured-rail {
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
   mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 92%, transparent 100%);
 }
@@ -2534,5 +2606,95 @@
   #appRoot .quickview__backdrop,
   #appRoot .quickview__panel {
     transition: none;
+  }
+}
+
+/* =========================================================
+   PILIHAN AI (engine.js: showAIPicks)
+   Kartu pilihan AI menyala TERUS (bingkai biru + aura) sampai
+   diklik. Sengaja tanpa animasi berdenyut: menggambar ulang
+   bayangan di kartu 3D bisa memicu glitch di laptop.
+   ========================================================= */
+
+#appRoot .featured[data-view] .featured-rail > .product-card.is-ai-pick,
+#appRoot .featured[data-view] .featured-rail > .product-card.is-ai-pick:hover {
+  border-color: #3b82f6;
+  box-shadow:
+    0 0 0 2px #3b82f6,
+    0 0 0 7px rgb(59 130 246 / 12%),
+    0 16px 42px rgb(59 130 246 / 32%);
+}
+
+/* Label kecil di atas judul berwarna biru saat etalase berisi pilihan AI. */
+#appRoot .featured[data-ai-picks] .featured-float__eyebrow {
+  color: #2563eb;
+}
+
+/* Tombol "Kembali ke awal": pil halus dengan ikon putar balik. */
+#appRoot .featured-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin-top: 4px;
+  padding: 0 12px 0 10px;
+
+  color: var(--store-text);
+  background: color-mix(in srgb, var(--store-text) 5%, var(--store-surface, #fff));
+  border: 1px solid color-mix(in srgb, var(--store-text) 12%, transparent);
+  border-radius: 999px;
+
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+#appRoot .featured-reset[hidden] {
+  display: none;
+}
+
+#appRoot .featured-reset svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#appRoot .featured-reset:hover {
+  background: color-mix(in srgb, var(--store-text) 9%, var(--store-surface, #fff));
+  border-color: color-mix(in srgb, var(--store-text) 22%, transparent);
+}
+
+#appRoot .featured-reset:hover svg {
+  transform: rotate(-45deg);
+}
+
+/* Posisi ATAS (etalase digeser ke tengah): cukup ikon + teks kecil. */
+#appRoot .featured[data-text-spot="top"] .featured-reset {
+  height: 24px;
+  margin-top: 2px;
+  font-size: 10.5px;
+}
+
+@media (min-width: 900px) {
+  #appRoot .featured-reset {
+    height: 32px;
+    padding: 0 14px 0 12px;
+    font-size: 12.5px;
+  }
+
+  #appRoot .featured-reset svg {
+    width: 14px;
+    height: 14px;
   }
 }
