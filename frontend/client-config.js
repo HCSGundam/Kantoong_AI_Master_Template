@@ -53,6 +53,16 @@ const KantoongConfig = {
      */
     use_demo_when_empty: true,
 
+    /*
+     * MODE DEMO ERP (untuk presentasi ke bos / calon klien).
+     * true  = panel "Coba mode demo" (data contoh, peran Owner/Sales/Kasir/dll)
+     *         selalu tampil di halaman login ERP, plus tombol "Coba Demo ERP"
+     *         di Profil.
+     * false = demo HILANG total. WAJIB false untuk web klien sungguhan.
+     * Data demo fiktif & hanya tersimpan di perangkat yang membukanya.
+     */
+    erp_demo: true,
+
 
     // ========================================================
     // 3. HERO / SLIDER UTAMA

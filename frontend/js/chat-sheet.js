@@ -104,6 +104,31 @@ function initChatSheet() {
     const desktopQuery = window.matchMedia("(min-width: 900px)");
     const THROW_DISTANCE = 80;
 
+    /* Mode BEBAS (ERP & kasir): pil "Halo Kak" digeser kiri/kanan = pindah tempat, disimpan. */
+    const FREE_KEY = "kantoong:assistant-free-x";
+    const isFree = () => document.documentElement.dataset.kcFree !== undefined;
+    function applyFreeX(ratio = null) {
+        if (!isFree()) return;
+        let value = ratio;
+        if (value === null) {
+            try {
+                value = Number(localStorage.getItem(FREE_KEY));
+            } catch {
+                value = NaN;
+            }
+        }
+        const root = document.documentElement;
+        if (!Number.isFinite(value) || value <= 0) {
+            root.style.removeProperty("--kc-free-left");
+            return;
+        }
+        const width = panel.getBoundingClientRect().width || 440;
+        const left = clamp(value * window.innerWidth, 12, window.innerWidth - width - 12);
+        root.style.setProperty("--kc-free-left", `${Math.round(left)}px`);
+    }
+    window.addEventListener("resize", () => applyFreeX());
+    requestAnimationFrame(() => applyFreeX());
+
     /** File lampiran yang menunggu dikirim. */
     let pending = [];
 
@@ -258,7 +283,7 @@ function initChatSheet() {
         const dx = event.clientX - drag.startX;
 
         if (
-            !drag.moved && !drag.throwing && state === "peek" && desktopQuery.matches &&
+            !drag.moved && !drag.throwing && (state === "peek" || isFree()) && desktopQuery.matches &&
             Math.abs(dx) >= 8 && Math.abs(dx) > Math.abs(dy) * 1.5
         ) {
             drag.throwing = true;
@@ -269,9 +294,9 @@ function initChatSheet() {
             drag.dx = dx;
             panel.style.setProperty("--kc-throw-x", `${dx}px`);
 
-            // Bayangan sisi tujuan, agar user tahu chat akan menempel di mana.
+            // Bayangan sisi tujuan, agar user tahu chat akan menempel di mana (bukan di mode bebas).
             const root = document.documentElement;
-            if (Math.abs(dx) >= THROW_DISTANCE) root.dataset.kcThrow = dx < 0 ? "left" : "right";
+            if (!isFree() && Math.abs(dx) >= THROW_DISTANCE) root.dataset.kcThrow = dx < 0 ? "left" : "right";
             else delete root.dataset.kcThrow;
 
             event.preventDefault();
@@ -328,6 +353,22 @@ function initChatSheet() {
         if (drag.throwing) {
             drag.throwing = false;
             panel.classList.remove("is-dragging");
+
+            if (isFree()) {
+                // Mode bebas: posisi baru disimpan (perbandingan lebar layar), tidak membuka chat.
+                const rect = panel.getBoundingClientRect();
+                panel.style.removeProperty("--kc-throw-x");
+                const left = clamp(rect.left, 12, window.innerWidth - rect.width - 12);
+                const ratio = left / window.innerWidth;
+                try {
+                    localStorage.setItem(FREE_KEY, String(ratio));
+                } catch {
+                    // Penyimpanan diblokir: posisi berlaku selama halaman terbuka.
+                }
+                applyFreeX(ratio);
+                return;
+            }
+
             panel.style.removeProperty("--kc-throw-x");
             delete document.documentElement.dataset.kcThrow;
 
@@ -1009,8 +1050,9 @@ function initChatSheet() {
     floatOrb.setAttribute("aria-label", "Buka konsultasi AI");
     host.appendChild(floatOrb);
 
-    /** Posisi orb: sisi layar (kiri/kanan) + tinggi relatif 0..1. */
-    let orbPos = { side: "right", y: 0.72 };
+    /** Posisi orb: sisi layar (kiri/kanan) + tinggi relatif 0..1.
+        Mode bebas (ERP & kasir): bawaan kiri bawah, supaya tidak menutupi panel pesanan/tombol Bayar di kanan. */
+    let orbPos = isFree() ? { side: "left", y: 0.94 } : { side: "right", y: 0.72 };
 
     try {
         const saved = JSON.parse(localStorage.getItem(ORB_STORE_KEY) || "null");

@@ -22,6 +22,8 @@ import { leaderboard, periodStart } from "../core/metrics.js";
 import { phase2Methods } from "./demo-adapter-phase2.js";
 import { phase3Methods } from "./demo-adapter-phase3.js";
 import { phase4Methods } from "./demo-adapter-phase4.js";
+import { posProMethods } from "./demo-adapter-pos.js";
+import { ensurePosMembers } from "./demo-seed-kitchen.js";
 
 const STORE_KEY = "kantoong_erp_demo_v1";
 const listeners = new Set();
@@ -48,6 +50,8 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
     if (!db || db.version !== DEMO_VERSION) {
         db = buildDemoSeed(realProducts);
     }
+    // POS Pro Tahap 2: peran Barista (Dapur & Bar) juga untuk data demo lama.
+    ensurePosMembers(db);
 
     const save = () => {
         try {
@@ -83,11 +87,13 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
     const notify = () => listeners.forEach((callback) => callback());
 
     // Fase 2: gudang, kasir, keuangan, absensi, payroll.
-    const phase2 = phase2Methods({ db: () => db, save, me, audit });
+    const { posHelpers, ...phase2 } = phase2Methods({ db: () => db, save, me, audit });
 
     return {
         mode: "demo",
         ...phase2,
+        // Kasir POS Pro (Tahap 1): channel, varian, pajak/service, bayar campuran, bill terbuka.
+        ...posProMethods({ db: () => db, save, me, audit, ...posHelpers }),
         ...phase3Methods({ db: () => db, save, me, audit }),
         ...phase4Methods({ db: () => db, save, me }),
 

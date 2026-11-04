@@ -25,6 +25,7 @@ export const JOB_ROLES = Object.freeze({
     marketing: "Marketing",
     cs: "Customer Service",
     kasir: "Kasir",
+    dapur: "Dapur & Bar",
 });
 
 /** Boleh mengerjakan bagian ini? (direktur/owner selalu boleh) */

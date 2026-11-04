@@ -572,3 +572,19 @@ div {
         scroll-behavior: auto !important;
     }
 }
+
+/* ============================================================
+   BATANG SCROLL DISEMBUNYIKAN DI SELURUH HALAMAN
+   Scroll tetap jalan (roda mouse, touchpad, sentuh); hanya batangnya
+   yang tidak terlihat.
+   ============================================================ */
+html,
+* {
+    scrollbar-width: none !important;
+}
+
+*::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}

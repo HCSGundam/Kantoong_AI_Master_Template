@@ -10,10 +10,13 @@
  *    tanpa aktivitas.
  * 3. Setelah terbuka: hanya email yang terdaftar sebagai anggota (RLS) yang
  *    melihat data. Menu dihitung dari jabatan. Halaman diganti lewat #/modul.
- * 4. Mode demo (data contoh) hanya muncul bila alamat diberi ?demo=1.
+ * 4. Mode demo (data contoh) muncul bila client-config.js › erp_demo = true
+ *    (template master / presentasi). Web klien: erp_demo = false -> demo hilang.
  */
 
-import { signInWithEmail } from "../auth/auth-service.js";
+import CFG from "../client-config.js";
+import { sendPasswordReset, signInWithEmail } from "../auth/auth-service.js";
+import { describePasswordError, isEmail } from "../auth/password-rules.js";
 import { supabase } from "../js/supabase-client.js";
 import { createSupabaseAdapter } from "./data/supabase-adapter.js";
 import { createDemoAdapter, resetDemoData } from "./data/demo-adapter.js";
@@ -32,6 +35,11 @@ import * as approvals from "./modules/approvals.js";
 import * as org from "./modules/org.js";
 import * as inventory from "./modules/inventory.js";
 import * as pos from "./modules/pos.js";
+import * as kitchen from "./modules/kitchen.js";
+import * as cashcontrol from "./modules/cashcontrol.js";
+import * as promos from "./modules/promos.js";
+import * as recipes from "./modules/recipes.js";
+import * as posreport from "./modules/posreport.js";
 import * as finance from "./modules/finance.js";
 import * as hr from "./modules/hr.js";
 import * as payroll from "./modules/payroll.js";
@@ -43,7 +51,7 @@ import * as crm from "./modules/crm.js";
 import * as brain from "./modules/brain.js";
 
 const RENDERERS = {
-    workspace, cockpit, sales, team, catalog, approvals, org, inventory, pos, finance, hr, payroll,
+    workspace, cockpit, sales, team, catalog, approvals, org, inventory, pos, kitchen, cashcontrol, posreport, recipes, promos, finance, hr, payroll,
     purchasing, logistics, cs, marketing, crm, brain,
 };
 const DEMO_KEY = "kantoong_erp_demo_persona";
@@ -59,7 +67,7 @@ const app = {
     webEmail: "",
 };
 
-const DEMO_ALLOWED = new URLSearchParams(location.search).has("demo");
+const DEMO_ALLOWED = CFG.erp_demo === true;
 
 /* ---------- Masuk ---------- */
 
@@ -67,10 +75,12 @@ function showLogin(message = "", { email = "" } = {}) {
     stopIdleWatch();
     $("appView").hidden = true;
     $("loginView").hidden = false;
+    document.title = "Kantoong ERP";
 
     const note = $("loginMessage");
     note.hidden = !message;
     note.textContent = message;
+    delete note.dataset.kind;
 
     // Sudah login di web: email dikunci, cukup masukkan password lagi.
     app.webEmail = email;
@@ -174,6 +184,8 @@ function currentModuleKey() {
 }
 
 async function renderPage() {
+    // ERP sudah dikunci / keluar demo: jangan gambar ulang (cegah error dari pengisian otomatis).
+    if (!app.data) return;
     const key = currentModuleKey();
     const module = MODULES.find((entry) => entry.key === key);
     const root = $("pageRoot");
@@ -181,7 +193,7 @@ async function renderPage() {
     app.cleanup?.();
     app.cleanup = null;
 
-    $("topTitle").textContent = module.label;
+    // Judul cukup sekali (judul besar di halaman); bilah atas tidak mengulanginya.
     document.title = `${module.label} — Kantoong ERP`;
     renderNav();
     closeNav();
@@ -255,7 +267,31 @@ function start(adapter, member, userId = null) {
     renderPage();
 }
 
-/* ---------- Menu ponsel ---------- */
+/* ---------- Menu kiri: desktop = ciutkan, ponsel = laci ---------- */
+
+const NAV_COLLAPSED_KEY = "kantoong:erp-nav-collapsed";
+const isPhoneLayout = () => window.matchMedia("(max-width: 899px)").matches;
+
+function setNavCollapsed(collapsed, remember = true) {
+    document.body.classList.toggle("nav-collapsed", collapsed);
+    $("navToggle").setAttribute("aria-expanded", String(!collapsed));
+    $("navToggle").setAttribute("aria-label", collapsed ? "Buka menu" : "Tutup menu");
+    if (!remember) return;
+    try {
+        localStorage.setItem(NAV_COLLAPSED_KEY, collapsed ? "1" : "0");
+    } catch {
+        // Penyimpanan diblokir: pilihan berlaku selama halaman terbuka.
+    }
+}
+
+function toggleNav() {
+    if (isPhoneLayout()) {
+        if (document.body.classList.contains("nav-open")) closeNav();
+        else openNav();
+    } else {
+        setNavCollapsed(!document.body.classList.contains("nav-collapsed"));
+    }
+}
 
 function openNav() {
     document.body.classList.add("nav-open");
@@ -266,15 +302,22 @@ function openNav() {
 function closeNav() {
     document.body.classList.remove("nav-open");
     $("navBackdrop").hidden = true;
-    $("navToggle").setAttribute("aria-expanded", "false");
+    // Desktop: status tombol mengikuti menu kiri (terbuka kecuali diciutkan).
+    const expanded = !isPhoneLayout() && !document.body.classList.contains("nav-collapsed");
+    $("navToggle").setAttribute("aria-expanded", String(expanded));
 }
 
 /* ---------- Mulai ---------- */
 
 async function boot() {
-    $("navToggle").addEventListener("click", () =>
-        document.body.classList.contains("nav-open") ? closeNav() : openNav()
-    );
+    $("navToggle").addEventListener("click", toggleNav);
+    let collapsed = false;
+    try {
+        collapsed = localStorage.getItem(NAV_COLLAPSED_KEY) === "1";
+    } catch {
+        collapsed = false;
+    }
+    setNavCollapsed(collapsed, false);
     $("navBackdrop").addEventListener("click", closeNav);
     window.addEventListener("hashchange", () => app.data && renderPage());
 
@@ -290,6 +333,9 @@ async function boot() {
             } catch {
                 // abaikan
             }
+            // Hentikan pengisian ulang otomatis halaman yang sedang terbuka.
+            app.cleanup?.();
+            app.cleanup = null;
             app.data = null;
             location.hash = "";
             showLogin();
@@ -316,6 +362,33 @@ async function boot() {
         }
         location.hash = "";
         startDemo(value);
+    });
+
+    // Lupa password: link "buat password baru" dikirim ke email yang tertulis.
+    $("loginForgot").addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        const note = $("loginMessage");
+        const email = $("loginEmail").value.trim();
+        const say = (text, kind = "") => {
+            note.textContent = text;
+            note.hidden = !text;
+            note.dataset.kind = kind;
+        };
+        if (!isEmail(email)) {
+            say("Tulis email akunmu dulu, lalu klik \"Lupa password?\".");
+            $("loginEmail").focus();
+            return;
+        }
+        button.disabled = true;
+        say("Mengirim link…", "info");
+        try {
+            await sendPasswordReset(email);
+            say("✔ Kalau email itu terdaftar, link untuk membuat password baru sudah dikirim. Cek kotak masuk (dan folder spam).", "success");
+        } catch (error) {
+            say(describePasswordError(error));
+        } finally {
+            button.disabled = false;
+        }
     });
 
     $("loginForm").addEventListener("submit", async (event) => {

@@ -454,24 +454,21 @@ p {
         max(1.5rem, env(safe-area-inset-bottom));
 }
 
+/* Batang scroll disembunyikan (scroll tetap jalan: roda mouse, touchpad, sentuh). */
+html,
+body,
 .dashboard-user,
 .dashboard-user * {
-    scrollbar-color:
-        var(--kc-color-border-strong)
-        transparent;
+    scrollbar-width: none !important;
 }
 
-.dashboard-user::-webkit-scrollbar {
-    width: 8px;
-}
-
-.dashboard-user::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.dashboard-user::-webkit-scrollbar-thumb {
-    background: var(--kc-color-border-strong);
-    border-radius: var(--kc-radius-pill);
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.dashboard-user::-webkit-scrollbar,
+.dashboard-user *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 

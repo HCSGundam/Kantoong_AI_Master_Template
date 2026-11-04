@@ -639,6 +639,49 @@
   color: #b42318;
 }
 
+.kc-profile__feedback[data-kind="success"] {
+  color: #157a3d;
+}
+
+/* Ganti password (sudah login) */
+.kc-profile__password {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px;
+  border: 1px solid var(--kc-profile-border);
+  border-radius: var(--kc-profile-radius-sm);
+  background: var(--kc-profile-soft);
+}
+
+.kc-profile__password[hidden] {
+  display: none;
+}
+
+.kc-profile__password .kc-profile__login-form {
+  max-width: 420px;
+}
+
+/* Tombol bergaya tautan (mis. "Lupa password?") */
+.kc-profile__button--link {
+  justify-self: start;
+  min-height: auto;
+  padding: 4px 0;
+  color: var(--kc-profile-muted);
+  background: none;
+  border: 0;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.kc-profile__button--link:hover {
+  color: var(--kc-profile-text);
+}
+
 
 /* ============================================================
    PROFILE CARD PREVIEW — DASHBOARD BENTO

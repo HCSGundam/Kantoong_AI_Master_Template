@@ -6,6 +6,9 @@
     <meta name="robots" content="noindex">
     <title>Kantoong ERP</title>
     <link rel="stylesheet" href="./erp.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" />
 </head>
 <body>
     <!-- =========================================
@@ -28,6 +31,7 @@
                 </label>
                 <p class="erp-form__error" id="loginMessage" hidden></p>
                 <button class="erp-btn erp-btn--primary erp-btn--block" type="submit">Buka ERP</button>
+                <button class="erp-link" id="loginForgot" type="button">Lupa password?</button>
                 <button class="erp-link" id="loginSwitch" type="button" hidden>Bukan akunmu? Ganti akun</button>
                 <a class="erp-link" href="/">← Kembali ke toko</a>
             </form>
@@ -64,7 +68,8 @@
                     <svg viewBox="0 0 24 24" class="erp-icon" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
                 </button>
 
-                <div class="erp-top__title" id="topTitle"></div>
+                <!-- Pengisi ruang: judul TIDAK diulang di sini (sudah ada di halaman). -->
+                <div class="erp-top__title" id="topTitle" aria-hidden="true"></div>
 
                 <div class="erp-top__right">
                     <span class="erp-badge" id="demoBadge" hidden>DATA CONTOH</span>
@@ -83,10 +88,13 @@
     <script type="module" src="./erp-app.js"></script>
 
     <!-- Asisten AI Kantoong: sama dengan di toko, nyambung lintas halaman & brand.
-         Di ERP mulai sebagai orb agar tidak menutupi tabel. -->
+         ERP & kasir: selalu mulai sebagai ORB bulat bermata. Ketuk orb = kotak
+         "Halo Kak" (mode BEBAS: geser kiri/kanan, dibuka naik seperti di HP).
+         Tidak pernah menempel di samping. -->
     <script>
         window.KantoongAssistantContext = {
             surface: "erp",
+            dock: false,
             startMinimized: true,
             greetings: ["Ada yang bisa kubantu di dashboard kerjamu?"],
             suggestions: [

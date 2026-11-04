@@ -1401,10 +1401,15 @@
 }
 
 @media (min-width: 900px) {
-    .kc-host > .kc-sheet {
+    /* Dashboard (ERP, dll) di desktop: kotak "Halo Kak" DIKUNCI di pojok kanan
+       bawah. Tanpa geser setengah lebar ala toko (yang membuatnya nanggung). */
+    .kc-host > .kc-sheet,
+    .kc-host > .kc-sheet:not(.kc-sheet--docked) {
         left: auto;
-        width: min(440px, calc(100% - 32px));
         right: 16px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        width: min(440px, calc(100% - 32px));
+        transform: translateX(var(--kc-throw-x, 0px));
     }
 }
 
@@ -1985,4 +1990,24 @@ body.kc-overlay-open .kc-sheet {
     .kc-hcard__preview {
         transition: none;
     }
+}
+
+
+/* =========================================================
+   MODE BEBAS (ERP & kasir) — html[data-kc-free]
+   Pil "Halo Kak" di bawah, digeser kiri/kanan (posisi disimpan).
+   Dibuka = naik seperti di HP (setengah/penuh, tinggi bisa ditarik).
+   Tidak pernah menempel di samping; halaman tidak menyempit.
+   ========================================================= */
+@media (min-width: 900px) {
+    html[data-kc-free] .kc-host > .kc-sheet,
+    html[data-kc-free] .kc-host > .kc-sheet:not(.kc-sheet--docked) {
+        left: var(--kc-free-left, calc(50% - min(220px, (100% - 32px) / 2)));
+        right: auto;
+        width: min(440px, calc(100% - 32px));
+        transform: translateX(var(--kc-throw-x, 0px));
+    }
+    html[data-kc-free] .kc-host > .kc-sheet.is-dragging { transition: none; }
+    html[data-kc-free] .kc-dock-tools,
+    html[data-kc-free] .kc-dock-edge { display: none !important; }
 }

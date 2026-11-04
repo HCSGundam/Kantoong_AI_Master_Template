@@ -20,6 +20,24 @@
  */
 
 import { getProfileConfig } from "./profile-config.js";
+import { isEmail, validateNewPassword } from "../../../auth/password-rules.js";
+import CFG from "../../../client-config.js";
+
+// Tombol "Coba Demo ERP" hanya di template master (client-config › erp_demo).
+const ERP_DEMO = CFG.erp_demo === true;
+const ERP_DEMO_PATH = "/erp/erp.html?demo=1";
+
+function createDemoButton() {
+  const button = createActionButton({
+    label: "Coba Demo ERP (data contoh)",
+    action: "open-erp-demo",
+    variant: "secondary",
+  });
+
+  button.dataset.lockable = "true";
+
+  return button;
+}
 
 const VIEW_CLASS = "kc-profile";
 const VIEW_ATTRIBUTE = "data-kc-profile-view";
@@ -83,6 +101,7 @@ function getUserData(context = {}, config) {
         ? user.avatarUrl
         : "",
     isOwner: user.isOwner === true,
+    hasPassword: user.hasPassword === true,
   };
 }
 
@@ -247,10 +266,97 @@ function createLoginPanel() {
   submit.type = "submit";
   submit.dataset.lockable = "true";
 
-  form.append(emailInput, passwordInput, submit);
+  // Lupa password: link dikirim ke email yang ditulis di atas.
+  const forgot = createActionButton({
+    label: "Lupa password?",
+    action: "forgot-password",
+    variant: "link",
+  });
+
+  forgot.dataset.lockable = "true";
+
+  form.append(emailInput, passwordInput, submit, forgot);
   panel.append(form);
 
+  if (ERP_DEMO) {
+    panel.append(createDemoButton());
+  }
+
   return panel;
+}
+
+/** Satu isian password. */
+function createPasswordInput(name, placeholder, autocomplete) {
+  const input = document.createElement("input");
+
+  input.type = "password";
+  input.name = name;
+  input.autocomplete = autocomplete;
+  input.placeholder = placeholder;
+  input.setAttribute("aria-label", placeholder);
+  input.className = "kc-profile__input";
+  input.dataset.lockable = "true";
+
+  return input;
+}
+
+/**
+ * Ganti password (sudah login). Password lama wajib diisi.
+ * Akun Google saja tidak punya password Kantoong: cukup keterangan.
+ */
+function createPasswordSection(user) {
+  const section = createElement("section", "kc-profile__password");
+
+  section.dataset.profilePassword = "true";
+  section.hidden = true;
+
+  section.append(
+    createElement("h2", "kc-profile__section-title", "Ganti password")
+  );
+
+  if (!user.hasPassword) {
+    section.append(
+      createElement(
+        "p",
+        "kc-profile__login-text",
+        "Akunmu masuk lewat Google, jadi password dikelola oleh Google."
+      )
+    );
+
+    return section;
+  }
+
+  const form = createElement("form", "kc-profile__login-form");
+
+  form.dataset.profileForm = "change-password";
+  form.noValidate = true;
+
+  const submit = createElement(
+    "button",
+    "kc-profile__button kc-profile__button--primary",
+    "Simpan password baru"
+  );
+
+  submit.type = "submit";
+  submit.dataset.lockable = "true";
+
+  const cancel = createActionButton({
+    label: "Batal",
+    action: "toggle-password",
+    variant: "secondary",
+  });
+
+  form.append(
+    createPasswordInput("current", "Password lama", "current-password"),
+    createPasswordInput("next", "Password baru (min. 8, huruf + angka)", "new-password"),
+    createPasswordInput("confirm", "Ulangi password baru", "new-password"),
+    submit,
+    cancel
+  );
+
+  section.append(form);
+
+  return section;
 }
 
 /**
@@ -270,6 +376,19 @@ function createAccountActions(user) {
 
     adminButton.dataset.lockable = "true";
     group.append(adminButton);
+  }
+
+  const passwordButton = createActionButton({
+    label: "Ganti password",
+    action: "toggle-password",
+    variant: "secondary",
+  });
+
+  passwordButton.dataset.lockable = "true";
+  group.append(passwordButton);
+
+  if (ERP_DEMO) {
+    group.append(createDemoButton());
   }
 
   const logoutButton = createActionButton({
@@ -550,6 +669,7 @@ function createProfileLayout(user, config) {
     header,
     identityCard,
     createAccountActions(user),
+    createPasswordSection(user),
     detailsSection,
     notice,
     feedback
@@ -730,6 +850,62 @@ export async function renderProfileView({
       return;
     }
 
+    if (action === "open-erp-demo") {
+      // Dashboard User ada di iframe: buka demo di jendela utama.
+      let target = window;
+
+      try {
+        target = window.top || window;
+        void target.location.href;
+      } catch {
+        target = window;
+      }
+
+      target.location.assign(ERP_DEMO_PATH);
+
+      return;
+    }
+
+    if (action === "toggle-password") {
+      const section = page.querySelector("[data-profile-password]");
+
+      if (section) {
+        section.hidden = !section.hidden;
+        section.querySelector("form")?.reset();
+        section.querySelector("input")?.focus();
+      }
+
+      showFeedback("");
+
+      return;
+    }
+
+    if (action === "forgot-password") {
+      const email = String(
+        page.querySelector("[data-profile-form='email-login']")?.elements.email?.value ?? ""
+      ).trim();
+
+      if (!isEmail(email)) {
+        showFeedback("Tulis email akunmu dulu di kolom Email, lalu klik \"Lupa password?\".", "error");
+
+        return;
+      }
+
+      setBusy(true);
+      showFeedback("Mengirim link…");
+
+      try {
+        await auth.sendPasswordReset(email);
+        showFeedback("✔ Kalau email itu terdaftar, link untuk membuat password baru sudah dikirim. Cek kotak masuk (dan folder spam).", "success");
+      } catch (error) {
+        showFeedback(auth.describePasswordError?.(error) ?? "Gagal mengirim link.", "error");
+      } finally {
+        setBusy(false);
+      }
+
+      return;
+    }
+
     if (action === "logout") {
       setBusy(true);
 
@@ -746,10 +922,49 @@ export async function renderProfileView({
   const handleSubmit = async (event) => {
     const form = event.target;
 
-    if (
-      !(form instanceof HTMLFormElement) ||
-      form.dataset.profileForm !== "email-login"
-    ) {
+    if (!(form instanceof HTMLFormElement)) {
+      return;
+    }
+
+    if (form.dataset.profileForm === "change-password") {
+      event.preventDefault();
+
+      const auth = getAuth();
+
+      if (!auth) {
+        return;
+      }
+
+      const current = String(form.elements.current?.value ?? "");
+      const next = String(form.elements.next?.value ?? "");
+      const problem = !current
+        ? "Isi password lama."
+        : validateNewPassword(next, form.elements.confirm?.value, current);
+
+      if (problem) {
+        showFeedback(problem, "error");
+
+        return;
+      }
+
+      setBusy(true);
+      showFeedback("Menyimpan…");
+
+      try {
+        await auth.changePassword({ email: user.email, currentPassword: current, newPassword: next });
+        form.reset();
+        form.closest("[data-profile-password]").hidden = true;
+        showFeedback("✔ Password berhasil diganti. Pakai password baru untuk masuk ke web & ERP.", "success");
+      } catch (error) {
+        showFeedback(auth.describePasswordError?.(error) ?? "Gagal mengganti password.", "error");
+      } finally {
+        setBusy(false);
+      }
+
+      return;
+    }
+
+    if (form.dataset.profileForm !== "email-login") {
       return;
     }
 

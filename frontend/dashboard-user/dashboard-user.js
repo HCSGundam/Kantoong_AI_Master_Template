@@ -2252,6 +2252,9 @@ export async function openFeatureStage(feature) {
                     signOut: bridge.signOut,
                     openAdmin: bridge.openAdmin,
                     describeError: bridge.describeAuthError,
+                    sendPasswordReset: bridge.sendPasswordResetLink,
+                    changePassword: bridge.changePassword,
+                    describePasswordError: bridge.describePasswordError,
                 }
                 : null,
             reload: () => reloadFeatureStage(),

@@ -68,6 +68,9 @@ export function phase2Methods({ db: getDb, save, me, audit }) {
     };
 
     return {
+        /** Alat pencatat stok & jurnal, dipakai ulang oleh kasir POS Pro (demo-adapter-pos.js). */
+        posHelpers: { journalWrite, recordMoves },
+
         /** Dipanggil demo-adapter saat pesanan demo dibayar. */
         journalForOrder(order) {
             if (isPaid(order)) {

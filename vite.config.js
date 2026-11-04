@@ -106,6 +106,14 @@ export default defineConfig({
                     )
                 ),
 
+                // Tujuan link "Lupa password" dari email.
+                resetPassword: fileURLToPath(
+                    new URL(
+                        "./frontend/auth/reset-password.html",
+                        import.meta.url
+                    )
+                ),
+
                 dashboardUser: fileURLToPath(
                     new URL(
                         "./frontend/dashboard-user/dashboard-user.html",

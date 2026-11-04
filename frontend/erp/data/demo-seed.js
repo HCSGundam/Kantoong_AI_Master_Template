@@ -232,6 +232,7 @@ export const DEMO_PERSONAS = Object.freeze([
     { id: "m-fajar", label: "Keuangan", note: "jurnal, laba rugi & neraca" },
     { id: "m-joko", label: "Staf Gudang", note: "stok, mutasi & opname" },
     { id: "m-dewi", label: "Kasir Outlet", note: "jualan di kasir POS" },
+    { id: "m-bayu", label: "Barista / Dapur", note: "layar dapur & antrian" },
     { id: "m-nadia", label: "Customer Service", note: "tiket keluhan & retur" },
     { id: "m-reza", label: "Marketing", note: "voucher & data pelanggan" },
     { id: "m-lina", label: "Staf Katalog", note: "mengatur kode barang" },

@@ -5,6 +5,7 @@
  * Penghubung antara Dashboard User dan Supabase Auth:
  * - membaca sesi dan role (owner / pelanggan)
  * - login Google dan email
+ * - lupa password (link ke email) & ganti password
  * - keluar
  * - membuka Dashboard Admin
  *
@@ -15,6 +16,15 @@
  */
 
 import { supabase } from "../../js/supabase-client.js";
+import { changePassword, sendPasswordReset } from "../../auth/auth-service.js";
+import { describePasswordError } from "../../auth/password-rules.js";
+
+export { changePassword, describePasswordError };
+
+/** Link reset dikirim dengan alamat jendela utama (Dashboard User ada di iframe). */
+export function sendPasswordResetLink(email) {
+    return sendPasswordReset(email, getTopWindow().location.origin);
+}
 
 // Dashboard perusahaan (ERP). Membukanya selalu minta password lagi.
 const ADMIN_PATH = "/erp/erp.html";
@@ -108,9 +118,12 @@ export async function getDashboardUser() {
     const meta = user.user_metadata ?? {};
     const email = user.email ?? "";
     const company = await getCompanyAccess(user.id);
+    const providers = user.app_metadata?.providers ?? [user.app_metadata?.provider];
 
     return {
         authenticated: true,
+        // Akun email punya password Kantoong; akun Google saja tidak.
+        hasPassword: providers.includes("email"),
         id: user.id,
         name: String(
             meta.full_name || meta.name || company?.name || email.split("@")[0] || "Pengguna"

@@ -5,11 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex">
     <title>Kantoong ERP</title>
-  <script type="module" crossorigin src="/assets/erp-2nKsSNry.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/preload-helper-DD1OZmLC.js">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" />
+  <script type="module" crossorigin src="/assets/erp-BI-75wOM.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+  <link rel="modulepreload" crossorigin href="/assets/client-config-C5cOf8VT.js">
   <link rel="modulepreload" crossorigin href="/assets/supabase-client-vYFxeodt.js">
-  <link rel="modulepreload" crossorigin href="/assets/kantoong-assistant-BWVJTs7J.js">
-  <link rel="stylesheet" crossorigin href="/assets/erp-BiCEaoxL.css">
+  <link rel="modulepreload" crossorigin href="/assets/password-rules-BefxxVvK.js">
+  <link rel="modulepreload" crossorigin href="/assets/auth-service-Bp4RrR2T.js">
+  <link rel="modulepreload" crossorigin href="/assets/preload-helper-BXl3LOEh.js">
+  <link rel="modulepreload" crossorigin href="/assets/kantoong-assistant-DxjzuX6a.js">
+  <link rel="stylesheet" crossorigin href="/assets/erp-C07RH0_c.css">
 </head>
 <body>
     <!-- =========================================
@@ -32,6 +39,7 @@
                 </label>
                 <p class="erp-form__error" id="loginMessage" hidden></p>
                 <button class="erp-btn erp-btn--primary erp-btn--block" type="submit">Buka ERP</button>
+                <button class="erp-link" id="loginForgot" type="button">Lupa password?</button>
                 <button class="erp-link" id="loginSwitch" type="button" hidden>Bukan akunmu? Ganti akun</button>
                 <a class="erp-link" href="/">← Kembali ke toko</a>
             </form>
@@ -68,7 +76,8 @@
                     <svg viewBox="0 0 24 24" class="erp-icon" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
                 </button>
 
-                <div class="erp-top__title" id="topTitle"></div>
+                <!-- Pengisi ruang: judul TIDAK diulang di sini (sudah ada di halaman). -->
+                <div class="erp-top__title" id="topTitle" aria-hidden="true"></div>
 
                 <div class="erp-top__right">
                     <span class="erp-badge" id="demoBadge" hidden>DATA CONTOH</span>
@@ -86,10 +95,13 @@
 
 
     <!-- Asisten AI Kantoong: sama dengan di toko, nyambung lintas halaman & brand.
-         Di ERP mulai sebagai orb agar tidak menutupi tabel. -->
+         ERP & kasir: selalu mulai sebagai ORB bulat bermata. Ketuk orb = kotak
+         "Halo Kak" (mode BEBAS: geser kiri/kanan, dibuka naik seperti di HP).
+         Tidak pernah menempel di samping. -->
     <script>
         window.KantoongAssistantContext = {
             surface: "erp",
+            dock: false,
             startMinimized: true,
             greetings: ["Ada yang bisa kubantu di dashboard kerjamu?"],
             suggestions: [

@@ -16,7 +16,10 @@
  *    disinkronkan ke Supabase (db/assistant-memory.sql), hanya teks.
  * 5. Di atas keranjang / dashboard, chat mengecil jadi orb agar tidak
  *    menutupi tombol penting; tetap bisa dibuka kapan saja.
- *    Desktop: chat terbuka menempel di samping (assistant-dock.js).
+ *    Desktop: chat terbuka menempel di samping (assistant-dock.js), KECUALI
+ *    context.dock === false (ERP & kasir): mode BEBAS — pil "Halo Kak" di bawah,
+ *    digeser kiri/kanan saja, dibuka naik seperti di HP (setengah/penuh),
+ *    halaman utama tidak pernah menyempit.
  * 6. Hak pengguna: menu "Hapus memori asisten" menghapus lokal + server.
  */
 
@@ -30,6 +33,7 @@ import { initAiTelemetry } from "./ai-telemetry.js";
 
 const context = (window.KantoongAssistantContext = window.KantoongAssistantContext || {});
 if (!context.surface) context.surface = location.pathname.includes("/erp/") ? "erp" : "store";
+if (context.dock === false) document.documentElement.dataset.kcFree = "";
 
 /* ---------- 1. Pasang kotak chat ---------- */
 
@@ -288,7 +292,7 @@ async function start() {
     await import("./chat-sheet.js");
 
     if (context.startMinimized) window.KantoongChat?.minimize?.();
-    initAssistantDock();
+    if (context.dock !== false) initAssistantDock();
     initAssistantHistory();
     initChatProductGestures();
     initAiTelemetry();
