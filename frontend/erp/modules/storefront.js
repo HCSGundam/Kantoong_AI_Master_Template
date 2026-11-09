@@ -320,20 +320,21 @@ export async function render(ctx) {
 
     /* ---------- Homepage: zona promosi ---------- */
 
-    const home = homeEditor({ draft, products, onChange: () => refresh() });
+    const home = homeEditor({ draft, products, demo, onChange: () => refresh() });
     homeRef = home;
     const saveHome = el("button", { class: "erp-btn erp-btn--primary", type: "button" }, "Simpan homepage");
     saveHome.addEventListener("click", async () => {
         saveHome.disabled = true;
         try {
-            await saveStorefront("home", sanitizeStorefront(draft).home, { demo });
-            // Hero & Unggulan = tanda di produk; simpan yang berubah saja.
+            // Hero & Unggulan = tanda di produk (tabel products); disimpan dulu
+            // agar tetap tersimpan walau bagian homepage gagal.
             for (const { id, changes } of home.pendingFlags()) {
                 await data.setPublication(id, changes);
                 const product = products.find((p) => String(p.id) === id);
                 if (product) Object.assign(product, changes);
             }
             home.markSaved();
+            await saveStorefront("home", sanitizeStorefront(draft).home, { demo });
             Object.assign(saved, clone(getStorefront()));
             toast("Homepage tersimpan · toko langsung berubah.");
             dirty();

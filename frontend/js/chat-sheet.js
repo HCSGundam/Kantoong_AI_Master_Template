@@ -29,6 +29,7 @@
  *                           di belakang terlihat
  */
 
+import { cameraSupported, openWebCamera } from "./web-camera.js";
 import CFG from "../client-config.js";
 import { AgentMode, AGENT_MODES } from "./agent-state.js";
 
@@ -667,11 +668,7 @@ function initChatSheet() {
         renderAttachments();
     }
 
-    fileInput?.addEventListener("change", () => {
-        const files = Array.from(fileInput.files ?? []);
-
-        fileInput.value = "";
-
+    function addFiles(files) {
         for (const file of files) {
             if (pending.length >= MAX_FILES) {
                 notify(`Maksimal ${MAX_FILES} lampiran.`);
@@ -692,6 +689,12 @@ function initChatSheet() {
         }
 
         renderAttachments();
+    }
+
+    fileInput?.addEventListener("change", () => {
+        const files = Array.from(fileInput.files ?? []);
+        fileInput.value = "";
+        addFiles(files);
     });
 
     /* ====================================================
@@ -741,6 +744,16 @@ function initChatSheet() {
                 break;
 
             case "attach-camera":
+                // Kamera terbuka DI DALAM web (bukan aplikasi kamera HP).
+                if (cameraSupported()) {
+                    openWebCamera().then((photo) => {
+                        if (photo) {
+                            addFiles([photo]);
+                            textarea?.focus({ preventScroll: true });
+                        }
+                    });
+                    return;
+                }
                 fileInput.accept = "image/*";
                 fileInput.setAttribute("capture", "environment");
                 break;

@@ -62,7 +62,7 @@ begin
         return jsonb_build_object('error', 'Bagian tidak dikenal.');
     end if;
 
-    if p_value is null or jsonb_typeof(p_value) <> 'object' or octet_length(p_value::text) > 20000 then
+    if p_value is null or jsonb_typeof(p_value) <> 'object' or octet_length(p_value::text) > 120000 then
         return jsonb_build_object('error', 'Isi pengaturan tidak valid.');
     end if;
 

@@ -538,3 +538,29 @@
     .kc-jackpot__box.is-shaking { animation: none; }
 }
 #appRoot #categorySection[hidden] { display: none !important; }
+
+/* ---------- Galeri bebas ---------- */
+.kc-media { display: grid; gap: 12px; }
+.kc-media--grid { grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
+@media (max-width: 640px) { .kc-media--grid { grid-template-columns: repeat(min(var(--cols, 3), 2), minmax(0, 1fr)); } }
+.kc-media--geser { grid-auto-flow: column; grid-auto-columns: calc((100% - (var(--cols, 4) - 1) * 12px) / var(--cols, 4)); overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+@media (max-width: 640px) { .kc-media--geser { grid-auto-columns: calc((100% - 24px) / 3); } }
+.kc-media--geser::-webkit-scrollbar { display: none; }
+.kc-media__item { display: grid; gap: 6px; color: inherit; text-decoration: none; scroll-snap-align: start; }
+.kc-media__frame { display: grid; place-items: center; aspect-ratio: var(--ratio, 1 / 1); overflow: hidden; background: var(--pr-card); border: 1px solid var(--pr-line); border-radius: 18px; box-shadow: var(--pr-shadow); }
+.kc-media__frame img { width: 100%; height: 100%; object-fit: cover; transition: transform 500ms var(--pr-ease); }
+.kc-media--contain .kc-media__frame { padding: 14%; }
+.kc-media--contain .kc-media__frame img { object-fit: contain; }
+a.kc-media__item:hover .kc-media__frame img { transform: scale(1.04); }
+.kc-media__ph { color: var(--pr-muted); font-size: 20px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.kc-media__cap { display: grid; gap: 2px; }
+.kc-media__cap strong { font-size: 13.5px; font-weight: 500; }
+.kc-media__cap span { color: var(--pr-muted); font-size: 12px; }
+.kc-media--contain .kc-media__cap { text-align: center; }
+
+/* ---------- Teks ---------- */
+.kc-text { display: grid; justify-items: start; gap: 10px; padding: 26px; background: var(--pr-card); border: 1px solid var(--pr-line); border-radius: 26px; box-shadow: var(--pr-shadow); }
+.kc-text__body { max-width: 70ch; margin: 0; color: var(--pr-muted); font-size: 15px; line-height: 1.7; white-space: pre-line; }
+
+/* Rel produk (3D) di dalam zona promosi memakai gaya Produk Unggulan */
+.kc-promo__block--rail > .page-section { padding: 0; }

@@ -366,7 +366,7 @@ function getDashboardFrame() {
   frame.src = DASHBOARD_URL;
   frame.loading = "eager";
   frame.referrerPolicy = "strict-origin-when-cross-origin";
-  frame.setAttribute("allow", "clipboard-read; clipboard-write");
+  frame.setAttribute("allow", "clipboard-read; clipboard-write; camera; microphone");
   frame.setAttribute("allowfullscreen", "");
 
   Object.assign(frame.style, {
@@ -3716,7 +3716,9 @@ function renderRails() {
 
   host.replaceChildren();
 
-  const rails = Array.isArray(CFG?.rails) ? CFG.rails : [];
+  // Rel produk (Best Seller, Terbaru, dll.) kini bagian dari homepage yang
+  // diatur di ERP › Etalase & Brand (blok "Rel produk"), bukan client-config.
+  const rails = [];
 
   rails.forEach((rail) => {
     const products = getRailProducts(rail);
@@ -3761,6 +3763,18 @@ function renderPromos() {
   renderHomePromos(root, {
     home: getStorefront().home,
     products: state.products,
+    showSamples: CFG?.erp_demo === true,
+    renderRail(block, products) {
+      const { section, rail } = createShowcaseSection({
+        key: `rail-${block.id}`,
+        eyebrow: block.eyebrow,
+        title: block.title || "Produk",
+        description: block.text,
+      });
+      // Komidi putar butuh elemen sudah ada di halaman sebelum diisi.
+      setTimeout(() => renderProducts(products, rail), 0);
+      return section;
+    },
     onAction(action) {
       if (action.type === "catalog") openDashboardFeature("product-catalog");
       else if (action.type === "chat") askConsultation(action.hint);

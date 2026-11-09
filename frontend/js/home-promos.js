@@ -11,7 +11,7 @@
  * (tertulis jelas di kotaknya), 1× sehari per perangkat.
  */
 
-import { drawReward } from "./storefront-settings.js";
+import { drawReward, railProducts } from "./storefront-settings.js";
 
 const CLAIM_KEY = "kantoong:claimed-coupons";
 const JACKPOT_KEY = "kantoong:jackpot";
@@ -197,7 +197,61 @@ function pinned(block, ctx) {
     return [head(block.title, block.sample), rail];
 }
 
-const RENDER = { banner, coupons, jackpot, posters, pinned };
+/* ---------- Galeri bebas (rasio pilihan: logo mitra, lookbook, dll.) ---------- */
+
+function mediaBlock(block) {
+    const [w, h] = block.ratio.split(":").map(Number);
+    const wrap = el("div", `kc-media kc-media--${block.layout} kc-media--${block.fit}`);
+    wrap.style.setProperty("--ratio", `${w} / ${h}`);
+    wrap.style.setProperty("--cols", String(block.columns));
+    block.items.forEach((item) => {
+        const tag = item.link ? "a" : "div";
+        const card = el(tag, "kc-media__item");
+        if (item.link) {
+            card.href = item.link;
+            card.target = "_blank";
+            card.rel = "noopener";
+        }
+        const frame = el("div", "kc-media__frame");
+        if (item.image) {
+            const img = document.createElement("img");
+            img.src = item.image;
+            img.alt = item.title || "";
+            img.loading = "lazy";
+            frame.append(img);
+        } else {
+            frame.append(el("span", "kc-media__ph", (item.title || "?").slice(0, 2)));
+        }
+        card.append(frame);
+        if (item.title || item.text) card.append(el("div", "kc-media__cap", item.title ? el("strong", "", item.title) : null, item.text ? el("span", "", item.text) : null));
+        wrap.append(card);
+    });
+    return [head(block.title, block.sample), wrap];
+}
+
+/* ---------- Teks & pengumuman ---------- */
+
+function textBlock(block, ctx) {
+    return [el("div", "kc-text",
+        block.title ? el("h2", "kc-promo__title", block.title) : null,
+        block.sample ? el("span", "kc-promo__sample", "Contoh") : null,
+        block.text ? el("p", "kc-text__body", block.text) : null,
+        block.action !== "none" && block.cta
+            ? button("kc-banner__cta", block.cta, () => ctx.onAction?.({ type: block.action, hint: block.text || block.title }))
+            : null)];
+}
+
+/* ---------- Rel produk (kartu 3D seperti Produk Unggulan) ---------- */
+
+function rail(block, ctx) {
+    const items = railProducts(block, ctx.products);
+    if (!items.length) return ctx.preview ? [head(block.title || "Rel produk", block.sample), el("p", "kc-promo__empty", "Belum ada produk yang cocok untuk rel ini.")] : null;
+    // Toko asli memakai komidi putar 3D milik engine; pratinjau memakai baris sederhana.
+    if (ctx.renderRail) return [ctx.renderRail(block, items)];
+    return pinned({ ...block, productIds: items.map((p) => String(p.id)) }, ctx);
+}
+
+const RENDER = { banner, coupons, jackpot, posters, pinned, media: mediaBlock, text: textBlock, rail };
 
 /**
  * root : wadah
@@ -205,13 +259,18 @@ const RENDER = { banner, coupons, jackpot, posters, pinned };
  * Blok kosong (tanpa isi) disembunyikan dari pelanggan.
  */
 export function renderHomePromos(root, opts) {
-    const blocks = (opts.home?.blocks ?? []).filter((b) => b.enabled);
+    // Isi "Contoh" hanya tampil di pratinjau ERP & web template (erp_demo), bukan di toko klien.
+    const blocks = (opts.home?.blocks ?? []).filter((b) => b.enabled && (!b.sample || opts.preview || opts.showSamples));
     const sections = blocks.map((block) => {
-        const hasContent = block.type === "jackpot" ? block.rewards?.length : block.type === "pinned" ? true : block.items?.length;
+        const hasContent = block.type === "jackpot" ? block.rewards?.length
+            : ["pinned", "rail", "text"].includes(block.type) ? true
+                : block.items?.length;
         if (!hasContent) return null;
         const nodes = RENDER[block.type]?.(block, opts);
         if (!nodes) return null;
-        return el("section", `kc-promo__block kc-promo__block--${block.type}`, nodes);
+        const section = el("section", `kc-promo__block kc-promo__block--${block.type}`, nodes);
+        section.dataset.blockId = block.id;
+        return section;
     }).filter(Boolean);
     root.replaceChildren(...sections);
     root.hidden = sections.length === 0;

@@ -66,30 +66,47 @@ describe("ukuran kartu bebas", () => {
     });
 });
 
-import { drawReward, sampleHome, sanitizeHome, HOME_BLOCKS } from "../frontend/js/storefront-settings.js";
+import { drawReward, railProducts, sampleHome, sanitizeHome } from "../frontend/js/storefront-settings.js";
 
 describe("homepage = zona promosi", () => {
-    it("template contoh berisi semua jenis blok, tiap jenis sekali", () => {
+    it("template contoh lengkap, semua bertanda Contoh & punya ID unik", () => {
         const home = sanitizeHome(sampleHome());
-        expect(home.blocks.map((b) => b.type).sort()).toEqual(HOME_BLOCKS.map((b) => b.type).sort());
+        expect(home.blocks.length).toBeGreaterThanOrEqual(6);
         expect(home.blocks.every((b) => b.sample)).toBe(true);
+        expect(new Set(home.blocks.map((b) => b.id)).size).toBe(home.blocks.length);
+        expect(home.blocks.some((b) => b.type === "rail")).toBe(true);
+        expect(home.blocks.some((b) => b.type === "media")).toBe(true);
     });
 
-    it("isi berbahaya dibersihkan: link non-https, kode aneh, duplikat", () => {
+    it("bagian boleh ditambah berkali-kali; isi berbahaya dibersihkan", () => {
         const home = sanitizeHome({ blocks: [
-            { type: "banner", items: [{ title: "A", image: "javascript:alert(1)", action: "hack" }] },
-            { type: "banner", items: [{ title: "dobel" }] },
-            { type: "coupons", items: [{ code: "hemat 10!", title: "Diskon" }, { code: "", title: "tanpa kode" }] },
-            { type: "jackpot", rewards: [{ label: "Hadiah", weight: 999 }] },
+            { id: "b1", type: "banner", items: [{ title: "A", image: "javascript:alert(1)", action: "hack" }] },
+            { id: "b2", type: "banner", items: [{ title: "kedua" }] },
+            { id: "c1", type: "coupons", items: [{ code: "hemat 10!", title: "Diskon" }, { code: "", title: "tanpa kode" }] },
+            { id: "j1", type: "jackpot", rewards: [{ label: "Hadiah", weight: 999 }] },
+            { id: "m1", type: "media", ratio: "7:3", columns: 99, fit: "x", items: [{ title: "Mitra", link: "http://tidak-aman" }] },
             { type: "aneh" },
         ] });
-        const banner = home.blocks.find((b) => b.type === "banner");
-        expect(banner.items).toEqual([{ title: "A", text: "", image: "", cta: "", action: "catalog" }]);
-        expect(home.blocks.filter((b) => b.type === "banner")).toHaveLength(1);
+        expect(home.blocks.filter((b) => b.type === "banner")).toHaveLength(2);
+        expect(home.blocks[0].items).toEqual([{ title: "A", text: "", image: "", cta: "", action: "catalog" }]);
         expect(home.blocks.find((b) => b.type === "coupons").items).toEqual([{ code: "HEMAT10", title: "Diskon", text: "", expires: "" }]);
         expect(home.blocks.find((b) => b.type === "jackpot").rewards[0].weight).toBe(100);
-        // jenis yang tidak disebut tetap ada tapi mati
-        expect(home.blocks.find((b) => b.type === "posters").enabled).toBe(false);
+        const media = home.blocks.find((b) => b.type === "media");
+        expect(media).toMatchObject({ ratio: "1:1", columns: 8, fit: "cover" });
+        expect(media.items[0].link).toBe("");
+        expect(home.blocks.some((b) => b.type === "aneh")).toBe(false);
+    });
+
+    it("rel produk mengikuti sumbernya (terlaris, kategori, pilih sendiri)", () => {
+        const products = [
+            { id: 1, name: "A", category: "Susu", sales_count: 5, price: 10 },
+            { id: 2, name: "B", category: "Kue", sales_count: 9, price: 20, compare_at_price: 30 },
+            { id: 3, name: "C", category: "Susu", sales_count: 0, price: 5 },
+        ];
+        expect(railProducts({ source: "terlaris", limit: 10 }, products).map((p) => p.id)).toEqual([2, 1]);
+        expect(railProducts({ source: "kategori", category: "Susu", limit: 10 }, products).map((p) => p.id)).toEqual([1, 3]);
+        expect(railProducts({ source: "diskon", limit: 10 }, products).map((p) => p.id)).toEqual([2]);
+        expect(railProducts({ source: "manual", productIds: ["3", "1"], limit: 10 }, products).map((p) => p.id)).toEqual([3, 1]);
     });
 
     it("kotak misteri mengikuti peluang yang diisi toko", () => {

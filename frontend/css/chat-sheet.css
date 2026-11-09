@@ -2090,3 +2090,28 @@ html[data-chat-skin="light"] .kc-sheet {
     --kc-line: rgb(22 19 14 / 10%);
     color-scheme: light;
 }
+
+/* =========================================================
+   KAMERA DI DALAM WEB (js/web-camera.js)
+   ========================================================= */
+.kc-cam { position: fixed; inset: 0; z-index: 2147483200; display: grid; grid-template-rows: auto 1fr auto; background: #050504; color: #fbf4e2; opacity: 0; transition: opacity 200ms ease; font-family: inherit; }
+.kc-cam.is-open { opacity: 1; }
+.kc-cam__stage { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; }
+.kc-cam__video, .kc-cam__still { width: 100%; height: 100%; object-fit: cover; }
+.kc-cam__video.is-mirror { transform: scaleX(-1); }
+.kc-cam__video[hidden], .kc-cam__still[hidden] { display: none; }
+.kc-cam__status { position: absolute; max-width: 320px; margin: 0; padding: 0 20px; color: rgb(251 244 226 / 80%); font-size: 14px; text-align: center; }
+.kc-cam__status[hidden] { display: none; }
+.kc-cam__top { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 14px; background: linear-gradient(rgb(0 0 0 / 55%), transparent); }
+.kc-cam__live { color: #e8cf8f; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; }
+.kc-cam__close { width: 42px; height: 42px; color: #fff; background: rgb(255 255 255 / 14%); border: 0; border-radius: 50%; font-size: 24px; line-height: 1; cursor: pointer; }
+.kc-cam__bar { position: relative; z-index: 1; grid-row: 3; display: flex; align-items: center; justify-content: center; gap: 28px; padding: 22px 20px calc(26px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, rgb(0 0 0 / 65%)); }
+.kc-cam__shutter { width: 76px; height: 76px; padding: 0; background: #fff; border: 5px solid rgb(255 255 255 / 35%); border-radius: 50%; background-clip: padding-box; box-shadow: 0 0 0 3px #fff; cursor: pointer; transition: transform 120ms ease; }
+.kc-cam__shutter:active { transform: scale(0.92); }
+.kc-cam__flip { width: 50px; height: 50px; color: #fff; background: rgb(255 255 255 / 14%); border: 0; border-radius: 50%; font-size: 22px; cursor: pointer; }
+.kc-cam__ghost, .kc-cam__use { padding: 14px 22px; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.kc-cam__ghost { color: #fff; background: rgb(255 255 255 / 14%); border: 1px solid rgb(255 255 255 / 25%); }
+.kc-cam__use { color: #16130e; background: linear-gradient(135deg, #f1dfae, #c9a24a); border: 0; }
+.kc-cam__bar [hidden] { display: none; }
+.kc-cam.is-flash::after { content: ""; position: absolute; inset: 0; z-index: 3; background: #fff; animation: kc-flash 180ms ease-out forwards; pointer-events: none; }
+@keyframes kc-flash { to { opacity: 0; } }

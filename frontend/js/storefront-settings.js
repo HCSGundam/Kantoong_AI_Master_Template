@@ -36,100 +36,190 @@ export const DEFAULT_CHIPS = Object.freeze(["terlaris", "terbaru", "promo", "ter
 
 const str = (v, max = 80) => String(v ?? "").trim().slice(0, max);
 
-/* ---------- Homepage = zona promosi (diatur di ERP › Etalase & Brand) ---------- */
+/* ---------- Homepage = etalase bebas (diatur di ERP › Etalase & Brand) ---------- */
 
-/** Jenis blok homepage. Semua opsional: admin bebas menyalakan / mematikan / mengurutkan. */
+/**
+ * Jenis BAGIAN homepage. Semua bisa ditambah berkali-kali lewat "+ Tambah bagian",
+ * dinyalakan/dimatikan, dan diurutkan bebas.
+ */
 export const HOME_BLOCKS = Object.freeze([
+    { type: "rail", label: "Rel produk", hint: "Kartu produk 3D: terlaris, terbaru, diskon, per kategori, atau pilihanmu" },
+    { type: "media", label: "Galeri bebas", hint: "Gambar apa saja dengan rasio pilihanmu: logo mitra, lookbook, testimoni foto…" },
     { type: "banner", label: "Banner promo", hint: "Iklan lebar dengan tombol ajakan" },
     { type: "coupons", label: "Kupon & voucher", hint: "Kode yang bisa diklaim pelanggan" },
     { type: "jackpot", label: "Kotak hadiah misteri", hint: "Hadiah tak terduga, 1× sehari per pelanggan" },
     { type: "posters", label: "Poster", hint: "Kartu gambar untuk event / pengumuman" },
-    { type: "pinned", label: "Produk pilihan admin", hint: "Produk yang disematkan admin" },
+    { type: "text", label: "Teks & pengumuman", hint: "Judul, paragraf, dan tombol ajakan" },
+    { type: "pinned", label: "Produk pilihan (baris kecil)", hint: "Baris produk sederhana yang kamu sematkan" },
 ]);
 
-/** Contoh isi (template kosong) supaya pemilik bisa melihat hasilnya dulu. */
+export const RAIL_SOURCES = Object.freeze([
+    { id: "terlaris", label: "Terlaris" },
+    { id: "wishlist", label: "Paling banyak di-wishlist" },
+    { id: "terbaru", label: "Terbaru" },
+    { id: "diskon", label: "Sedang diskon" },
+    { id: "rating", label: "Rating tertinggi" },
+    { id: "kategori", label: "Satu kategori" },
+    { id: "manual", label: "Pilih sendiri" },
+]);
+
+export const MEDIA_RATIOS = Object.freeze(["1:1", "4:5", "3:4", "2:3", "9:16", "4:3", "16:9", "21:9", "3:1"]);
+export const MEDIA_LAYOUTS = Object.freeze([
+    { id: "geser", label: "Geser ke samping" },
+    { id: "grid", label: "Grid" },
+]);
+
+let seq = 0;
+export const newBlockId = (type) => `${type}-${Date.now().toString(36)}-${(seq++).toString(36)}`;
+
+/** Bagian baru (kosong) untuk tombol "+ Tambah bagian". */
+export function blankBlock(type, preset = "") {
+    const base = { id: newBlockId(type), type, enabled: true, sample: false, title: "" };
+    if (type === "rail") return { ...base, eyebrow: "", text: "", source: "terlaris", category: "", productIds: [], limit: 10 };
+    if (type === "media") {
+        return preset === "logos"
+            ? { ...base, title: "Bekerja sama dengan", ratio: "1:1", layout: "geser", columns: 6, fit: "contain", items: [] }
+            : { ...base, ratio: "4:5", layout: "grid", columns: 3, fit: "cover", items: [] };
+    }
+    if (type === "jackpot") return { ...base, title: "Kotak hadiah misteri", text: "", rewards: [] };
+    if (type === "text") return { ...base, text: "", cta: "", action: "none" };
+    if (type === "pinned") return { ...base, productIds: [] };
+    return { ...base, items: [] };
+}
+
+/** Contoh isi supaya pemilik bisa melihat hasilnya dulu (ditandai "Contoh"). */
 export function sampleHome() {
+    const s = (block) => ({ ...block, sample: true });
     return {
         blocks: [
-            {
-                type: "banner", enabled: true, sample: true, title: "",
-                items: [
-                    { title: "Promo akhir pekan", text: "Diskon spesial untuk menu favoritmu. Berlaku Sabtu–Minggu.", image: "", cta: "Lihat produk", action: "catalog" },
-                    { title: "Bingung pilih?", text: "Ceritakan seleramu, asisten kami carikan yang paling pas.", image: "", cta: "Tanya asisten", action: "chat" },
-                ],
-            },
-            {
-                type: "coupons", enabled: true, sample: true, title: "Kupon untukmu",
-                items: [
-                    { code: "HEMAT10", title: "Diskon 10%", text: "Min. belanja Rp 50.000", expires: "" },
-                    { code: "ONGKIR", title: "Gratis ongkir", text: "Untuk pesanan pertama", expires: "" },
-                ],
-            },
-            {
-                type: "jackpot", enabled: true, sample: true, title: "Kotak hadiah misteri",
-                text: "Buka 1× sehari. Hadiahnya acak dari daftar hadiah toko.",
-                rewards: [
-                    { label: "Diskon 5%", code: "MISTERI5", weight: 40 },
-                    { label: "Gratis topping", code: "TOPPING", weight: 25 },
-                    { label: "Diskon 15%", code: "JACKPOT15", weight: 5 },
-                    { label: "Belum beruntung — coba lagi besok", code: "", weight: 30 },
-                ],
-            },
-            {
-                type: "posters", enabled: true, sample: true, title: "Info & event",
-                items: [
-                    { title: "Menu baru setiap bulan", text: "Ikuti terus kejutannya.", image: "" },
-                    { title: "Kemitraan reseller", text: "Hubungi kami lewat asisten.", image: "" },
-                ],
-            },
-            { type: "pinned", enabled: false, sample: true, title: "Pilihan kami", productIds: [] },
+            s({ id: "rail-terlaris", type: "rail", enabled: true, title: "Best Seller", eyebrow: "Paling laris", text: "Produk yang paling banyak dibeli pelanggan.", source: "terlaris", category: "", productIds: [], limit: 10 }),
+            s({ id: "banner-1", type: "banner", enabled: true, title: "", items: [
+                { title: "Promo akhir pekan", text: "Diskon spesial untuk menu favoritmu. Berlaku Sabtu–Minggu.", image: "", cta: "Lihat produk", action: "catalog" },
+                { title: "Bingung pilih?", text: "Ceritakan seleramu, asisten kami carikan yang paling pas.", image: "", cta: "Tanya asisten", action: "chat" },
+            ] }),
+            s({ id: "rail-wishlist", type: "rail", enabled: true, title: "Paling Banyak Di-wishlist", eyebrow: "Favorit pembeli", text: "Produk yang paling sering disimpan pembeli.", source: "wishlist", category: "", productIds: [], limit: 10 }),
+            s({ id: "coupons-1", type: "coupons", enabled: true, title: "Kupon untukmu", items: [
+                { code: "HEMAT10", title: "Diskon 10%", text: "Min. belanja Rp 50.000", expires: "" },
+                { code: "ONGKIR", title: "Gratis ongkir", text: "Untuk pesanan pertama", expires: "" },
+            ] }),
+            s({ id: "jackpot-1", type: "jackpot", enabled: true, title: "Kotak hadiah misteri", text: "Buka 1× sehari. Hadiahnya acak dari daftar hadiah toko.", rewards: [
+                { label: "Diskon 5%", code: "MISTERI5", weight: 40 },
+                { label: "Gratis topping", code: "TOPPING", weight: 25 },
+                { label: "Diskon 15%", code: "JACKPOT15", weight: 5 },
+                { label: "Belum beruntung — coba lagi besok", code: "", weight: 30 },
+            ] }),
+            s({ id: "rail-terbaru", type: "rail", enabled: true, title: "Produk Terbaru", eyebrow: "Baru datang", text: "Koleksi terbaru yang baru masuk toko.", source: "terbaru", category: "", productIds: [], limit: 10 }),
+            s({ id: "media-logos", type: "media", enabled: true, title: "Bekerja sama dengan", ratio: "1:1", layout: "geser", columns: 6, fit: "contain", items: [
+                { title: "Mitra A", text: "", image: "", link: "" },
+                { title: "Mitra B", text: "", image: "", link: "" },
+                { title: "Mitra C", text: "", image: "", link: "" },
+            ] }),
+            s({ id: "posters-1", type: "posters", enabled: true, title: "Info & event", items: [
+                { title: "Menu baru setiap bulan", text: "Ikuti terus kejutannya.", image: "" },
+                { title: "Kemitraan reseller", text: "Hubungi kami lewat asisten.", image: "" },
+            ] }),
         ],
     };
 }
 
-const cleanUrl = (v) => {
-    const url = str(v, 500);
-    return /^https:\/\//i.test(url) ? url : "";
+const cleanImage = (v) => {
+    const value = String(v ?? "").trim();
+    if (/^https:\/\//i.test(value) && value.length <= 600) return value;
+    // Mode demo: gambar kecil disimpan langsung (data:) di perangkat.
+    if (/^data:image\/(png|webp|jpeg);base64,[a-z0-9+/=]+$/i.test(value) && value.length <= 400000) return value;
+    return "";
+};
+const cleanLink = (v) => {
+    const value = String(v ?? "").trim();
+    return /^https:\/\//i.test(value) ? value.slice(0, 500) : "";
 };
 const cleanCode = (v) => str(v, 20).toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+const cleanId = (v, type) => (/^[a-z0-9-]{3,60}$/i.test(String(v ?? "")) ? String(v) : newBlockId(type));
 
 function cleanBlock(raw) {
     const meta = HOME_BLOCKS.find((b) => b.type === raw?.type);
     if (!meta) return null;
-    const block = { type: meta.type, enabled: raw.enabled !== false, sample: raw.sample === true, title: str(raw.title, 60) };
-    const items = Array.isArray(raw.items) ? raw.items.slice(0, 8) : [];
-    if (meta.type === "banner") {
-        block.items = items.map((it) => ({
-            title: str(it?.title, 60), text: str(it?.text, 160), image: cleanUrl(it?.image),
-            cta: str(it?.cta, 30), action: ["catalog", "chat", "none"].includes(it?.action) ? it.action : "catalog",
-        })).filter((it) => it.title);
-    } else if (meta.type === "coupons") {
-        block.items = items.map((it) => ({
-            code: cleanCode(it?.code), title: str(it?.title, 40), text: str(it?.text, 100), expires: str(it?.expires, 10),
-        })).filter((it) => it.code && it.title);
-    } else if (meta.type === "posters") {
-        block.items = items.map((it) => ({ title: str(it?.title, 60), text: str(it?.text, 120), image: cleanUrl(it?.image) }))
-            .filter((it) => it.title);
-    } else if (meta.type === "jackpot") {
-        block.text = str(raw.text, 160);
-        block.rewards = (Array.isArray(raw.rewards) ? raw.rewards.slice(0, 10) : [])
-            .map((r) => ({ label: str(r?.label, 50), code: cleanCode(r?.code), weight: Math.min(100, Math.max(1, Math.round(Number(r?.weight) || 1))) }))
-            .filter((r) => r.label);
-    } else if (meta.type === "pinned") {
-        block.productIds = (Array.isArray(raw.productIds) ? raw.productIds : []).map((id) => str(id, 60)).filter(Boolean).slice(0, 20);
+    const block = { id: cleanId(raw.id, meta.type), type: meta.type, enabled: raw.enabled !== false, sample: raw.sample === true, title: str(raw.title, 60) };
+    const items = Array.isArray(raw.items) ? raw.items.slice(0, 24) : [];
+    switch (meta.type) {
+        case "banner":
+            block.items = items.map((it) => ({
+                title: str(it?.title, 60), text: str(it?.text, 160), image: cleanImage(it?.image),
+                cta: str(it?.cta, 30), action: ["catalog", "chat", "none"].includes(it?.action) ? it.action : "catalog",
+            })).filter((it) => it.title);
+            break;
+        case "coupons":
+            block.items = items.map((it) => ({ code: cleanCode(it?.code), title: str(it?.title, 40), text: str(it?.text, 100), expires: str(it?.expires, 10) }))
+                .filter((it) => it.code && it.title);
+            break;
+        case "posters":
+            block.items = items.map((it) => ({ title: str(it?.title, 60), text: str(it?.text, 120), image: cleanImage(it?.image) })).filter((it) => it.title);
+            break;
+        case "media":
+            block.ratio = MEDIA_RATIOS.includes(raw.ratio) ? raw.ratio : "1:1";
+            block.layout = MEDIA_LAYOUTS.some((l) => l.id === raw.layout) ? raw.layout : "grid";
+            block.columns = Math.min(8, Math.max(1, Math.round(Number(raw.columns) || 3)));
+            block.fit = raw.fit === "contain" ? "contain" : "cover";
+            block.items = items.map((it) => ({ title: str(it?.title, 60), text: str(it?.text, 120), image: cleanImage(it?.image), link: cleanLink(it?.link) }))
+                .filter((it) => it.title || it.image);
+            break;
+        case "jackpot":
+            block.text = str(raw.text, 160);
+            block.rewards = (Array.isArray(raw.rewards) ? raw.rewards.slice(0, 10) : [])
+                .map((r) => ({ label: str(r?.label, 50), code: cleanCode(r?.code), weight: Math.min(100, Math.max(1, Math.round(Number(r?.weight) || 1))) }))
+                .filter((r) => r.label);
+            break;
+        case "text":
+            block.text = str(raw.text, 600);
+            block.cta = str(raw.cta, 30);
+            block.action = ["catalog", "chat", "none"].includes(raw.action) ? raw.action : "none";
+            break;
+        case "rail":
+            block.eyebrow = str(raw.eyebrow, 40);
+            block.text = str(raw.text, 160);
+            block.source = RAIL_SOURCES.some((s) => s.id === raw.source) ? raw.source : "terlaris";
+            block.category = str(raw.category, 60);
+            block.limit = Math.min(30, Math.max(1, Math.round(Number(raw.limit) || 10)));
+            block.productIds = (Array.isArray(raw.productIds) ? raw.productIds : []).map((id) => str(id, 60)).filter(Boolean).slice(0, 30);
+            break;
+        case "pinned":
+            block.productIds = (Array.isArray(raw.productIds) ? raw.productIds : []).map((id) => str(id, 60)).filter(Boolean).slice(0, 20);
+            break;
+        default:
+            break;
     }
     return block;
 }
 
 export function sanitizeHome(raw) {
     const source = Array.isArray(raw?.blocks) ? raw : sampleHome();
-    const seen = new Set();
-    const blocks = source.blocks.map(cleanBlock).filter((b) => b && !seen.has(b.type) && seen.add(b.type));
-    // Jenis blok yang belum ada ditambahkan (mati) agar admin bisa menyalakannya.
-    HOME_BLOCKS.forEach((meta) => {
-        if (!seen.has(meta.type)) blocks.push({ ...cleanBlock({ type: meta.type, enabled: false }), enabled: false });
+    const ids = new Set();
+    const blocks = source.blocks.slice(0, 40).map(cleanBlock).filter(Boolean).map((block) => {
+        if (ids.has(block.id)) block.id = newBlockId(block.type);
+        ids.add(block.id);
+        return block;
     });
     return { blocks };
+}
+
+/** Produk untuk "Rel produk" sesuai sumbernya (murni, dites). */
+export function railProducts(block, products) {
+    const list = (products ?? []).filter((p) => p && p.is_published !== false);
+    const price = (p) => Number(p.price) || 0;
+    const limit = block.limit || 10;
+    switch (block.source) {
+        case "terlaris": return list.filter((p) => Number(p.sales_count) > 0).sort((a, b) => b.sales_count - a.sales_count).slice(0, limit);
+        case "wishlist": return list.filter((p) => Number(p.wishlist_count) > 0).sort((a, b) => b.wishlist_count - a.wishlist_count).slice(0, limit);
+        case "terbaru": return list.slice().sort((a, b) => new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0)).slice(0, limit);
+        case "diskon": return list.filter((p) => Number(p.compare_at_price) > price(p)).slice(0, limit);
+        case "rating": return list.filter((p) => Number(p.rating_avg) > 0).sort((a, b) => b.rating_avg - a.rating_avg).slice(0, limit);
+        case "kategori": return list.filter((p) => String(p.category ?? "").trim() === block.category).slice(0, limit);
+        case "manual": {
+            const byId = new Map(list.map((p) => [String(p.id), p]));
+            return block.productIds.map((id) => byId.get(id)).filter(Boolean);
+        }
+        default: return [];
+    }
 }
 
 /** Undian kotak misteri berbobot (rand 0..1 bisa disuntik saat tes). */
@@ -358,6 +448,10 @@ export async function saveStorefront(section, value, { demo = false } = {}) {
             p_value: next[section],
         });
         if (error) throw error;
+        if (data?.error === "Bagian tidak dikenal.") {
+            // Fungsi lama di Supabase belum mengenal bagian "home".
+            throw new Error("Database belum diperbarui: jalankan ULANG file db/storefront.sql di Supabase › SQL Editor, lalu simpan lagi.");
+        }
         if (data?.error) throw new Error(data.error);
     }
     publish(next);
