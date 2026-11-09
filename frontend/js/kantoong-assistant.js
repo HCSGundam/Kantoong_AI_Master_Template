@@ -33,7 +33,10 @@ import { initAiTelemetry } from "./ai-telemetry.js";
 
 const context = (window.KantoongAssistantContext = window.KantoongAssistantContext || {});
 if (!context.surface) context.surface = location.pathname.includes("/erp/") ? "erp" : "store";
-if (context.dock === false) document.documentElement.dataset.kcFree = "";
+// free: true = pil "Halo Kak" bebas digeser (mode melayang). Bisa digabung dengan
+// dock (desktop): chat juga bisa menempel kiri/kanan & membelah layar.
+if (context.dock === false || context.free === true) document.documentElement.dataset.kcFree = "";
+if (context.free === true && context.dock !== false) document.documentElement.dataset.kcDockable = "";
 
 /* ---------- 1. Pasang kotak chat ---------- */
 

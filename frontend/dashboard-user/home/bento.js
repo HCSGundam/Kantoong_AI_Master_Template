@@ -85,9 +85,37 @@ export function createBento({
         }
     }
 
+    /*
+     * Simpanan PENUH (termasuk kartu yang belum termuat). Kartu dimuat bertahap,
+     * jadi tampilan sementara tidak boleh menimpa simpanan: urutan & ukuran
+     * kartu yang belum tampil dipertahankan di posisinya.
+     */
+    let stored = load() ?? { order: [], sizes: {} };
+
+    function mergeIntoStored() {
+        const shown = new Set(s.state.order);
+        const old = Array.isArray(stored.order) ? stored.order.map(String) : [];
+        const order = [...s.state.order];
+        old.forEach((id, i) => {
+            if (shown.has(id) || order.includes(id)) return;
+            // Sisipkan kartu tersembunyi setelah tetangga sebelumnya yang masih ada.
+            let at = 0;
+            for (let j = i - 1; j >= 0; j--) {
+                const k = order.indexOf(old[j]);
+                if (k >= 0) {
+                    at = k + 1;
+                    break;
+                }
+            }
+            order.splice(at, 0, id);
+        });
+        stored = { order, sizes: { ...(stored.sizes ?? {}), ...s.state.sizes } };
+    }
+
     function save() {
+        mergeIntoStored();
         try {
-            localStorage.setItem(storageKey, JSON.stringify(s.state));
+            localStorage.setItem(storageKey, JSON.stringify(stored));
         } catch {
             /* storage penuh/diblokir: tata letak tetap jalan selama halaman terbuka */
         }
@@ -179,7 +207,9 @@ export function createBento({
     function render(features) {
         s.features = features;
         const ids = features.map((f) => f.id);
-        s.state = sanitizeState(s.state.order.length ? s.state : load(), ids, defaults);
+        // Selalu dari simpanan penuh (bukan dari tampilan sementara).
+        if (s.state.order.length) mergeIntoStored();
+        s.state = sanitizeState(stored, ids, defaults);
 
         const wanted = new Set(ids);
         for (const [id, card] of s.cards) {
@@ -199,7 +229,6 @@ export function createBento({
 
         measure();
         layout();
-        save();
         requestAnimationFrame(() => {
             s.cards.forEach((card) => delete card.dataset.instant);
         });
@@ -233,6 +262,7 @@ export function createBento({
     }
 
     function reset() {
+        stored = { order: [], sizes: {} };
         s.state = sanitizeState(null, s.features.map((f) => f.id), defaults);
         layout();
         save();

@@ -4,7 +4,9 @@
  */
 window.KantoongAssistantContext = {
     surface: "erp",
-    dock: false,
+    // Desktop: melayang bebas + bisa menempel kiri/kanan atau belah layar (HP: tidak).
+    free: true,
+    dock: true,
     startMinimized: true,
     greetings: ["Ada yang bisa kubantu di dashboard kerjamu?"],
     suggestions: [

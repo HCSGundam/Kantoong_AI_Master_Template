@@ -9,7 +9,9 @@
  */
 window.KantoongAssistantContext = {
     surface: "dashboard",
-    dock: false,
+    // Desktop: melayang bebas + bisa menempel kiri/kanan atau belah layar (HP: tidak).
+    free: true,
+    dock: true,
     startMinimized: true,
     greetings: ["Ada yang bisa kubantu di ruang pribadimu?"],
     suggestions: [

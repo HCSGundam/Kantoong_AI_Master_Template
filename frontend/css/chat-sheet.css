@@ -1997,19 +1997,22 @@ body.kc-overlay-open .kc-sheet {
    MODE BEBAS (ERP & kasir) — html[data-kc-free]
    Pil "Halo Kak" di bawah, digeser kiri/kanan (posisi disimpan).
    Dibuka = naik seperti di HP (setengah/penuh, tinggi bisa ditarik).
-   Tidak pernah menempel di samping; halaman tidak menyempit.
+   Di desktop ERP & dashboard juga bisa menempel kiri/kanan atau membelah
+   layar (tombol di bar judul chat); di HP tidak ada mode menempel.
    ========================================================= */
 @media (min-width: 900px) {
-    html[data-kc-free] .kc-host > .kc-sheet,
-    html[data-kc-free] .kc-host > .kc-sheet:not(.kc-sheet--docked) {
+    /* Mode bebas hanya saat chat TIDAK sedang menempel di samping. */
+    html[data-kc-free]:not(.kc-docked) .kc-host > .kc-sheet,
+    html[data-kc-free]:not(.kc-docked) .kc-host > .kc-sheet:not(.kc-sheet--docked) {
         left: var(--kc-free-left, calc(50% - min(220px, (100% - 32px) / 2)));
         right: auto;
         width: min(440px, calc(100% - 32px));
         transform: translateX(var(--kc-throw-x, 0px));
     }
     html[data-kc-free] .kc-host > .kc-sheet.is-dragging { transition: none; }
-    html[data-kc-free] .kc-dock-tools,
-    html[data-kc-free] .kc-dock-edge { display: none !important; }
+    /* ERP & dashboard (data-kc-dockable): tombol menempel kiri/kanan & belah layar TETAP ada. */
+    html[data-kc-free]:not([data-kc-dockable]) .kc-dock-tools,
+    html[data-kc-free]:not([data-kc-dockable]) .kc-dock-edge { display: none !important; }
 }
 
 /* Kolom "Tempel link" di dalam chat (pengganti kotak bawaan browser) */
