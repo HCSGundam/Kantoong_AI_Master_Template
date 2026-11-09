@@ -2063,3 +2063,30 @@ body.kc-overlay-open .kc-sheet {
     font-size: 20px;
     cursor: pointer;
 }
+
+/* =========================================================
+   PERSONALISASI (js/personalize.js) — hanya di browser pengguna ini
+   ========================================================= */
+
+/* Font pilihan pengguna untuk seluruh web (ikon SVG & struk kasir tidak ikut). */
+html[data-user-font] body,
+html[data-user-font] body *:not(svg):not(svg *):not(code):not(kbd):not(pre):not(.erp-receipt__paper):not(.erp-receipt__paper *):not(.ap-font__sample):not(.ap-font__line) {
+    font-family: var(--kc-user-font) !important;
+}
+
+/* Warna kotak chat konsultasi: hitam / putih (bawaan = ikut tema) */
+html[data-chat-skin="dark"] .kc-sheet {
+    --kc-surface: #13120f;
+    --kc-text: #f1ead9;
+    --kc-muted: #a59c8a;
+    --kc-line: rgb(255 240 205 / 10%);
+    color-scheme: dark;
+}
+
+html[data-chat-skin="light"] .kc-sheet {
+    --kc-surface: #fffdf8;
+    --kc-text: #16130e;
+    --kc-muted: #7b7365;
+    --kc-line: rgb(22 19 14 / 10%);
+    color-scheme: light;
+}

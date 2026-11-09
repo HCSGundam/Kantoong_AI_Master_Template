@@ -66,9 +66,11 @@ export async function render(ctx) {
                     el("td", { "data-label": "Barcode" }, product.barcode ? el("code", { text: product.barcode }) : "-"),
                     el("td", { "data-label": "Harga", text: rupiah(product.price) }),
                     el("td", { "data-label": "Stok", text: String(product.stock ?? 0) }),
+                    // Hero/Unggulan dipilih di Etalase & Brand › Homepage (kolom ini hanya info).
                     el("td", { "data-label": "Homepage" }, el("div", { class: "erp-row-actions erp-row-actions--start" },
-                        publishToggle(ctx, product, "is_featured", "Unggulan", canEdit),
-                        publishToggle(ctx, product, "is_hero", "Hero", canEdit)
+                        product.is_hero ? el("span", { class: "erp-pill", text: "Hero" }) : null,
+                        product.is_featured ? el("span", { class: "erp-pill", text: "Unggulan" }) : null,
+                        !product.is_hero && !product.is_featured ? el("a", { class: "erp-link", href: "#/storefront", text: "Atur" }) : null
                     )),
                     el("td", {}, canEdit ? el("div", { class: "erp-row-actions" },
                         el("a", { class: "erp-btn erp-btn--sm erp-btn--primary", href: `#/catalog/produk/${encodeURIComponent(product.id)}` }, "Edit"),
@@ -106,26 +108,6 @@ export async function render(ctx) {
 }
 
 /** Tombol tampil di homepage (Produk Unggulan / Hero), sama seperti admin lama. */
-function publishToggle(ctx, product, key, label, canEdit) {
-    const on = product[key] === true;
-    return el("button", {
-        class: `erp-toggle${on ? " is-on" : ""}`,
-        type: "button",
-        disabled: !canEdit,
-        "aria-pressed": String(on),
-        title: on ? `Matikan ${label}` : `Tampilkan sebagai ${label}`,
-        onclick: async () => {
-            try {
-                await ctx.data.setPublication(product.id, { [key]: !on });
-                toast(`${label} ${on ? "dimatikan" : "diaktifkan"} untuk ${product.name}.`);
-                ctx.rerender();
-            } catch (error) {
-                toast(friendlyError(error), "error");
-            }
-        },
-    }, label);
-}
-
 async function editCodes(ctx, product) {
     const suggestion = product.sku || `${(product.category || "PRD").replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "PRD"}-${String(product.id).replace(/[^A-Za-z0-9]/g, "").slice(-4).toUpperCase()}`;
 

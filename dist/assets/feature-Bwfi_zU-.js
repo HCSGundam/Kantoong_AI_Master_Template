@@ -1,1 +1,0 @@
-import{h as o,a as t}from"./details-344apt_7.js";import"./feature-contract-YJvZtFaw.js";import"./home-Br6Ude2t.js";import"./kantoong-assistant-DNRSYTYg.js";import"./supabase-client-DvLz8SWw.js";import"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";import"./catalog-view-CVeuTRsO.js";const c=o({id:"clock",name:"Jam",order:90,mount:t});export{c as default};

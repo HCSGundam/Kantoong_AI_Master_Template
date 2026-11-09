@@ -15,6 +15,7 @@
  */
 
 import { applyTheme } from "../js/theme.js";
+import { openAppearanceSheet } from "../js/appearance-panel.js";
 import CFG from "../client-config.js";
 import { PRODUCT_PUBLIC_COLUMNS } from "../js/product-columns.js";
 import { sendPasswordReset, signInWithEmail } from "../auth/auth-service.js";
@@ -322,6 +323,7 @@ async function boot() {
     }
     setNavCollapsed(collapsed, false);
     $("navBackdrop").addEventListener("click", closeNav);
+    $("appearanceBtn")?.addEventListener("click", openAppearanceSheet);
     window.addEventListener("hashchange", () => app.data && renderPage());
     // Tema: ERP dan kasir bisa diatur terpisah (js/theme.js).
     const themeArea = () => (/^#\/?pos(\/|$)/.test(location.hash) ? "pos" : "erp");

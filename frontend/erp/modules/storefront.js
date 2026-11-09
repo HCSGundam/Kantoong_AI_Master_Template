@@ -22,7 +22,7 @@ import {
 } from "../../js/storefront-settings.js";
 import { renderCatalog } from "../../dashboard-user/home/catalog-view.js";
 import { renderHomePromos } from "../../js/home-promos.js";
-import { homeEditor, logoField } from "./storefront-home.js";
+import { grip, homeEditor, logoField, makeSortable } from "./storefront-home.js";
 import "../../dashboard-user/home/home.css";
 import "../../css/promo.css";
 
@@ -57,8 +57,13 @@ export async function render(ctx) {
     });
     // Pratinjau homepage (zona promosi) memakai tampilan yang sama dengan toko.
     const promoRoot = el("div", { class: "kc-promo erp-sf__promos" });
+    let homeRef = null; // diisi setelah pengatur homepage dibuat
+    const heroPreview = el("div", { class: "erp-sf__hero" });
+    const featuredPreview = el("div", { class: "erp-sf__featured" });
     const promoWrap = el("div", { class: "erp-sf__phone erp-sf__phone--home" },
         el("div", { class: "erp-sf__fake-header" }, el("span", { class: "erp-sf__fake-brand" })),
+        heroPreview,
+        featuredPreview,
         promoRoot);
     const renderPromos = () => {
         promoRoot.dataset.theme = document.documentElement.dataset.theme || "light";
@@ -67,6 +72,16 @@ export async function render(ctx) {
         const count = renderHomePromos(promoRoot, { home: clean.home, products, preview: true });
         promoRoot.hidden = false;
         if (!count) promoRoot.replaceChildren(el("p", { class: "kc-promo__empty" }, "Semua blok dimatikan · homepage hanya menampilkan banner atas & produk unggulan."));
+        const byId = new Map(products.map((p) => [String(p.id), p]));
+        const heroes = (homeRef?.heroIds ?? []).map((id) => byId.get(id)).filter(Boolean);
+        const first = heroes[0];
+        heroPreview.replaceChildren(...(first
+            ? [el("img", { src: first.hero_image_url || first.image_url || "", alt: "" }), el("div", { class: "erp-sf__hero-text" }, el("small", {}, first.hero_caption || first.category || ""), el("strong", {}, first.name), heroes.length > 1 ? el("span", {}, `${heroes.length} slide`) : null)]
+            : [el("div", { class: "erp-sf__hero-text" }, el("strong", {}, "Banner bawaan"), el("small", {}, "Pilih produk hero agar tampil di sini"))]));
+        const feats = (homeRef?.featuredIds ?? []).map((id) => byId.get(id)).filter(Boolean);
+        featuredPreview.replaceChildren(...(feats.length
+            ? [el("p", {}, "Produk unggulan"), el("div", { class: "erp-sf__feat-row" }, feats.map((p) => el("span", { class: "erp-sf__feat" }, p.image_url ? el("img", { src: p.image_url, alt: "" }) : null, el("small", {}, p.name))))]
+            : []));
         const fake = promoWrap.querySelector(".erp-sf__fake-brand");
         fake.replaceChildren(clean.brand.logo ? el("img", { src: clean.brand.logo, alt: "" }) : clean.brand.name);
     };
@@ -241,21 +256,9 @@ export async function render(ctx) {
                 entry.hidden = !show.checked;
                 refresh();
             });
-            const up = el("button", { class: "erp-btn erp-btn--ghost erp-sf__move", type: "button", "aria-label": "Naikkan", disabled: index === 0 }, "↑");
-            const down = el("button", { class: "erp-btn erp-btn--ghost erp-sf__move", type: "button", "aria-label": "Turunkan", disabled: index === categories.length - 1 }, "↓");
-            up.addEventListener("click", () => {
-                [categories[index - 1], categories[index]] = [categories[index], categories[index - 1]];
-                drawCats();
-                refresh();
-            });
-            down.addEventListener("click", () => {
-                [categories[index + 1], categories[index]] = [categories[index], categories[index + 1]];
-                drawCats();
-                refresh();
-            });
             return el("article", { class: `erp-sf__cat${entry.hidden ? " is-hidden" : ""}` },
                 el("div", { class: "erp-sf__cat-head" },
-                    el("div", { class: "erp-sf__order" }, up, down),
+                    grip(),
                     el("label", { class: "erp-field erp-sf__label" }, el("span", {}, `Nama tampilan · asal “${key}” · ${count} produk`), label),
                     el("label", { class: "erp-sf__toggle" }, show, "Tampil")),
                 el("p", { class: "erp-sf__hint" }, "Saran filter (bisa digeser pelanggan; yang melewati batas slot disembunyikan):"),
@@ -303,15 +306,34 @@ export async function render(ctx) {
         el("div", { class: "erp-sf__actions erp-sf__actions--sticky" }, status, reset, saveCatalog));
 
     drawCats();
+    // Urutan kategori: tahan ⠿ lalu geser (bukan panah naik/turun).
+    makeSortable(list, {
+        handle: ".hs-grip",
+        item: ".erp-sf__cat",
+        onDrop: (from, to) => {
+            const [moved] = categories.splice(from, 1);
+            categories.splice(to, 0, moved);
+            drawCats();
+            refresh();
+        },
+    });
 
     /* ---------- Homepage: zona promosi ---------- */
 
     const home = homeEditor({ draft, products, onChange: () => refresh() });
+    homeRef = home;
     const saveHome = el("button", { class: "erp-btn erp-btn--primary", type: "button" }, "Simpan homepage");
     saveHome.addEventListener("click", async () => {
         saveHome.disabled = true;
         try {
             await saveStorefront("home", sanitizeStorefront(draft).home, { demo });
+            // Hero & Unggulan = tanda di produk; simpan yang berubah saja.
+            for (const { id, changes } of home.pendingFlags()) {
+                await data.setPublication(id, changes);
+                const product = products.find((p) => String(p.id) === id);
+                if (product) Object.assign(product, changes);
+            }
+            home.markSaved();
             Object.assign(saved, clone(getStorefront()));
             toast("Homepage tersimpan · toko langsung berubah.");
             dirty();

@@ -156,17 +156,19 @@ export async function renderEditor(ctx, productId) {
     const heroText = el("textarea", { name: "hero_text", rows: 2, maxlength: 160 });
     heroText.value = product.hero_text || "";
 
-    const heroFields = el("div", { class: "erp-hero-fields", hidden: !hero.checked },
+    const heroFields = el("div", { class: "erp-hero-fields" },
         el("div", { class: "erp-field" }, el("span", { text: "Foto hero (opsional, melebar 16:9)" }), heroImage.element, el("small", { text: "Kosongkan untuk memakai foto produk." })),
         field("Teks kecil hero", heroCaption),
         field("Teks promo hero", heroText)
     );
-    hero.addEventListener("change", () => { heroFields.hidden = !hero.checked; });
-
+    // Pilihan tampil di homepage (Hero / Unggulan) PINDAH ke ERP › Etalase & Brand › Homepage.
+    // Kotak centangnya tetap ada (tersembunyi) agar nilai lama ikut tersimpan apa adanya.
     form.appendChild(el("section", { class: "erp-card" },
-        el("h2", { text: "Tampil di homepage" }),
-        el("label", { class: "erp-check" }, featured, "Produk Unggulan (kartu di etalase)"),
-        el("label", { class: "erp-check" }, hero, `Hero slider (banner besar, maks. ${PRODUCT_CONFIG.maxHeroSlides})`),
+        el("h2", { text: "Tampilan di homepage" }),
+        el("p", { class: "erp-muted" }, "Produk mana yang tampil sebagai Hero atau Unggulan kini dipilih di ",
+            el("a", { class: "erp-link", href: "#/storefront" }, "Etalase & Brand › Homepage"),
+            ". Di sini cukup isi foto & teks bila produk ini dijadikan hero."),
+        el("span", { hidden: true }, featured, hero),
         heroFields
     ));
 

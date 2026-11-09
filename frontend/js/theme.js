@@ -14,6 +14,8 @@
  * ikut ke tab lain (event storage). Disimpan di perangkat saja.
  */
 
+import "./personalize.js";
+
 export const THEME_KEY = "kantoong:theme";
 export const AREAS = Object.freeze([
     { id: "store", label: "Toko & halaman produk" },

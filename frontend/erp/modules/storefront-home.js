@@ -6,7 +6,7 @@
 
 import { el, formDialog, toast, friendlyError } from "../ui.js";
 import { HOME_BLOCKS } from "../../js/storefront-settings.js";
-import { uploadProductImage } from "../data/product-service.js";
+import { PRODUCT_CONFIG, uploadProductImage } from "../data/product-service.js";
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
 
@@ -40,25 +40,200 @@ const ITEM_FIELDS = {
     ],
 };
 
-function summaryOf(block, products) {
-    if (block.type === "jackpot") return `${block.rewards?.length ?? 0} hadiah`;
-    if (block.type === "pinned") {
-        const names = new Map(products.map((p) => [String(p.id), p.name]));
-        const list = (block.productIds ?? []).map((id) => names.get(id)).filter(Boolean);
-        return list.length ? list.join(", ") : "Belum ada produk";
+/* ---------- Ikon blok ---------- */
+
+const BLOCK_ICONS = {
+    hero: "M3 5h18v11H3zM7 20h10M12 16v4",
+    featured: "M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.6 6.7 19.4l1.2-6L3.4 9.3l6-.7z",
+    banner: "M4 6h16v10H4zM8 20h8",
+    coupons: "M3 8a2 2 0 0 0 0 4v4h18v-4a2 2 0 0 1 0-4V4H3zM9 4v16",
+    jackpot: "M4 10h16v10H4zM3 6h18v4H3zM12 6v14M12 6c-2-3-6-3-6 0M12 6c2-3 6-3 6 0",
+    posters: "M5 3h14v18H5zM8 15l3-3 2 2 3-3",
+    pinned: "M9 4h6l-1 6 3 3H7l3-3zM12 13v8",
+};
+
+function svgIcon(d) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    svg.append(path);
+    return svg;
+}
+
+export function grip() {
+    const g = el("span", { class: "hs-grip", "aria-hidden": "true" });
+    for (let i = 0; i < 6; i++) g.append(el("i"));
+    return g;
+}
+
+function switchEl(checked, onChange, label) {
+    const input = el("input", { type: "checkbox", checked, "aria-label": label });
+    input.addEventListener("change", () => onChange(input.checked));
+    return el("label", { class: "hs-switch" }, input, el("span", { class: "hs-switch__track" }, el("span", { class: "hs-switch__dot" })));
+}
+
+/* ---------- Pemilih produk bergambar ---------- */
+
+/**
+ * Admin cukup mengetuk foto produk. Urutan ketukan = urutan tampil.
+ * selected: array id (diubah langsung), max: batas jumlah.
+ */
+function productPicker({ products, selected, max = 20, onChange, empty = "Belum ada produk dipilih." }) {
+    const wrap = el("div", { class: "hs-picker" });
+    const info = el("p", { class: "hs-picker__info" });
+    const grid = el("div", { class: "hs-picker__grid" });
+
+    function draw() {
+        info.textContent = selected.length
+            ? `${selected.length} dipilih${max < 99 ? ` dari maks. ${max}` : ""} · ketuk foto untuk memilih / melepas`
+            : `${empty} Ketuk foto produk untuk memilih.`;
+        grid.replaceChildren(...products.map((p) => {
+            const id = String(p.id);
+            const at = selected.indexOf(id);
+            const tile = el("button", { class: `hs-pick${at >= 0 ? " is-on" : ""}`, type: "button", "aria-pressed": String(at >= 0), title: p.name },
+                el("span", { class: "hs-pick__img" },
+                    p.image_url ? el("img", { src: p.image_url, alt: "", loading: "lazy" }) : el("span", { class: "hs-pick__ph" }, p.name.charAt(0)),
+                    at >= 0 ? el("span", { class: "hs-pick__num" }, String(at + 1)) : null),
+                el("span", { class: "hs-pick__name" }, p.name));
+            tile.addEventListener("click", () => {
+                if (at >= 0) selected.splice(at, 1);
+                else if (selected.length >= max) return toast(`Maksimal ${max} produk.`, "bad");
+                else selected.push(id);
+                draw();
+                onChange();
+            });
+            return tile;
+        }));
     }
-    return `${block.items?.length ?? 0} isi`;
+    draw();
+    wrap.append(info, grid);
+    return wrap;
+}
+
+/* ---------- Geser bebas untuk mengurutkan (realtime) ---------- */
+
+export function makeSortable(list, { handle, item: itemSelector = ".hs-block", onDrop }) {
+    let drag = null;
+
+    list.addEventListener("pointerdown", (event) => {
+        const h = event.target.closest(handle);
+        if (!h || !list.contains(h)) return;
+        const item = h.closest(itemSelector);
+        if (!item) return;
+        event.preventDefault();
+        const items = [...list.children];
+        drag = {
+            item,
+            from: items.indexOf(item),
+            to: items.indexOf(item),
+            startY: event.clientY,
+            rects: items.map((node) => node.getBoundingClientRect()),
+            items,
+            pointerId: event.pointerId,
+        };
+        h.setPointerCapture?.(event.pointerId);
+        item.classList.add("is-dragging");
+        list.classList.add("is-sorting");
+    });
+
+    list.addEventListener("pointermove", (event) => {
+        if (!drag || event.pointerId !== drag.pointerId) return;
+        const dy = event.clientY - drag.startY;
+        drag.item.style.transform = `translateY(${dy}px) scale(1.01)`;
+        const self = drag.rects[drag.from];
+        const center = self.top + self.height / 2 + dy;
+        let to = drag.from;
+        drag.rects.forEach((r, i) => {
+            const mid = r.top + r.height / 2;
+            if (i > drag.from && center > mid) to = Math.max(to, i);
+            if (i < drag.from && center < mid) to = Math.min(to, i);
+        });
+        drag.to = to;
+        const gap = 12;
+        drag.items.forEach((node, i) => {
+            if (node === drag.item) return;
+            let shift = 0;
+            if (drag.from < to && i > drag.from && i <= to) shift = -(self.height + gap);
+            if (drag.from > to && i < drag.from && i >= to) shift = self.height + gap;
+            node.style.transform = shift ? `translateY(${shift}px)` : "";
+        });
+    });
+
+    const end = () => {
+        if (!drag) return;
+        const { from, to, items } = drag;
+        items.forEach((node) => (node.style.transform = ""));
+        drag.item.classList.remove("is-dragging");
+        list.classList.remove("is-sorting");
+        drag = null;
+        if (from !== to) onDrop(from, to);
+    };
+    list.addEventListener("pointerup", end);
+    list.addEventListener("pointercancel", end);
+}
+
+/* ---------- Isi tiap blok ---------- */
+
+function itemsKey(block) {
+    return block.type === "jackpot" ? "rewards" : "items";
+}
+
+function itemCard(block, item, index, { onEdit, onRemove }) {
+    const remove = el("button", { class: "hs-item__x", type: "button", "aria-label": "Hapus" }, "×");
+    remove.addEventListener("click", (event) => {
+        event.stopPropagation();
+        onRemove();
+    });
+    let face;
+    if (block.type === "coupons") {
+        face = el("span", { class: "hs-item__ticket" }, el("strong", {}, item.title), el("small", {}, item.code));
+    } else if (block.type === "jackpot") {
+        const total = (block.rewards ?? []).reduce((s, r) => s + (Number(r.weight) || 0), 0) || 1;
+        const pct = Math.round(((Number(item.weight) || 0) / total) * 100);
+        face = el("span", { class: "hs-item__reward" },
+            el("strong", {}, item.label),
+            el("small", {}, item.code ? `kode ${item.code}` : "tanpa hadiah"),
+            el("span", { class: "hs-item__bar" }, el("i", { style: `width:${pct}%` })),
+            el("em", {}, `${pct}% peluang`));
+    } else {
+        face = el("span", { class: `hs-item__visual hs-item__visual--${index % 3}` },
+            item.image ? el("img", { src: item.image, alt: "", loading: "lazy" }) : null,
+            el("strong", {}, item.title));
+    }
+    const card = el("button", { class: `hs-item hs-item--${block.type}`, type: "button", title: "Ketuk untuk mengubah" }, face, remove);
+    card.addEventListener("click", onEdit);
+    return card;
 }
 
 /**
  * opts: { draft, products, onChange }
- * Mengembalikan elemen kartu pengatur homepage.
+ * Mengembalikan { element, redraw, pendingFlags }.
+ * Hero & Unggulan = tanda di produk (is_hero / is_featured), disimpan saat "Simpan homepage".
  */
 export function homeEditor({ draft, products, onChange }) {
-    const list = el("div", { class: "erp-sf__blocks" });
+    const root = el("div", { class: "hs" });
+    const open = new Set(["hero"]);
 
-    function itemsKey(block) {
-        return block.type === "jackpot" ? "rewards" : "items";
+    const original = new Map(products.map((p) => [String(p.id), { is_hero: p.is_hero === true, is_featured: p.is_featured === true }]));
+    const heroIds = products.filter((p) => p.is_hero).map((p) => String(p.id));
+    const featuredIds = products.filter((p) => p.is_featured).map((p) => String(p.id));
+
+    function pendingFlags() {
+        const out = [];
+        original.forEach((was, id) => {
+            const now = { is_hero: heroIds.includes(id), is_featured: featuredIds.includes(id) };
+            const changes = {};
+            if (now.is_hero !== was.is_hero) changes.is_hero = now.is_hero;
+            if (now.is_featured !== was.is_featured) changes.is_featured = now.is_featured;
+            if (Object.keys(changes).length) out.push({ id, changes });
+        });
+        return out;
+    }
+
+    function markSaved() {
+        original.forEach((_, id) => original.set(id, { is_hero: heroIds.includes(id), is_featured: featuredIds.includes(id) }));
     }
 
     async function editItem(block, index) {
@@ -78,99 +253,120 @@ export function homeEditor({ draft, products, onChange }) {
         onChange();
     }
 
-    async function editPinned(block) {
-        const answer = await formDialog({
-            title: "Produk pilihan admin",
-            submitLabel: "Simpan",
-            fields: [
-                { name: "title", label: "Judul baris", value: block.title, max: 60 },
-                { name: "ids", label: "Produk yang disematkan", type: "checkboxes", value: block.productIds, options: products.map((p) => ({ value: String(p.id), label: p.name })) },
-            ],
-        });
-        if (!answer) return;
-        block.title = answer.title;
-        block.productIds = answer.ids;
-        block.sample = false;
+    function toggleOpen(id) {
+        if (open.has(id)) open.delete(id);
+        else open.add(id);
         draw();
-        onChange();
     }
 
-    function blockCard(block, index) {
-        const meta = HOME_BLOCKS.find((b) => b.type === block.type);
-        const blocks = draft.home.blocks;
-        const toggle = el("input", { type: "checkbox", checked: block.enabled });
-        toggle.addEventListener("change", () => {
-            block.enabled = toggle.checked;
-            draw();
-            onChange();
-        });
-        const up = el("button", { class: "erp-btn erp-btn--ghost erp-sf__move", type: "button", disabled: index === 0, "aria-label": "Naikkan" }, "↑");
-        const down = el("button", { class: "erp-btn erp-btn--ghost erp-sf__move", type: "button", disabled: index === blocks.length - 1, "aria-label": "Turunkan" }, "↓");
-        up.addEventListener("click", () => {
-            [blocks[index - 1], blocks[index]] = [blocks[index], blocks[index - 1]];
-            draw();
-            onChange();
-        });
-        down.addEventListener("click", () => {
-            [blocks[index + 1], blocks[index]] = [blocks[index], blocks[index + 1]];
-            draw();
-            onChange();
-        });
+    function shell({ id, iconKey, label, hint, sample, enabled, onToggle, body, sortable, fixed }) {
+        const isOpen = open.has(id) && enabled !== false;
+        const head = el("div", { class: "hs-block__head" },
+            sortable ? grip() : el("span", { class: "hs-pin", title: "Posisi tetap" }, svgIcon("M9 4h6l-1 6 3 3H7l3-3zM12 13v8")),
+            el("span", { class: "hs-block__icon" }, svgIcon(BLOCK_ICONS[iconKey])),
+            el("button", { class: "hs-block__title", type: "button", onclick: () => toggleOpen(id) },
+                el("strong", {}, label, sample ? el("span", { class: "hs-badge" }, "Contoh") : null, fixed ? el("span", { class: "hs-badge hs-badge--soft" }, "Posisi tetap di atas") : null),
+                el("small", {}, hint)),
+            onToggle ? switchEl(enabled !== false, onToggle, `Aktifkan ${label}`) : null,
+            el("button", { class: `hs-chevron${isOpen ? " is-open" : ""}`, type: "button", "aria-label": isOpen ? "Tutup" : "Buka", onclick: () => toggleOpen(id) }, svgIcon("M6 9l6 6 6-6")));
+        return el("article", { class: `hs-block${enabled === false ? " is-off" : ""}${isOpen ? " is-open" : ""}`, dataset: { id } },
+            head,
+            isOpen ? el("div", { class: "hs-block__body" }, body()) : null);
+    }
 
-        const title = el("input", { class: "erp-input", maxlength: "60", value: block.title ?? "", placeholder: "Judul bagian (opsional)", "aria-label": `Judul ${meta.label}` });
-        title.addEventListener("input", () => {
-            block.title = title.value;
+    function titleInput(block, label) {
+        const input = el("input", { class: "hs-input", maxlength: "60", value: block.title ?? "", placeholder: "Judul bagian (opsional)", "aria-label": `Judul ${label}` });
+        input.addEventListener("input", () => {
+            block.title = input.value;
             block.sample = false;
             onChange();
         });
+        return el("label", { class: "hs-field" }, el("span", {}, "Judul di homepage"), input);
+    }
 
-        const body = el("div", { class: "erp-sf__items" });
+    function blockBody(block, meta) {
+        const nodes = [titleInput(block, meta.label)];
         if (block.type === "pinned") {
-            body.append(el("p", { class: "erp-sf__hint" }, summaryOf(block, products)),
-                el("button", { class: "erp-btn", type: "button", onclick: () => editPinned(block) }, "Pilih produk"));
-        } else {
-            const key = itemsKey(block);
-            if (block.type === "jackpot") {
-                const text = el("input", { class: "erp-input", maxlength: "160", value: block.text ?? "", placeholder: "Keterangan kotak" });
-                text.addEventListener("input", () => {
-                    block.text = text.value;
-                    onChange();
-                });
-                body.append(text);
-            }
-            (block[key] ?? []).forEach((it, i) => {
-                const remove = el("button", { class: "erp-sf__chip-x", type: "button", "aria-label": "Hapus" }, "×");
-                remove.addEventListener("click", () => {
-                    block[key].splice(i, 1);
-                    block.sample = false;
-                    draw();
-                    onChange();
-                });
-                const label = it.title || it.label || it.code;
-                const extra = block.type === "coupons" ? ` · ${it.code}` : block.type === "jackpot" ? ` · peluang ${it.weight}` : "";
-                body.append(el("div", { class: "erp-sf__item" },
-                    el("button", { class: "erp-sf__item-edit", type: "button", onclick: () => editItem(block, i) }, `${label}${extra}`),
-                    remove));
-            });
-            body.append(el("button", { class: "erp-btn erp-btn--ghost", type: "button", onclick: () => editItem(block, (block[key] ?? []).length) }, "+ Tambah"));
+            nodes.push(productPicker({ products, selected: block.productIds, onChange: () => {
+                block.sample = false;
+                onChange();
+            } }));
+            return nodes;
         }
-
-        return el("article", { class: `erp-sf__cat${block.enabled ? "" : " is-hidden"}` },
-            el("div", { class: "erp-sf__cat-head" },
-                el("div", { class: "erp-sf__order" }, up, down),
-                el("div", {},
-                    el("strong", {}, meta.label, block.sample ? el("span", { class: "erp-sf__sample" }, "contoh") : null),
-                    el("p", { class: "erp-sf__hint" }, meta.hint)),
-                el("label", { class: "erp-sf__toggle" }, toggle, "Aktif")),
-            block.enabled ? title : null,
-            block.enabled ? body : null);
+        if (block.type === "jackpot") {
+            const text = el("input", { class: "hs-input", maxlength: "160", value: block.text ?? "", placeholder: "Keterangan kotak" });
+            text.addEventListener("input", () => {
+                block.text = text.value;
+                onChange();
+            });
+            nodes.push(el("label", { class: "hs-field" }, el("span", {}, "Keterangan"), text));
+        }
+        const key = itemsKey(block);
+        const grid = el("div", { class: `hs-items hs-items--${block.type}` });
+        (block[key] ?? []).forEach((item, i) => grid.append(itemCard(block, item, i, {
+            onEdit: () => editItem(block, i),
+            onRemove: () => {
+                block[key].splice(i, 1);
+                block.sample = false;
+                draw();
+                onChange();
+            },
+        })));
+        const add = el("button", { class: "hs-add", type: "button" }, el("span", {}, "+"), block.type === "jackpot" ? "Tambah hadiah" : "Tambah");
+        add.addEventListener("click", () => editItem(block, (block[key] ?? []).length));
+        grid.append(add);
+        nodes.push(grid);
+        return nodes;
     }
 
     function draw() {
-        list.replaceChildren(...draft.home.blocks.map(blockCard));
+        const fixed = el("div", { class: "hs-list" },
+            shell({
+                id: "hero", iconKey: "hero", label: "Banner atas (hero)", fixed: true,
+                hint: "Slide besar paling atas. Foto & teksnya diisi di Katalog Master › Edit produk.",
+                body: () => [productPicker({ products, selected: heroIds, max: PRODUCT_CONFIG.maxHeroSlides, onChange, empty: "Belum ada hero — homepage memakai banner bawaan." })],
+            }),
+            shell({
+                id: "featured", iconKey: "featured", label: "Produk unggulan", fixed: true,
+                hint: "Kartu putar 3D di bawah hero.",
+                body: () => [productPicker({ products, selected: featuredIds, onChange, empty: "Belum ada produk unggulan." })],
+            }));
+
+        const sortList = el("div", { class: "hs-list hs-list--sort" });
+        draft.home.blocks.forEach((block) => {
+            const meta = HOME_BLOCKS.find((b) => b.type === block.type);
+            sortList.append(shell({
+                id: block.type, iconKey: block.type, label: meta.label, hint: meta.hint,
+                sample: block.sample, enabled: block.enabled, sortable: true,
+                onToggle: (on) => {
+                    block.enabled = on;
+                    if (on) open.add(block.type);
+                    draw();
+                    onChange();
+                },
+                body: () => blockBody(block, meta),
+            }));
+        });
+        makeSortable(sortList, {
+            handle: ".hs-grip",
+            onDrop: (from, to) => {
+                const blocks = draft.home.blocks;
+                const [moved] = blocks.splice(from, 1);
+                blocks.splice(to, 0, moved);
+                draw();
+                onChange();
+            },
+        });
+
+        root.replaceChildren(
+            el("p", { class: "hs-section" }, "Selalu di atas"),
+            fixed,
+            el("p", { class: "hs-section" }, "Blok promosi · tahan ⠿ lalu geser untuk mengatur urutan"),
+            sortList);
     }
+
     draw();
-    return { element: list, redraw: draw };
+    return { element: root, redraw: draw, pendingFlags, markSaved, heroIds, featuredIds };
 }
 
 /* ---------- Logo ---------- */
