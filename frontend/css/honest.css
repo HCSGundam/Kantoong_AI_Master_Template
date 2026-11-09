@@ -1,0 +1,469 @@
+/* ============================================================
+   KANTOONG — HARGA JUJUR · COCOK/KURANG COCOK · JEJAK ASAL ·
+   BANDINGKAN · RUANG RAGU  (js/pdp-extras.js)
+   Memakai token luxe.css (gading / tinta / emas), ikut tema gelap.
+   ============================================================ */
+
+/* ---------- Harga Jujur ---------- */
+#appRoot .pdp-honest {
+    display: grid;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 14px 16px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--lux-shadow);
+}
+
+#appRoot .pdp-honest__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#appRoot .pdp-honest__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--lux-gold);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+#appRoot .pdp-honest__range {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+#appRoot .pdp-honest__chart {
+    width: 100%;
+    height: 56px;
+    overflow: visible;
+}
+
+#appRoot .pdp-honest__chart path {
+    fill: none;
+    stroke: var(--text-primary);
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+#appRoot .pdp-honest__axis {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: 10.5px;
+}
+
+#appRoot .pdp-honest__verdict {
+    margin: 2px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ---------- Cocok & Kurang Cocok ---------- */
+#appRoot .pdp-fit {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: var(--lux-shadow);
+}
+
+#appRoot .pdp-fit__eyebrow,
+#appRoot .pdp-origin__eyebrow {
+    margin: 0;
+    color: var(--lux-gold);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+#appRoot .pdp-fit__cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+}
+
+#appRoot .pdp-fit__col {
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: var(--surface-soft);
+}
+
+#appRoot .pdp-fit__title {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#appRoot .pdp-fit__list {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+}
+
+#appRoot .pdp-fit__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+#appRoot .pdp-fit__list svg {
+    flex: none;
+    margin-top: 2px;
+}
+
+#appRoot .pdp-fit__col--yes svg { color: #3f8a5b; }
+#appRoot .pdp-fit__col--no svg { color: #b0573f; }
+#appRoot .pdp-fit__col--no { color: var(--text-muted); }
+#appRoot .pdp-fit__col--no .pdp-fit__title { color: var(--text-primary); }
+
+/* ---------- Jejak Asal ---------- */
+#appRoot .pdp-origin {
+    position: relative;
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    overflow: hidden;
+    color: #f1ead9;
+    background: radial-gradient(120% 140% at 100% 0%, rgb(184 145 63 / 28%), transparent 55%), #16130e;
+    border-radius: 24px;
+    box-shadow: var(--lux-shadow);
+}
+
+#appRoot .pdp-origin__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#appRoot .pdp-origin__icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    color: var(--lux-gold-soft);
+    border: 1px solid rgb(232 214 166 / 35%);
+    border-radius: 50%;
+}
+
+#appRoot .pdp-origin__title {
+    margin: 2px 0 0;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+#appRoot .pdp-origin__list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+}
+
+#appRoot .pdp-origin__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgb(241 234 217 / 12%);
+    font-size: 13px;
+}
+
+#appRoot .pdp-origin__row dt { color: rgb(241 234 217 / 62%); }
+#appRoot .pdp-origin__row dd { margin: 0; font-weight: 500; text-align: right; }
+
+#appRoot .pdp-origin__note {
+    margin: 0;
+    color: var(--lux-gold-soft);
+    font-size: 13.5px;
+    font-style: italic;
+    line-height: 1.55;
+}
+
+/* ---------- Tombol Bandingkan ---------- */
+#appRoot .pdp-compare-link {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: 8px;
+    padding: 8px 2px;
+    color: var(--text-primary);
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: var(--lux-gold);
+    text-underline-offset: 4px;
+    cursor: pointer;
+}
+
+/* ---------- Ruang Ragu ---------- */
+#appRoot .kc-doubt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 10px 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--lux-gold-soft);
+    border-radius: 18px;
+    box-shadow: var(--lux-shadow);
+    animation: kc-doubt-in .45s cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes kc-doubt-in {
+    from { opacity: 0; transform: translateY(-6px); }
+}
+
+#appRoot .kc-doubt__icon { color: var(--lux-gold); display: grid; }
+
+#appRoot .kc-doubt__text {
+    flex: 1;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+#appRoot .kc-doubt__open {
+    flex: none;
+    padding: 8px 14px;
+    color: var(--surface);
+    background: var(--text-primary);
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+#appRoot .kc-doubt__dismiss {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    color: var(--text-muted);
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* ---------- Lembar Bandingkan ---------- */
+.kc-compare {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgb(10 9 7 / 0%);
+    backdrop-filter: blur(0);
+    transition: background .26s ease, backdrop-filter .26s ease;
+}
+
+.kc-compare.is-open {
+    background: rgb(10 9 7 / 45%);
+    backdrop-filter: blur(6px);
+}
+
+.kc-compare__panel {
+    display: flex;
+    flex-direction: column;
+    width: min(720px, 100%);
+    max-height: 88vh;
+    padding: 8px 18px 22px;
+    color: var(--text-primary);
+    background: var(--container-bg, #fbf8f1);
+    border-radius: 26px 26px 0 0;
+    box-shadow: 0 -20px 60px -20px rgb(0 0 0 / 40%);
+    transform: translateY(100%);
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+}
+
+.kc-compare.is-open .kc-compare__panel { transform: none; }
+
+@media (min-width: 900px) {
+    .kc-compare { align-items: center; }
+    .kc-compare__panel { border-radius: 26px; transform: translateY(24px) scale(.98); opacity: 0; transition: transform .3s cubic-bezier(.2, .8, .2, 1), opacity .2s ease; }
+    .kc-compare.is-open .kc-compare__panel { opacity: 1; }
+    .kc-compare__grab { display: none; }
+}
+
+.kc-compare__grab {
+    width: 40px;
+    height: 4px;
+    margin: 4px auto 6px;
+    background: var(--line);
+    border-radius: 4px;
+}
+
+.kc-compare__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0 12px;
+}
+
+.kc-compare__title { margin: 0; font-size: 18px; font-weight: 500; }
+
+.kc-compare__close {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    color: var(--text-primary);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.kc-compare__body {
+    display: grid;
+    gap: 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.kc-compare__products {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.kc-compare__product {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+}
+
+.kc-compare__img {
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--surface-soft);
+    border-radius: 14px;
+}
+
+.kc-compare__img img { width: 100%; height: 100%; object-fit: cover; }
+
+.kc-compare__name { font-size: 13.5px; font-weight: 500; line-height: 1.3; }
+.kc-compare__price { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.kc-compare__pick {
+    margin-top: 2px;
+    padding: 9px 12px;
+    color: var(--surface);
+    background: var(--text-primary);
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.kc-compare__summary {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--surface-soft);
+    border-left: 3px solid var(--lux-gold);
+    border-radius: 6px 14px 14px 6px;
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+.kc-compare__rows { display: grid; gap: 4px; }
+
+.kc-compare__row {
+    display: grid;
+    gap: 6px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.kc-compare__label {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.kc-compare__cells {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    font-size: 13.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.kc-compare__cell.is-better {
+    font-weight: 600;
+}
+
+.kc-compare__cell.is-better::after {
+    content: "lebih baik";
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 7px;
+    color: var(--lux-gold);
+    border: 1px solid var(--lux-gold-soft);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 500;
+    vertical-align: 1px;
+}
+
+.kc-compare__same,
+.kc-compare__hint,
+.kc-compare__empty {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12.5px;
+}
+
+.kc-compare__options { display: grid; gap: 8px; overflow-y: auto; }
+
+.kc-compare__option {
+    display: grid;
+    grid-template-columns: 52px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px 8px 8px;
+    color: var(--text-primary);
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    font: inherit;
+    cursor: pointer;
+    transition: border-color .2s ease, transform .2s ease;
+}
+
+.kc-compare__option:hover { border-color: var(--lux-gold); transform: translateY(-1px); }
+.kc-compare__option .kc-compare__img { width: 52px; border-radius: 12px; }
+.kc-compare__option-text { display: grid; gap: 2px; }
+.kc-compare__option-text strong { font-size: 13.5px; font-weight: 500; }
+.kc-compare__option-text small { color: var(--text-muted); font-size: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .kc-compare, .kc-compare__panel, #appRoot .kc-doubt { transition: none; animation: none; }
+}

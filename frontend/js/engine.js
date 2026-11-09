@@ -28,6 +28,15 @@ import { renderHomePromos } from "./home-promos.js";
 import { getPlan, markPlan } from "./plan.js";
 import { bigPrice, enrichProducts, specRows } from "./industry.js";
 import { loadAttributes } from "./product-attributes.js";
+import {
+  createCompareLink,
+  createDoubtBanner,
+  createFitCard,
+  createHonestPrice,
+  createOriginCard,
+  honestFor,
+  loadPriceHistory,
+} from "./pdp-extras.js";
 import { POLICY_PAGES, whatsappLink } from "./storefront-settings.js";
 import {
   clampQty,
@@ -1215,9 +1224,9 @@ async function loadProducts() {
     const raw = applyStoreProducts(await fetchProductsFromSupabase(), state.salesStore);
     // Paket industri: spesifikasi (properti/emas) + harga emas hari ini.
     const plan = getPlan();
-    const products = plan.industry === "umum"
-      ? raw
-      : enrichProducts(raw, await loadAttributes(), { industry: plan.industry, gold: getStorefront().catalog.gold });
+    // Riwayat harga (Harga Jujur) dimuat bersamaan; gagal = tampilan lama.
+    const [attrs] = await Promise.all([loadAttributes(), loadPriceHistory()]);
+    const products = enrichProducts(raw, attrs, { industry: plan.industry, gold: getStorefront().catalog.gold });
 
     state.products = products;
     state.usingDemo = false;
@@ -1350,7 +1359,11 @@ const ICONS = {
 };
 
 function getCompareAtPrice(product) {
-  return toNumber(product?.compare_at_price ?? product?.original_price, 0);
+  const compareAt = toNumber(product?.compare_at_price ?? product?.original_price, 0);
+  if (!(compareAt > 0)) return 0;
+  // Harga Jujur: harga coret hanya bila produk ini benar pernah dijual
+  // setinggi itu dalam 30 hari terakhir (null = riwayat belum tersedia).
+  return honestFor(product, getProductPrice(product)).strike === false ? 0 : compareAt;
 }
 
 /** Persen diskon dari harga coret. 0 bila tidak ada diskon asli. */
@@ -2527,6 +2540,9 @@ function createPdpSummary(product) {
   }
   box.appendChild(priceBox);
 
+  const honest = createHonestPrice(product, getProductPrice(product), formatCurrency);
+  if (honest) box.appendChild(honest);
+
   return box;
 }
 
@@ -2849,6 +2865,28 @@ function createPdpStickyBar(product, buyBox) {
   return bar;
 }
 
+/** Pembantu untuk tampilan Bandingkan / Ruang Ragu (js/pdp-extras.js). */
+function pdpCtx() {
+  return {
+    industry: getPlan().industry,
+    nameOf: getProductName,
+    imageOf: getProductImage,
+    isSafeImage: isSafeImageURL,
+    priceOf: getProductPrice,
+    money: formatCurrency,
+    find: findProductById,
+    open: openProductPage,
+  };
+}
+
+/** Lawan banding: terakhir dilihat dulu, lalu produk serupa. */
+function compareCandidates(product) {
+  const id = getProductId(product);
+  const recent = pushRecent(null).map(findProductById).filter(Boolean);
+  const similar = relatedProducts(product, state.products, { limit: 10, idOf: getProductId });
+  return [...recent, ...similar].filter((p) => getProductId(p) !== id);
+}
+
 function renderProductPage(product) {
   closeQuickView();
 
@@ -2911,7 +2949,15 @@ function renderProductPage(product) {
   body.append(createPdpSummary(product));
   const specs = createPdpSpecs(product);
   if (specs) body.append(specs);
-  body.append(buy, createPdpAssurance(product));
+  const fit = createFitCard(product);
+  if (fit) body.append(fit);
+  body.append(buy, createCompareLink(pdpCtx(), product, () => compareCandidates(product)), createPdpAssurance(product));
+  const origin = createOriginCard(product);
+  if (origin) body.append(origin);
+
+  // Ruang Ragu: bolak-balik A → B → A dalam 30 menit = tawarkan perbandingan.
+  const doubt = createDoubtBanner(pdpCtx(), product);
+  if (doubt) body.prepend(doubt);
 
   const main = makeElement("div", "pdp-main");
   main.append(galleryEl, body);

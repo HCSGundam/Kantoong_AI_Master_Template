@@ -13,6 +13,7 @@ import { el, friendlyError, pageHeader, toast } from "../ui.js";
 import { getPlan } from "../../js/plan.js";
 import { INDUSTRIES, cleanAttributes } from "../../js/industry.js";
 import { loadAttributes, saveAttributes } from "../../js/product-attributes.js";
+import { ORIGIN_FIELDS, cleanStory, hasStory, supplierOrigin } from "../../js/product-story.js";
 import { getGalleryItems, initGalleryDeck, setGalleryItems, uploadPendingGallery } from "./gallery-deck.js";
 
 function field(label, input, hint) {
@@ -97,7 +98,7 @@ export async function renderEditor(ctx, productId) {
         el("div", { class: "erp-grid2" },
             field("Kategori", category),
             field("Harga (Rp) *", price),
-            field("Harga coret (Rp)", compareAt, "Label diskon muncul otomatis bila lebih tinggi dari harga."),
+            field("Harga coret (Rp)", compareAt, "Harga Jujur: harga coret hanya tampil di toko bila produk ini benar pernah dijual dengan harga itu dalam 30 hari terakhir. Contoh: ubah Harga 200.000 → 150.000, lalu isi harga coret 200.000."),
             el("div", { class: "erp-field" }, el("span", { text: "Stok" }), el("p", { class: "erp-muted", text: `${product.stock ?? 0} unit · diatur di Gudang & Stok` }))
         ),
         el("div", { class: "erp-grid2" },
@@ -262,10 +263,14 @@ export async function renderEditor(ctx, productId) {
                 await data.saveProductCodes(saved.id, codes);
             }
 
-            if (Object.keys(specInputs).length) {
+            // Spesifikasi industri + cerita produk (Cocok/Kurang Cocok, Jejak Asal) di satu baris.
+            const story = cleanStory(readStory());
+            if (Object.keys(specInputs).length || hasStory(story) || hasStory(savedAttrs.story)) {
                 submit.textContent = "Menyimpan spesifikasi…";
                 const raw = Object.fromEntries(Object.entries(specInputs).map(([k, input]) => [k, input.value]));
-                await saveAttributes(saved.id, cleanAttributes(getPlan().industry, raw), { demo: data.mode === "demo" });
+                const next = cleanAttributes(getPlan().industry, raw);
+                if (hasStory(story)) next.story = story;
+                await saveAttributes(saved.id, next, { demo: data.mode === "demo" });
             }
 
             toast(isNew ? "Produk ditambahkan." : "Perubahan disimpan.");
@@ -279,8 +284,9 @@ export async function renderEditor(ctx, productId) {
     // Paket industri (properti / emas): kolom spesifikasi khusus, disimpan terpisah.
     const industry = getPlan().industry;
     const specInputs = {};
+    const savedAttrs = isNew ? {} : (await loadAttributes()).get(String(product.id)) ?? {};
     if (industry !== "umum") {
-        const attrs = isNew ? {} : (await loadAttributes()).get(String(product.id)) ?? {};
+        const attrs = savedAttrs;
         const grid = el("div", { class: "erp-spec-grid" }, INDUSTRIES[industry].fields.map((f) => {
             let input;
             if (f.type === "select") {
@@ -301,6 +307,60 @@ export async function renderEditor(ctx, productId) {
         const actions = form.querySelector(".erp-form__actions") ?? form.lastElementChild;
         form.insertBefore(section, actions);
     }
+
+    // Cerita produk: Cocok & Kurang Cocok + Jejak Asal (tampil di halaman produk).
+    const story = savedAttrs.story ?? {};
+    const area = (name, value, placeholder) => {
+        const node = el("textarea", { name, rows: 3, maxlength: 300, placeholder });
+        node.value = (value ?? []).join("\n");
+        return node;
+    };
+    const fitInput = area("story_fit", story.fit, "Satu per baris, maks 4\nContoh: Kulit kering\nAcara formal");
+    const notFitInput = area("story_not_fit", story.notFit, "Satu per baris, maks 4\nContoh: Kulit berminyak");
+    const originInputs = {};
+    const originFields = ORIGIN_FIELDS.map((f) => {
+        const node = f.long
+            ? el("textarea", { name: `origin_${f.key}`, rows: 2, maxlength: 240, placeholder: f.placeholder })
+            : el("input", { name: `origin_${f.key}`, maxlength: 80, placeholder: f.placeholder });
+        node.value = story.origin?.[f.key] ?? "";
+        originInputs[f.key] = node;
+        return field(f.label, node);
+    });
+
+    // Ambil dari data pemasok ERP (nama + kota saja; kontak pemasok tidak ikut tampil).
+    const supplierPick = el("select", { "aria-label": "Ambil dari pemasok ERP" }, el("option", { value: "" }, "Ambil dari pemasok ERP…"));
+    supplierPick.hidden = true;
+    let suppliers = [];
+    Promise.resolve(data.listSuppliers?.()).then((list) => {
+        suppliers = (list ?? []).filter((s) => s.is_active !== false);
+        if (!suppliers.length) return;
+        suppliers.forEach((s) => supplierPick.append(el("option", { value: s.id }, s.name)));
+        supplierPick.hidden = false;
+    }).catch(() => { /* tanpa akses pembelian: isi manual */ });
+    supplierPick.addEventListener("change", () => {
+        const s = suppliers.find((x) => String(x.id) === supplierPick.value);
+        if (s) originInputs.supplier.value = supplierOrigin(s);
+    });
+
+    function readStory() {
+        return {
+            fit: fitInput.value,
+            notFit: notFitInput.value,
+            origin: Object.fromEntries(Object.entries(originInputs).map(([k, node]) => [k, node.value])),
+        };
+    }
+
+    form.insertBefore(el("section", { class: "erp-card" },
+        el("h2", { text: "Cocok & Kurang Cocok" }),
+        el("p", { class: "erp-muted" }, "Jujur menyebut untuk siapa produk ini cocok dan untuk siapa tidak. Kepercayaan jadi pembeda, bukan diskon. Kosongkan bila belum ada."),
+        el("div", { class: "erp-grid2" }, field("Cocok untuk", fitInput), field("Kurang cocok untuk", notFitInput))
+    ), form.lastElementChild);
+    form.insertBefore(el("section", { class: "erp-card" },
+        el("h2", { text: "Jejak Asal" }),
+        el("p", { class: "erp-muted" }, "Asal bahan & pembuatnya. Merek kecil bisa tampil sekelas merek mewah. Hanya isian yang diisi yang tampil di toko."),
+        supplierPick,
+        el("div", { class: "erp-grid2" }, originFields)
+    ), form.lastElementChild);
 
     page.appendChild(form);
 

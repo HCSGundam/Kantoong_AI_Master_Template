@@ -10,6 +10,7 @@
 
 import { CartConfig as CFG } from './cart-config.js';
 import { voucherDiscount } from '../erp/core/marketing.js';
+import { cleanReason } from './cart-reason.js';
 
 const CART_KEY = `kantoong:cart:v2:${CFG.business_id}`;
 const DRAFT_KEY = `kantoong:checkout:${CFG.business_id}`;
@@ -54,7 +55,9 @@ function sanitizeItems(list) {
             image_url: str(it.image_url, 500),
             category: str(it.category, 80),
             qty: clampQty(it.qty),
-            note: str(it.note, 300)
+            note: str(it.note, 300),
+            // Alasan pribadi (Keranjang yang Ingat Alasan): hanya di perangkat, tidak ikut pesanan.
+            reason: cleanReason(it.reason)
         }));
 }
 
@@ -162,7 +165,8 @@ export function addItem(product, qty = 1) {
             image_url: str(product.image_url, 500),
             category: str(product.category, 80),
             qty: clampQty(qty),
-            note: ''
+            note: '',
+            reason: null
         };
         items.push(it);
     }
@@ -191,6 +195,13 @@ export function setItemNote(id, note) {
     const it = items.find(i => i.id === String(id));
     if (!it) return;
     it.note = str(note, 300);
+    commitItems();
+}
+
+export function setItemReason(id, reason) {
+    const it = items.find(i => i.id === String(id));
+    if (!it) return;
+    it.reason = cleanReason(reason);
     commitItems();
 }
 

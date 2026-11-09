@@ -14,6 +14,7 @@
 
 import * as Cart from './cart-store.js';
 import * as Views from './views.js';
+import { shouldNudge, upcomingReminder } from './cart-reason.js';
 
 const host = document.querySelector('.mobile-container') || document.body;
 
@@ -173,9 +174,50 @@ updateBadge();
 // Event dari modul lain
 // ------------------------------------------------------------
 window.addEventListener('kantoong:cart-add', (e) => {
-    const item = Cart.addItem(e.detail?.product, e.detail?.qty || 1);
-    if (item) toast(`${item.name} masuk keranjang`);
+    const qty = e.detail?.qty || 1;
+    const item = Cart.addItem(e.detail?.product, qty);
+    if (!item) return;
+    // Barang baru tanpa alasan: tawarkan "Ingat alasannya" (opsional, tidak memaksa).
+    if (item.qty === qty && !item.reason) {
+        actionToast(`${item.name} masuk keranjang`, 'Ingat alasannya', () => { ctx.reasonFor = item.id; open('cart'); });
+    } else {
+        toast(`${item.name} masuk keranjang`);
+    }
 });
+
+// ------------------------------------------------------------
+// Pemberitahuan dengan satu tombol (hilang sendiri setelah 6 detik)
+// ------------------------------------------------------------
+let actionEl = null;
+function actionToast(text, label, onClick) {
+    toastEl?.remove();
+    actionEl?.remove();
+    const box = document.createElement('div');
+    box.className = 'cart-action-toast';
+    box.setAttribute('role', 'status');
+    const span = document.createElement('span');
+    span.textContent = text;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.addEventListener('click', () => { box.remove(); onClick(); });
+    box.append(span, btn);
+    host.appendChild(box);
+    actionEl = box;
+    setTimeout(() => box.classList.add('is-leaving'), 6000);
+    setTimeout(() => box.remove(), 6400);
+}
+
+// Pengingat lembut di dalam web (maks 1x sehari): barang beralasan bertanggal <= 3 hari lagi.
+const NUDGE_KEY = 'kantoong:cart-reason-nudge';
+setTimeout(() => {
+    try {
+        const soon = upcomingReminder(Cart.getItems(), Date.now(), { within: 3 });
+        if (!soon || !shouldNudge(localStorage.getItem(NUDGE_KEY))) return;
+        localStorage.setItem(NUDGE_KEY, new Date().toDateString());
+        actionToast(soon.message, 'Lihat keranjang', () => open('cart'));
+    } catch { /* penyimpanan diblokir */ }
+}, 2500);
 
 window.addEventListener('kantoong:cart-open', () => open('cart'));
 

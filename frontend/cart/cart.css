@@ -683,3 +683,121 @@
 .voucher-remove { min-height: 30px; margin: 0 0 8px auto; display: block; padding: 0 12px; color: inherit; background: transparent; text-decoration: underline; font-weight: 500; font-size: 13px; }
 .summary-voucher strong:last-child { color: #12633b; }
 .summary-voucher em { font-style: normal; opacity: .7; font-size: 12px; }
+
+/* ============================================================
+   KERANJANG YANG INGAT ALASAN (cart-reason.js)
+   ============================================================ */
+.cart-reason {
+    margin-top: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 5px 10px;
+    border: 1px solid var(--lux-gold-soft, #e8d6a6);
+    border-radius: 999px;
+    background: var(--c-soft);
+    color: var(--c-ink);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.cart-reason svg { flex: none; color: var(--lux-gold, #b8913f); }
+.cart-reason span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cart-reason-form {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--c-line);
+    border-radius: 16px;
+    background: var(--c-soft);
+}
+
+.cart-reason-form__title { margin: 0; font-size: 13.5px; font-weight: 600; }
+.cart-reason-form__title small { display: block; margin-top: 2px; color: var(--c-muted); font-size: 11.5px; font-weight: 400; }
+
+.cart-reason-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.cart-reason-chip {
+    padding: 6px 12px;
+    border: 1px solid var(--c-line);
+    border-radius: 999px;
+    background: var(--c-bg);
+    color: var(--c-ink);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.cart-reason-chip:hover { border-color: var(--lux-gold, #b8913f); }
+
+.cart-reason-text,
+.cart-reason-date input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--c-line);
+    border-radius: 12px;
+    background: var(--c-bg);
+    color: var(--c-ink);
+    font: inherit;
+    font-size: 14px;
+    color-scheme: light dark;
+}
+
+.cart-reason-date { display: grid; gap: 4px; font-size: 12px; color: var(--c-muted); }
+
+.cart-reason-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.cart-reason-actions .cart-btn { width: auto; margin: 0; padding: 9px 18px; }
+
+.cart-reason-alert { display: flex; align-items: flex-start; gap: 8px; }
+.cart-reason-alert svg { flex: none; margin-top: 2px; color: var(--lux-gold, #b8913f); }
+
+/* Pemberitahuan dengan tombol (dipasang di luar .cart-page) */
+.cart-action-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(110px + var(--safe-bottom, 0px));
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    max-width: min(92vw, 460px);
+    padding: 10px 10px 10px 16px;
+    border-radius: 16px;
+    background: var(--text-primary, #16130e);
+    color: var(--surface, #fffdf8);
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 18px 40px -16px rgb(0 0 0 / 45%);
+    transform: translateX(-50%);
+    animation: cart-action-in .35s cubic-bezier(.2, .8, .2, 1);
+    transition: opacity .3s ease, transform .3s ease;
+}
+
+.cart-action-toast.is-leaving { opacity: 0; transform: translate(-50%, 8px); }
+
+.cart-action-toast button {
+    flex: none;
+    padding: 7px 12px;
+    border: 1px solid var(--lux-gold-soft, #e8d6a6);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--lux-gold-soft, #e8d6a6);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+@keyframes cart-action-in {
+    from { opacity: 0; transform: translate(-50%, 10px); }
+}
+
+/* Mode gelap: tombol tinta jadi terang, tulisannya ikut gelap agar terbaca */
+:root[data-theme="dark"] .cart-cta,
+:root[data-theme="dark"] .cart-btn:not(.ghost) { color: var(--bg-main, #0e0d0b); }
+:root[data-theme="dark"] .cart-cta.is-loading::after { border-top-color: var(--bg-main, #0e0d0b); }

@@ -16,6 +16,7 @@ import { CartConfig as CFG } from './cart-config.js';
 import * as Cart from './cart-store.js';
 import { rupiah } from './cart-store.js';
 import * as API from './order-api.js';
+import { REASON_PRESETS, reasonLabel, upcomingReminder } from './cart-reason.js';
 
 // ------------------------------------------------------------
 // Helper & ikon
@@ -30,7 +31,8 @@ const ICON = {
     trash: svg('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>'),
     note: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>', 14),
     bag: svg('<path d="M5 8h14l-1.2 12H6.2L5 8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>', 56, 'stroke-width="1.6"'),
-    check: svg('<polyline points="20 6 9 17 4 12"/>', 34, 'stroke-width="3"')
+    check: svg('<polyline points="20 6 9 17 4 12"/>', 34, 'stroke-width="3"'),
+    spark: svg('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>', 14)
 };
 
 const thumb = (it) => it.image_url
@@ -45,6 +47,26 @@ const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { deta
 export function renderCartView(ctx) {
     const { body, footer } = ctx;
     let editingNote = null; // id barang yang kolom catatannya sedang dibuka
+    let editingReason = ctx.reasonFor ?? null; // id barang yang alasannya sedang ditulis
+    ctx.reasonFor = null;
+
+    // Keranjang yang Ingat Alasan: hanya di perangkat ini, tidak dikirim ke penjual.
+    const reasonForm = (it) => {
+        const id = esc(it.id);
+        const r = it.reason || {};
+        return `
+            <div class="cart-reason-form" data-id="${id}">
+                <p class="cart-reason-form__title">Untuk apa barang ini? <small>Hanya kamu yang melihat, tidak dikirim ke penjual.</small></p>
+                <div class="cart-reason-chips">${REASON_PRESETS.map(t =>
+                    `<button type="button" class="cart-reason-chip" data-act="reason-preset" data-id="${id}" data-text="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+                <input class="cart-reason-text" maxlength="80" value="${esc(r.text)}" placeholder="Contoh: kado ultah Mama" aria-label="Alasan">
+                <label class="cart-reason-date"><span>Tanggal (opsional)</span><input type="date" value="${esc(r.date)}" aria-label="Tanggal"></label>
+                <div class="cart-reason-actions">
+                    ${it.reason ? `<button type="button" class="cart-btn ghost" data-act="reason-clear" data-id="${id}">Hapus alasan</button>` : ''}
+                    <button type="button" class="cart-btn" data-act="reason-save" data-id="${id}">Simpan</button>
+                </div>
+            </div>`;
+    };
 
     const itemHtml = (it) => {
         const gone = ctx.missing.has(it.id);
@@ -58,7 +80,11 @@ export function renderCartView(ctx) {
                 <div class="cart-item-price">${rupiah(it.price)}</div>
                 ${gone ? '<p class="field-error">Produk ini sudah tidak tersedia. Hapus dari keranjang.</p>' : ''}
                 ${showNote ? '' : `<button class="cart-item-note-toggle" data-act="note" data-id="${id}">${ICON.note} Tulis catatan</button>`}
+                ${editingReason === it.id ? '' : it.reason
+                    ? `<button class="cart-reason" data-act="reason" data-id="${id}" aria-label="Ubah alasan">${ICON.spark}<span>${esc(reasonLabel(it.reason))}</span></button>`
+                    : `<button class="cart-item-note-toggle" data-act="reason" data-id="${id}">${ICON.spark} Ingat alasannya</button>`}
             </div>
+            ${editingReason === it.id ? reasonForm(it) : ''}
             ${showNote ? `<textarea class="cart-item-note" data-id="${id}" rows="2" maxlength="300"
                 placeholder="Contoh: warna hitam, tolong dibungkus rapi" aria-label="Catatan untuk ${esc(it.name)}">${esc(it.note)}</textarea>` : ''}
             <div class="cart-item-actions">
@@ -91,8 +117,10 @@ export function renderCartView(ctx) {
         }
 
         const gone = items.filter(it => ctx.missing.has(it.id));
+        const soon = upcomingReminder(items);
         body.innerHTML = `
             ${gone.length ? '<div class="cart-alert">Ada barang yang sudah tidak tersedia. Hapus dulu untuk melanjutkan.</div>' : ''}
+            ${soon ? `<div class="cart-alert is-info cart-reason-alert">${ICON.spark}<span>${esc(soon.message)}</span></div>` : ''}
             <section class="cart-section">${items.map(itemHtml).join('')}</section>`;
 
         footer.hidden = false;
@@ -113,6 +141,25 @@ export function renderCartView(ctx) {
                 editingNote = id; draw();
                 body.querySelector(`.cart-item-note[data-id="${CSS.escape(id)}"]`)?.focus();
                 break;
+            case 'reason':
+                editingReason = id; draw();
+                body.querySelector(`.cart-reason-form[data-id="${CSS.escape(id)}"] .cart-reason-text`)?.focus();
+                break;
+            case 'reason-preset': {
+                const input = el.closest('.cart-reason-form')?.querySelector('.cart-reason-text');
+                if (input) { input.value = el.dataset.text; input.focus(); }
+                break;
+            }
+            case 'reason-save': {
+                const form = el.closest('.cart-reason-form');
+                Cart.setItemReason(id, {
+                    text: form?.querySelector('.cart-reason-text')?.value,
+                    date: form?.querySelector('.cart-reason-date input')?.value
+                });
+                editingReason = null; draw();
+                break;
+            }
+            case 'reason-clear': Cart.setItemReason(id, null); editingReason = null; draw(); break;
             case 'consult': ctx.close(); emit('kantoong:consult', { text: '' }); break;
             case 'last-order': { const r = API.getLastOrder(); if (r) ctx.go('success', r); break; }
         }

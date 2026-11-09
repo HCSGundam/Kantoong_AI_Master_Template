@@ -129,10 +129,15 @@ export function bigPrice(value) {
  */
 export function enrichProducts(products, attrsById, { industry = "umum", gold = null } = {}) {
     const ind = industryOf(industry);
-    if (ind === "umum") return products;
+    const attrsOf = (p) => attrsById?.get?.(String(p.id)) ?? attrsById?.[String(p.id)] ?? {};
+    if (ind === "umum") {
+        // Industri umum: hanya cerita produk (Cocok/Kurang Cocok, Jejak Asal) bila ada.
+        if (!attrsById || (attrsById instanceof Map ? !attrsById.size : !Object.keys(attrsById).length)) return products;
+        return (products ?? []).map((p) => (attrsOf(p).story ? { ...p, story: attrsOf(p).story } : p));
+    }
     return (products ?? []).map((p) => {
-        const attrs = attrsById?.get?.(String(p.id)) ?? attrsById?.[String(p.id)] ?? {};
-        const next = { ...p, attributes: attrs, spec_line: cardLine(ind, attrs) };
+        const attrs = attrsOf(p);
+        const next = { ...p, attributes: attrs, spec_line: cardLine(ind, attrs), story: attrs.story ?? null };
         if (ind === "emas") {
             const price = goldPrice(attrs, gold);
             if (price) {
