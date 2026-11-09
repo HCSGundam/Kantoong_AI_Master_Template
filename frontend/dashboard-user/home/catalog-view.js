@@ -19,6 +19,7 @@ import { applyChip, chipLabel, chipsFor, orderedCategories } from "../../js/stor
 import { productImage, rupiah } from "./home-data.js";
 import { getPlan } from "../../js/plan.js";
 import { bigPrice } from "../../js/industry.js";
+import { addHistory, readHistory, removeHistory, writeHistory } from "../../js/catalog-url.js";
 
 const FILTER_ICON = ["M4 7h10", "M18 7h2", "M4 17h4", "M12 17h8", "M16 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z", "M10 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"];
 
@@ -175,7 +176,12 @@ export function renderCatalog(root, options) {
     let products = options.products ?? [];
     let settings = options.settings;
     const st = options.state ?? { query: "", global: { ...blankFilter(), category: "all" }, perCat: {} };
-    const onOpen = options.onOpenProduct;
+    // Membuka produk dari hasil pencarian = kata itu masuk riwayat (hanya di perangkat ini).
+    const onOpen = (p) => {
+        rememberQuery(st.query);
+        options.onOpenProduct?.(p);
+    };
+    const rememberQuery = (q) => writeHistory(addHistory(readHistory(), q));
     const sheetHost = options.sheetHost;
 
     const input = document.createElement("input");
@@ -213,9 +219,22 @@ export function renderCatalog(root, options) {
             st.global = { ...blankFilter(), category: "all" };
             draw();
         });
+        // Salin link: saringan yang sama bisa dibagikan / dibuka lagi.
+        const share = options.shareLink ? el("button", "bx-chip", icon("link"), "Salin link") : null;
+        share?.setAttribute("type", "button");
+        share?.addEventListener("click", async () => {
+            const url = options.shareLink(st);
+            try {
+                await navigator.clipboard.writeText(url);
+                share.lastChild.textContent = "Link tersalin";
+            } catch {
+                window.prompt("Salin link ini:", url);
+            }
+            setTimeout(() => { if (share.isConnected) share.lastChild.textContent = "Salin link"; }, 1800);
+        });
         const head = el("div", "bx-cat2__summary",
             el("p", "bx-cat__summary", ...[el("strong", "", `${result.items.length} produk`), info ? ` · ${info}` : ""].filter(Boolean)),
-            clear);
+            el("div", "bx-cat2__actions", share, clear));
         if (!result.items.length) {
             return [head, el("div", "bx-empty", el("span", "bx-empty__icon", icon("search", "bx-icon bx-icon--xl")), el("h3", "", "Belum ketemu yang pas"), el("p", "", "Coba kata lain atau longgarkan saringan. Asisten juga bisa carikan yang paling mirip."))];
         }
@@ -265,7 +284,7 @@ export function renderCatalog(root, options) {
         return sec;
     }
 
-    function draw() {
+    function drawView() {
         const active = st.query.trim() || isFilterActive(st.global) || (st.global.category && st.global.category !== "all");
         const count = [st.global.sort !== "relevan", st.global.band !== "all", st.global.discount, st.global.inStock, st.global.rating4, st.global.category && st.global.category !== "all"].filter(Boolean).length;
         const badge = filterBtn.querySelector(".bx-square__badge");
@@ -287,6 +306,12 @@ export function renderCatalog(root, options) {
         content.replaceChildren(...cats().map(section));
     }
 
+    // Setiap gambar ulang: kabari pemilik (alamat link ikut berubah).
+    function draw() {
+        drawView();
+        options.onStateChange?.(st);
+    }
+
     filterBtn.addEventListener("click", () => openFilterSheet({
         title: "Saring semua produk",
         subtitle: "Berlaku untuk seluruh katalog",
@@ -299,9 +324,55 @@ export function renderCatalog(root, options) {
         },
     }));
 
+    // Riwayat pencarian: muncul saat kotak cari diketuk & masih kosong.
+    function showHistory() {
+        const list = readHistory();
+        if (input.value.trim() || !list.length) return;
+        const rows = list.map((q) => {
+            const b = el("button", "", el("span", "bx-suggest__kind", "terakhir"), q);
+            b.type = "button";
+            b.addEventListener("mousedown", (event) => event.preventDefault());
+            b.addEventListener("click", () => {
+                st.query = q;
+                input.value = q;
+                suggestBox.hidden = true;
+                rememberQuery(q);
+                draw();
+            });
+            const x = el("button", "bx-suggest__remove", icon("close"));
+            x.type = "button";
+            x.setAttribute("aria-label", `Hapus "${q}" dari riwayat`);
+            x.addEventListener("mousedown", (event) => event.preventDefault());
+            x.addEventListener("click", () => {
+                writeHistory(removeHistory(readHistory(), q));
+                showHistory();
+                if (!readHistory().length) suggestBox.hidden = true;
+            });
+            return el("li", "bx-suggest__row", b, x);
+        });
+        const clearAll = el("button", "bx-suggest__clear", "Hapus semua riwayat");
+        clearAll.type = "button";
+        clearAll.addEventListener("mousedown", (event) => event.preventDefault());
+        clearAll.addEventListener("click", () => {
+            writeHistory([]);
+            suggestBox.hidden = true;
+        });
+        suggestBox.replaceChildren(el("li", "bx-suggest__head", el("span", "", "Pencarian terakhir · hanya di perangkat ini"), clearAll), ...rows);
+        suggestBox.hidden = false;
+    }
+    input.addEventListener("focus", showHistory);
+
     let timer = 0;
     input.addEventListener("input", () => {
         clearTimeout(timer);
+        if (!input.value.trim()) {
+            showHistory();
+            timer = setTimeout(() => {
+                st.query = "";
+                draw();
+            }, 160);
+            return;
+        }
         const list = suggest(products, input.value);
         suggestBox.replaceChildren(...list.map((s) => {
             const b = el("button", "", el("span", "bx-suggest__kind", s.kind), s.label);
@@ -315,6 +386,7 @@ export function renderCatalog(root, options) {
                 } else {
                     st.query = s.label;
                     input.value = s.label;
+                    rememberQuery(s.label);
                 }
                 suggestBox.hidden = true;
                 draw();
@@ -332,6 +404,7 @@ export function renderCatalog(root, options) {
         if (event.key === "Enter") {
             suggestBox.hidden = true;
             st.query = input.value;
+            rememberQuery(st.query);
             draw();
         }
     });

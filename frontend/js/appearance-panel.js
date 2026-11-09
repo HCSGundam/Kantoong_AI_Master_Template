@@ -8,6 +8,7 @@
 
 import { AREAS, CHOICES, readPrefs, savePrefs } from "./theme.js";
 import { CHAT_SKINS, DEFAULT_FONT, FONTS, previewCss, readPersonal, savePersonal } from "./personalize.js";
+import { LANGUAGES, activeLang, openLanguagePicker } from "./i18n.js";
 import "../css/appearance.css";
 
 function el(tag, className, ...children) {
@@ -139,16 +140,92 @@ function fontSection(say) {
     return el("div", "ap-stack", current, el("div", "ap-fontbar", search), chips, grid);
 }
 
-/** Pasang panel ke `root`. */
-export function renderAppearance(root) {
+/* ---------- Lapisan pop-up (bertumpuk di atas panel/halaman) ---------- */
+
+let layers = 0;
+
+/** Buka satu pilihan sebagai lapisan baru di atas yang sudah terbuka. */
+function openLayer(title, hint, build, onClose) {
     const status = el("p", "ap-status");
     status.setAttribute("role", "status");
     const say = (text) => (status.textContent = text);
-    root.replaceChildren(el("div", "ap",
-        el("section", "ap-section", el("h3", "ap-h", "Tema"), el("p", "ap-hint", "Gelap, terang, atau ikuti perangkat — untuk semua halaman atau per halaman."), themeSection(say)),
-        el("section", "ap-section", el("h3", "ap-h", "Warna kotak chat"), el("p", "ap-hint", "Untuk kotak konsultasi AI (tertutup maupun saat dibuka)."), chatSection(say)),
-        el("section", "ap-section", el("h3", "ap-h", "Font"), el("p", "ap-hint", "50 pilihan. Berlaku di toko, dashboard, ERP & kasir — hanya di browser ini; pengguna lain tidak terpengaruh."), fontSection(say)),
-        status));
+    const sheet = el("div", "ap-sheet ap-sheet--layer");
+    sheet.setAttribute("role", "dialog");
+    sheet.setAttribute("aria-modal", "true");
+    sheet.setAttribute("aria-label", title);
+    layers += 1;
+    sheet.style.zIndex = String(1400 + layers * 10);
+    const lastFocus = document.activeElement;
+    const shut = () => {
+        sheet.classList.remove("is-open");
+        document.removeEventListener("keydown", onKey, true);
+        layers = Math.max(0, layers - 1);
+        setTimeout(() => sheet.remove(), 240);
+        onClose?.();
+        lastFocus?.focus?.({ preventScroll: true });
+    };
+    const onKey = (event) => {
+        if (event.key === "Escape") {
+            event.stopPropagation();
+            shut();
+        }
+    };
+    const back = btn("ap-sheet__back", "‹", shut);
+    back.setAttribute("aria-label", "Kembali");
+    sheet.append(el("div", "ap-sheet__panel ap-sheet__panel--layer",
+        el("div", "ap-grab"),
+        el("header", "ap-sheet__head ap-sheet__head--layer", back,
+            el("div", "ap-sheet__titles", el("h2", "", title), hint ? el("p", "ap-hint", hint) : null)),
+        el("div", "ap-sheet__body ap", build(say), status)));
+    sheet.addEventListener("click", (event) => {
+        if (event.target === sheet) shut();
+    });
+    document.addEventListener("keydown", onKey, true);
+    document.body.appendChild(sheet);
+    requestAnimationFrame(() => sheet.classList.add("is-open"));
+    back.focus({ preventScroll: true });
+}
+
+const ROW_ICONS = {
+    lang: ["M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", "M3 12h18", "M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"],
+    theme: ["M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"],
+    chat: ["M4 5h16v11H8l-4 4z"],
+    font: ["M5 19L11 5h2l6 14", "M8 13h8"],
+};
+
+function rowIcon(paths) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    paths.forEach((d) => {
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("d", d);
+        svg.append(p);
+    });
+    return el("span", "ap-item__icon", svg);
+}
+
+/** Pasang panel ke `root`: menu ringkas, tiap pilihan dibuka sebagai lapisan pop-up. */
+export function renderAppearance(root) {
+    const draw = () => {
+        const prefs = readPrefs();
+        const theme = prefs.mode === "all" ? (CHOICES.find((c) => c.id === prefs.all)?.label ?? "") : "Per halaman";
+        const chat = CHAT_SKINS.find((c) => c.id === readPersonal().chatSkin)?.label ?? "";
+        const lang = LANGUAGES.find((l) => l.id === activeLang());
+        const row = (key, title, value, onClick) => btn("ap-item", [
+            rowIcon(ROW_ICONS[key]),
+            el("span", "ap-item__text", el("strong", "", title), el("small", "", value)),
+            el("span", "ap-item__chevron", "›"),
+        ], onClick);
+        root.replaceChildren(el("div", "ap ap--menu",
+            el("div", "ap-list",
+                row("lang", "Bahasa", lang?.label ?? "Bahasa Indonesia", () => openLanguagePicker()),
+                row("theme", "Tema", theme, () => openLayer("Tema", "Gelap, terang, atau ikuti perangkat — untuk semua halaman atau per halaman.", themeSection, draw)),
+                row("chat", "Warna kotak chat", chat, () => openLayer("Warna kotak chat", "Untuk kotak konsultasi AI (tertutup maupun saat dibuka).", chatSection, draw)),
+                row("font", "Font", readPersonal().font, () => openLayer("Font", "50 pilihan. Berlaku di toko, dashboard, ERP & kasir — hanya di browser ini.", fontSection, draw))),
+            el("p", "ap-hint ap-note", "Semua pilihan hanya berlaku di browser ini. Pengguna lain tidak terpengaruh.")));
+    };
+    draw();
 }
 
 /** Buka panel sebagai lembar pop-up (dipakai ERP). */
@@ -166,9 +243,9 @@ export function openAppearanceSheet() {
         setTimeout(() => sheet.remove(), 240);
     };
     const onKey = (event) => {
-        if (event.key === "Escape") shut();
+        if (event.key === "Escape" && !document.querySelector(".ap-sheet--layer, .kc-lang")) shut();
     };
-    sheet.append(el("div", "ap-sheet__panel", el("header", "ap-sheet__head", el("h2", "", "Tampilan"), close), body));
+    sheet.append(el("div", "ap-sheet__panel ap-sheet__panel--menu", el("header", "ap-sheet__head", el("h2", "", "Tampilan"), close), body));
     sheet.addEventListener("click", (event) => {
         if (event.target === sheet) shut();
     });

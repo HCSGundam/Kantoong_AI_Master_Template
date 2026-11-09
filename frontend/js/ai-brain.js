@@ -1461,6 +1461,8 @@ async function requestRemoteAI(message, requestId) {
 
             body: JSON.stringify({
                 business_id: AI_CONFIG.businessId,
+                // Bahasa pilihan pengunjung (js/i18n.js): AI menjawab dalam bahasa ini.
+                lang: (() => { try { return localStorage.getItem("kantoong:lang") || "id"; } catch { return "id"; } })(),
                 message,
                 history: buildAPIHistory(),
 

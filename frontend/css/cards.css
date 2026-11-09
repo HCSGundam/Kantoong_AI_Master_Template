@@ -1,0 +1,145 @@
+/* ============================================================
+   KANTOONG — ATURAN KARTU PRODUK (dimuat PALING AKHIR di toko)
+   Harga = bintang utama: besar, satu baris, tidak pernah patah.
+   Info kecil (rating, terjual, tiba, asal kota) satu baris & dipotong "…".
+   Berlaku: etalase, rel homepage, katalog, popup, kartu mini & kartu chat.
+   ============================================================ */
+
+/* ---------- Harga ---------- */
+#appRoot .product-card .product-price,
+#appRoot .product-buy .product-price,
+#appRoot .pdp-mini__price,
+.kc-pin__price,
+.ai-product-card__price {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+}
+
+#appRoot .product-card .product-buy .product-price {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 6px;
+    row-gap: 0;
+    min-width: 0;
+    margin: 0;
+    color: var(--text-primary, #16130e);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+/* Harga coret kecil di sebelah/bawah harga, tapi harga tetap utuh. */
+#appRoot .product-card .product-price__was {
+    color: var(--text-muted, #7b7365);
+    font-size: 11px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+#appRoot .product-card .product-buy {
+    padding-top: 8px;
+}
+
+@media (min-width: 900px) {
+    /* Desktop: TIDAK lagi berbagi baris dengan info kirim (dulu harga terdesak & patah). */
+    #appRoot .product-card .product-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #appRoot .product-card .product-buy,
+    #appRoot .product-card .product-ship {
+        align-self: stretch;
+    }
+
+    #appRoot .product-card .product-buy {
+        margin-top: auto;
+    }
+
+    #appRoot .product-card .product-buy .product-price {
+        flex-direction: row;
+        font-size: 19px;
+    }
+
+    #appRoot .product-card .product-ship {
+        display: flex;
+        margin-top: 8px;
+        padding-top: 7px;
+        border-top: 1px solid var(--line, #ececec);
+    }
+
+    #appRoot .product-card .product-ship > * + * {
+        margin-left: 6px;
+        padding-left: 6px;
+        border-left: 1px solid var(--line, #e5e5e5);
+    }
+}
+
+/* ---------- Info kecil: satu baris, dipotong rapi ---------- */
+#appRoot .product-card .product-meta {
+    display: flex;
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+#appRoot .product-card .product-meta.is-new .product-rating {
+    color: var(--lux-gold, #b8913f);
+    font-weight: 500;
+}
+
+#appRoot .product-card .product-ship {
+    min-width: 0;
+    font-size: 11px;
+}
+
+#appRoot .product-card .product-ship__eta {
+    flex: none;
+}
+
+#appRoot .product-card .product-ship__from {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
+
+#appRoot .product-card .product-ship__text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#appRoot .product-card .product-icon {
+    flex: none;
+}
+
+/* Kartu 2 kolom di HP: harga tetap besar, info kecil cukup 10.5px. */
+@media (max-width: 640px) {
+    #appRoot .product-card .product-buy .product-price { font-size: 16px; }
+    #appRoot .catalog-grid .product-card .product-meta,
+    #appRoot .catalog-grid .product-card .product-ship { font-size: 10.5px; }
+}
+
+/* ---------- Kartu lain ikut aturan yang sama ---------- */
+#appRoot .pdp-mini__price {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+#appRoot .pdp-mini__meta,
+#appRoot .pdp-mini__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kc-pin__price {
+    font-size: 15px;
+    font-weight: 600;
+}

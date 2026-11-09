@@ -74,8 +74,27 @@ describe("pemeriksa kode: aturan keamanan tidak boleh mundur", () => {
         expect(offenders).toEqual([]);
     });
 
-    it("library Supabase dimuat dengan versi terkunci", () => {
-        expect(readFileSync(join(root, "js/supabase-client.js"), "utf8")).toMatch(/supabase-js@\d+\.\d+\.\d+\/\+esm/);
+    it("library Supabase DIBUNDEL (bukan CDN luar) dengan versi terkunci & sudah ditambal", () => {
+        const client = readFileSync(join(root, "js/supabase-client.js"), "utf8");
+        expect(client).toMatch(/from ['"]@supabase\/supabase-js['"]/);
+        expect(client).not.toMatch(/cdn\.jsdelivr|unpkg|esm\.sh/);
+        const pkg = JSON.parse(readFileSync(join(root, "../package.json"), "utf8"));
+        const version = pkg.dependencies?.["@supabase/supabase-js"] ?? "";
+        expect(version).toMatch(/^\d+\.\d+\.\d+$/); // tanpa ^ atau ~: tidak ikut naik diam-diam
+        const [major, minor] = version.split(".").map(Number);
+        expect(major > 2 || (major === 2 && minor >= 50)).toBe(true); // < 2.50 punya celah auth-js (GHSA-8r88-6cj9-9fh5)
+    });
+
+    it("tidak ada skrip pihak ketiga selain login Google (CSP di semua halaman)", () => {
+        ["index.html", "info.html", "dashboard-user/dashboard-user.html", "auth/reset-password.html", "erp/erp.html"].forEach((page) => {
+            const html = readFileSync(join(root, page), "utf8");
+            expect(html, page).toContain("Content-Security-Policy");
+            expect(html, page).not.toMatch(/script-src[^;"]*(unsafe-inline|unsafe-eval|cdn\.jsdelivr)/);
+        });
+        const headers = readFileSync(join(root, "public/_headers"), "utf8");
+        expect(headers).toContain("X-Frame-Options: SAMEORIGIN");
+        expect(headers).toContain("frame-ancestors 'self'");
+        expect(headers).toContain("Strict-Transport-Security");
     });
 
     it("SQL pengamanan menutup fungsi internal & harga modal", () => {

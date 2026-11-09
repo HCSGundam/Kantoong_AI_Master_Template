@@ -1,1 +1,0 @@
-import{createClient as s}from"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";const t="https://bkhsmyabckdpxmboopar.supabase.co",o="sb_publishable_Ji7xZwTFB-llGC533Xe4Mg_pqhPCn8t",a=s(t,o);export{a as supabase};

@@ -38,6 +38,7 @@ import {
   loadPriceHistory,
 } from "./pdp-extras.js";
 import { POLICY_PAGES, whatsappLink } from "./storefront-settings.js";
+import { CATALOG_PARAM, mergeCatalogParams, stripCatalogParams } from "./catalog-url.js";
 import {
   clampQty,
   priceSaving,
@@ -515,6 +516,10 @@ function closeDashboard() {
 
   state.dashboardOpen = false;
   setPageVisibilityForDashboard(false);
+  // Katalog ditutup: link kembali bersih.
+  if (new URLSearchParams(location.search).has(CATALOG_PARAM)) {
+    history.replaceState(history.state, "", `${location.pathname}${stripCatalogParams(location.search)}${location.hash}`);
+  }
 
   emit("dashboard-closed", {
     tenant: state.activeTenant,
@@ -572,6 +577,14 @@ window.addEventListener("message", (event) => {
     case "kantoong:dashboard-close-request":
       closeDashboard();
       break;
+
+    // Katalog di dashboard: saringan ditulis ke alamat toko (?katalog=1&cari=…).
+    case "kantoong:catalog-state": {
+      const params = new URLSearchParams(String(message.params ?? "").slice(0, 600));
+      if (params.get(CATALOG_PARAM) !== "1") break;
+      history.replaceState(history.state, "", `${location.pathname}${mergeCatalogParams(location.search, params)}${location.hash}`);
+      break;
+    }
 
     // Dari Dashboard User: buka produk / keranjang / asisten di toko.
     case "kantoong:open-product": {
@@ -1551,30 +1564,23 @@ function createProductMeta(product) {
   const reviews = toNumber(product?.review_count ?? product?.reviews_count, 0);
   const sold = toNumber(product?.sales_count ?? product?.sold_count, 0);
 
-  const ratingEl = makeElement("span", "product-rating");
+  const meta = makeElement("div", "product-meta");
 
+  // Tanpa ikon membingungkan: "★ 4,8 (12) · 5rb+ terjual" atau "Produk baru".
   if (rating > 0) {
+    const ratingEl = makeElement("span", "product-rating");
     ratingEl.append(
       makeElement("span", "product-rating__star", "★"),
       makeElement("strong", "", rating.toFixed(1).replace(".", ",")),
       document.createTextNode(reviews > 0 ? ` (${formatSocialCount(reviews)})` : "")
     );
-  } else {
-    ratingEl.classList.add("is-empty");
-    ratingEl.append(
-      makeElement("span", "product-rating__star", "★"),
-      document.createTextNode("Baru")
-    );
+    meta.appendChild(ratingEl);
   }
-
-  const soldEl = makeElement("span", "product-sold");
-  soldEl.append(
-    makeIcon("product-icon", ICONS.bag),
-    document.createTextNode(`${formatSocialCount(sold)} terjual`)
-  );
-
-  const meta = makeElement("div", "product-meta");
-  meta.append(ratingEl, soldEl);
+  if (sold > 0) meta.appendChild(makeElement("span", "product-sold", `${formatSocialCount(sold)} terjual`));
+  if (!meta.childElementCount) {
+    meta.classList.add("is-new");
+    meta.appendChild(makeElement("span", "product-rating is-empty", "Produk baru"));
+  }
   return meta;
 }
 
@@ -1593,11 +1599,15 @@ function createProductShipping(product) {
     escapeText(CFG?.shipping?.from) ||
     "Indonesia";
 
-  const estimateEl = makeElement("span", "product-ship__item");
-  estimateEl.append(makeIcon("product-icon", ICONS.truck), document.createTextNode(estimate));
+  // Label jelas (bukan ikon saja): "Tiba ±3 hari" · "Dari Sumbersari, Band…".
+  const hasEstimate = Boolean(escapeText(product?.ship_estimate) || escapeText(CFG?.shipping?.estimate));
+  const estimateEl = makeElement("span", "product-ship__item product-ship__eta");
+  estimateEl.append(makeIcon("product-icon", ICONS.truck), document.createTextNode(hasEstimate ? `Tiba ${estimate}` : estimate));
+  estimateEl.title = hasEstimate ? `Perkiraan tiba ${estimate}` : "Ongkir dihitung saat checkout";
 
-  const fromEl = makeElement("span", "product-ship__item");
-  fromEl.append(makeIcon("product-icon", ICONS.pin), document.createTextNode(from));
+  const fromEl = makeElement("span", "product-ship__item product-ship__from");
+  fromEl.append(makeIcon("product-icon", ICONS.pin), makeElement("span", "product-ship__text", `Dari ${from}`));
+  fromEl.title = `Dikirim dari ${from}`;
 
   const row = makeElement("div", "product-ship");
   row.append(estimateEl, fromEl);
@@ -4739,6 +4749,16 @@ async function initKantoongEngine() {
 
     // Tautan langsung ke halaman produk (#produk/<id>) setelah data siap.
     syncProductRoute();
+
+    // Link katalog (?katalog=1&cari=…): buka Dashboard › Katalog Produk dengan saringan yang sama.
+    if (new URLSearchParams(location.search).get(CATALOG_PARAM) === "1") {
+      try {
+        sessionStorage.setItem("kantoong:catalog-url", location.search.slice(1, 600));
+      } catch {
+        /* penyimpanan diblokir: katalog tetap terbuka tanpa saringan */
+      }
+      openDashboardFeature("product-catalog");
+    }
 
     emit("engine-ready", {
       version: ENGINE_VERSION,

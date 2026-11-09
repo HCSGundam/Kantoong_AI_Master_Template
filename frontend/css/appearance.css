@@ -370,3 +370,103 @@
     padding: 6px 22px 24px;
     overflow-y: auto;
 }
+
+/* =========================================================
+   MENU RINGKAS + LAPISAN POP-UP (bukan daftar panjang ke bawah)
+   ========================================================= */
+.ap--menu { gap: 12px; }
+
+.ap-list {
+    display: grid;
+    overflow: hidden;
+    background: var(--ap-card);
+    border: 1px solid var(--ap-line);
+    border-radius: 22px;
+}
+
+.ap-item {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    color: var(--ap-text);
+    text-align: left;
+    background: none;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+    transition: background 160ms ease;
+}
+
+.ap-item + .ap-item { border-top: 1px solid var(--ap-line); }
+.ap-item:hover,
+.ap-item:focus-visible { background: var(--ap-soft); outline: none; }
+
+.ap-item__icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    color: var(--ap-gold);
+    background: var(--ap-soft);
+    border-radius: 14px;
+}
+
+.ap-item__icon svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ap-item__text { display: grid; gap: 2px; min-width: 0; }
+.ap-item__text strong { font-size: 14.5px; font-weight: 500; }
+.ap-item__text small {
+    overflow: hidden;
+    color: var(--ap-muted);
+    font-size: 12.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ap-item__chevron { color: var(--ap-muted); font-size: 22px; line-height: 1; }
+.ap-note { margin: 0; text-align: center; }
+
+.ap-sheet__panel--menu { width: min(480px, 100%); }
+.ap-sheet--layer.is-open { background: rgb(8 7 5 / 35%); }
+.ap-sheet__panel--layer { width: min(640px, 100%); max-height: min(86vh, 860px); }
+
+.ap-grab {
+    width: 40px;
+    height: 4px;
+    margin: 10px auto 0;
+    background: var(--ap-line);
+    border-radius: 4px;
+}
+
+@media (min-width: 760px) {
+    .ap-grab { display: none; }
+}
+
+.ap-sheet__head--layer { justify-content: flex-start; gap: 12px; }
+.ap-sheet__titles { min-width: 0; }
+.ap-sheet__titles h2 { margin: 0; font-size: 20px; font-weight: 500; }
+.ap-sheet__titles .ap-hint { margin: 2px 0 0; }
+
+.ap-sheet__back {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    color: var(--ap-text);
+    background: var(--ap-card);
+    border: 1px solid var(--ap-line);
+    border-radius: 50%;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}

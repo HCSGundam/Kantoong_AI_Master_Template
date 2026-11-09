@@ -2,6 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <!-- Pagar keamanan (CSP): hanya skrip dari web ini + login Google. Lihat docs/KEAMANAN.md -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com/gsi/ ws://localhost:* ws://127.0.0.1:*; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 
     <meta
         name="viewport"
@@ -69,13 +71,13 @@
 
 
     <!-- Asisten AI (sama dengan toko & ERP): mulai sebagai orb, tahu fitur yang sedang dibuka -->
-  <script type="module" crossorigin src="/assets/dashboardUser-CBMfPLCW.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="modulepreload" crossorigin href="/assets/theme-BJsjxonE.js">
-  <link rel="modulepreload" crossorigin href="/assets/supabase-client-BtPJjuZk.js">
-  <link rel="modulepreload" crossorigin href="/assets/kantoong-assistant-DlzT3mVn.js">
-  <link rel="modulepreload" crossorigin href="/assets/home-CatWXn9g.js">
-  <link rel="stylesheet" crossorigin href="/assets/home-C-8RnYqf.css">
+  <script type="module" crossorigin src="/assets/dashboardUser-BLi2O5C0.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-V_xEgetV.js">
+  <link rel="modulepreload" crossorigin href="/assets/kantoong-assistant-BWdt021k.js">
+  <link rel="modulepreload" crossorigin href="/assets/product-attributes-tvVFkKhv.js">
+  <link rel="modulepreload" crossorigin href="/assets/home-DjcYG4io.js">
+  <link rel="stylesheet" crossorigin href="/assets/kantoong-assistant-DEI-fNwG.css">
+  <link rel="stylesheet" crossorigin href="/assets/home-B601xrtO.css">
   <link rel="stylesheet" crossorigin href="/assets/dashboardUser-BwKR24YD.css">
 </head>
 

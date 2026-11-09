@@ -307,3 +307,59 @@ html[data-commerce="off"] #appRoot .pdp-sticky .pdp-btn--secondary {
     border-top: 1px solid var(--line);
     font-size: 11.5px;
 }
+
+/* ---------- Footer menempel di dasar halaman (dulu melayang seperti kartu) ---------- */
+#appRoot .kc-footer {
+    margin: 56px 0 0;
+    padding: 36px clamp(18px, 4vw, 40px) calc(132px + env(safe-area-inset-bottom, 0px));
+    color: #f1ead9;
+    background: radial-gradient(90% 120% at 100% 0%, rgb(184 145 63 / 18%), transparent 60%), #16130e;
+    border: 0;
+    border-radius: 32px 32px 0 0;
+    box-shadow: none;
+}
+
+#appRoot .kc-footer .kc-footer__tagline,
+#appRoot .kc-footer .kc-footer__text,
+#appRoot .kc-footer .kc-footer__bottom,
+#appRoot .kc-footer .kc-footer__bottom * {
+    color: rgb(241 234 217 / 62%);
+}
+
+#appRoot .kc-footer .kc-footer__link,
+#appRoot .kc-footer .kc-footer__name {
+    color: #f1ead9;
+}
+
+#appRoot .kc-footer .kc-footer__title {
+    color: var(--lux-gold-soft);
+}
+
+#appRoot .kc-footer hr,
+#appRoot .kc-footer .kc-footer__bottom {
+    border-color: rgb(241 234 217 / 12%);
+}
+
+/* Footer sudah memberi ruang untuk chat di bawah: hapus ruang kosong ganda di dasar halaman. */
+#appRoot .page-scroll:has(> .kc-footer:not(:empty)) {
+    padding-bottom: 0;
+}
+
+/* Tombol bahasa di header toko */
+.header-lang {
+    position: relative;
+    gap: 3px;
+}
+.header-lang__code {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    padding: 1px 4px;
+    color: var(--surface, #fffdf8);
+    background: var(--text-primary, #16130e);
+    border-radius: 6px;
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    line-height: 1.3;
+}

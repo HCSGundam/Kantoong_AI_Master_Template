@@ -2928,3 +2928,45 @@ html[data-theme="dark"]:has(> body .dashboard-user) {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* Aturan kartu: harga utama, satu baris, tidak patah (sama dengan css/cards.css toko). */
+.bx-tile__price {
+    flex-wrap: wrap;
+    row-gap: 0;
+    font-size: 17px;
+    font-weight: 600;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.bx-tile__price s { white-space: nowrap; }
+
+/* Riwayat pencarian (hanya di perangkat) + tombol salin link katalog */
+.bx-suggest__row { display: flex; align-items: center; gap: 4px; }
+.bx-suggest__row > button:first-child { flex: 1; min-width: 0; }
+.bx-suggest__remove {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 32px !important;
+    height: 32px;
+    padding: 0 !important;
+    color: var(--bx-muted);
+}
+.bx-suggest__remove .bx-icon { width: 14px; height: 14px; }
+.bx-suggest__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 12px 4px;
+    color: var(--bx-muted);
+    font-size: 11px;
+}
+.bx-suggest .bx-suggest__clear {
+    width: auto;
+    padding: 4px 6px;
+    color: var(--bx-text, inherit);
+    font-size: 11.5px;
+    text-decoration: underline;
+}
+.bx-cat2__actions { display: flex; flex-wrap: wrap; gap: 6px; }

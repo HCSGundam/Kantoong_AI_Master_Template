@@ -1,0 +1,32 @@
+# ============================================================
+# KANTOONG — HEADER KEAMANAN NETLIFY (ikut ke dist/ saat build)
+# CSP utama ada di <meta> tiap halaman; header di sini menutup
+# yang tidak bisa diatur lewat <meta> (anti clickjacking, HTTPS wajib, dll).
+# ============================================================
+
+/*
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self'; object-src 'none'; base-uri 'self'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(self), payment=(), usb=(), serial=(), bluetooth=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  X-Permitted-Cross-Domain-Policies: none
+
+# Halaman kerja: jangan pernah di-cache browser bersama & jangan diindeks Google.
+/erp/*
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+/dashboard-admin/*
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+/auth/*
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+# Aset hasil build punya nama unik → aman disimpan lama.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

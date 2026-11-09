@@ -1,6 +1,7 @@
-// Import Supabase Client dari CDN resmi (untuk web statis / vanilla JS)
-// Versi DIKUNCI (bukan 'terbaru'): paket yang disusupi di internet tidak otomatis ikut termuat.
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
+// Supabase Client DIBUNDEL ke web kita sendiri (paket npm, versi dikunci di package.json).
+// Dulu dimuat dari CDN luar saat halaman dibuka: bila CDN itu dibobol, penyerang ikut masuk.
+// Sekarang tidak ada skrip pihak ketiga untuk database (lebih aman + CSP lebih ketat).
+import { createClient } from '@supabase/supabase-js';
 
 // Masukkan URL dan Publishable Key dari dashboard Supabase kamu
 const SUPABASE_URL = 'https://bkhsmyabckdpxmboopar.supabase.co';

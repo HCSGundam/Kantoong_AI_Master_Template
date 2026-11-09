@@ -23,6 +23,8 @@ import {
     STORE_URL,
 } from "./home-data.js";
 import { productTile as baseTile, renderCatalog } from "./catalog-view.js";
+import { PRICE_BANDS, SORTS } from "./catalog-search.js";
+import { catalogToParams, paramsToCatalog } from "../../js/catalog-url.js";
 import { getStorefront, onStorefrontChange, startStorefrontSync } from "../../js/storefront-settings.js";
 
 /* ---------- Jembatan ke toko (halaman induk) ---------- */
@@ -89,6 +91,13 @@ export async function mountCatalog(root) {
             saved = { ...(saved ?? {}), query: pending };
             sessionStorage.removeItem("kantoong:catalog-query");
         }
+        // Dibuka dari link toko (?katalog=1&cari=…): saringan dari link menang.
+        const fromLink = sessionStorage.getItem("kantoong:catalog-url");
+        if (fromLink) {
+            sessionStorage.removeItem("kantoong:catalog-url");
+            const parsed = paramsToCatalog(fromLink, { sorts: SORTS.map((x) => x.id), bands: PRICE_BANDS.map((x) => x.id) });
+            if (parsed) saved = parsed;
+        }
     } catch {
         saved = null;
     }
@@ -102,6 +111,9 @@ export async function mountCatalog(root) {
             remember();
             openProduct(p.id, "product-catalog");
         },
+        // Alamat toko ikut berubah sesuai saringan (bisa di-bookmark / dibagikan).
+        onStateChange: (st) => toParent({ type: "kantoong:catalog-state", params: catalogToParams(st).toString() }),
+        shareLink: (st) => `${STORE_URL.split("#")[0].split("?")[0]}?${catalogToParams(st).toString()}`,
     });
 
     function remember() {

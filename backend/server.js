@@ -12,6 +12,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const express = require('express');
 const { handleChat } = require('./ai-chat');
+const { handleTranslate } = require('./translate');
 const security = require('./security');
 
 const config = security.settings();
@@ -53,6 +54,29 @@ app.post('/api/chat',
         next();
     },
     handleChat
+);
+
+// Multi bahasa: terjemahan teks halaman. Batas terpisah dari chat (satu halaman = beberapa paket),
+// tetap ikut anggaran AI harian supaya biaya tidak bisa dibobol.
+const translateLimiter = security.createLimiter({
+    perMinute: config.translatePerMinute,
+    perDay: config.translatePerDay,
+    budget: config.translateDailyBudget,
+});
+
+app.post('/api/translate',
+    security.requireJson,
+    security.blockAutomation,
+    (req, res, next) => {
+        const key = security.clientKey(req, config.trustProxy);
+        const blocked = translateLimiter.take(key);
+        if (blocked) {
+            res.setHeader('Retry-After', String(blocked.retryAfter));
+            return security.reject(res, blocked.status, blocked.message, blocked.reason, req);
+        }
+        next();
+    },
+    handleTranslate
 );
 
 // Selain rute di atas: tidak ada.

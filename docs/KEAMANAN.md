@@ -57,12 +57,16 @@ Pengunjung / Staf / Bot / AI penyerang
 ## 3. Rincian per lapisan (apa yang sudah terpasang)
 
 ### L1 — Browser
-- **Content-Security-Policy** di ERP (`erp/erp.html`): hanya skrip dari domain sendiri & jsDelivr; koneksi hanya ke domain sendiri & Supabase. Skrip tertanam dilarang.
+- **Content-Security-Policy di SEMUA halaman** (toko, dashboard user, info, reset password, ERP): skrip HANYA dari domain sendiri (+ login Google di toko). Skrip tertanam & `eval` dilarang. Koneksi hanya ke domain sendiri & Supabase. Dites otomatis.
+- **Header Netlify** `frontend/public/_headers` (ikut ke `dist/`): anti clickjacking (`X-Frame-Options`, `frame-ancestors`), HSTS (HTTPS wajib), `nosniff`, Permissions-Policy (kamera/mikrofon hanya web sendiri, pembayaran/USB mati), ERP/auth `no-store` + `noindex`.
 - Kunci rahasia (Gemini, service role) **tidak pernah** ada di frontend — diperiksa otomatis oleh tes `security-hardening.test.js`.
-- Library Supabase dikunci versinya (`js/supabase-client.js`).
+- Library Supabase **dibundel** dari npm (bukan CDN luar saat halaman dibuka), versi dikunci tanpa `^` dan sudah ditambal (≥ 2.50, celah auth-js). `npm audit` frontend & backend: 0 celah (10 Nov 2026).
+- Multi bahasa (`js/i18n.js`): terjemahan ditempel sebagai TEKS (bukan HTML), hanya ke teks & atribut aman (placeholder/title/aria-label/alt). Isi kotak ketik & pesan yang diketik pengguna tidak pernah dikirim ke penerjemah.
 
 ### L2 — Gerbang backend (`backend/security.js`)
 Header keamanan · CORS daftar putih · hanya JSON ≤ 64 KB · batas waktu 25 detik · penyaring alat otomatis (curl, python, headless, dll.) · 12 chat/menit & 300/hari per alamat · anggaran AI global per hari · deteksi pesan kembar · catatan kejadian **tanpa IP mentah** (hash harian) dan tanpa isi chat. Semua batas bisa diatur di `backend/.env` (lihat `.env.example`).
+
+Penerjemah `/api/translate` (`backend/translate.js`): batas terpisah (30/menit, 400/hari per alamat, anggaran harian sendiri), bahasa dari daftar saja, maks 80 teks / 9.000 karakter, teks halaman = DATA (anti prompt-injection), jumlah hasil wajib sama, hasil disaring (tanpa tag/tautan/kunci), cache di server agar teks sama tidak dibayar dua kali. Model terpisah dari chat (`GEMINI_TRANSLATE_MODEL`, bawaan `gemini-3.5-flash-lite`) supaya kuota chat tidak ikut habis.
 
 ### L3 — Penjaga AI (`backend/ai-chat.js`)
 Instruksi sistem tegas: pesan pengguna & daftar produk adalah **data, bukan perintah** · deteksi upaya pembajakan → AI diperingatkan · keluaran wajib skema JSON · produk yang disebut AI dicocokkan ulang ke katalog · aksi hanya 2 jenis · jawaban disaring (tautan asing, kunci, HTML, nomor kartu) · panjang jawaban dibatasi.
@@ -112,7 +116,7 @@ Urutan: `sales-and-reviews.sql` → `erp-pos-pro.sql` → `security-hardening.sq
 ### 4c. Saat produksi (online)
 1. Taruh web & backend di belakang **Cloudflare** (WAF, Bot Fight Mode, DDoS) → lapisan L0.
 2. `backend/.env`: isi `ALLOWED_ORIGINS` dengan domain asli, `TRUST_PROXY=1`, `LOG_SALT` teks acak panjang, `HOST=0.0.0.0` hanya di belakang proxy.
-3. HTTPS wajib + header HSTS di server web.
+3. HTTPS wajib + header HSTS (sudah di `frontend/public/_headers` untuk Netlify).
 4. Saklar `erp_demo` di `client-config.js` **WAJIB `false`** untuk web klien.
 
 ---

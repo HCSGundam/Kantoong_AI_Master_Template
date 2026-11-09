@@ -20,6 +20,16 @@
         "dev"
       ],
       "port": 5180
+    },
+    {
+      "name": "kantoong-backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "backend",
+        "start"
+      ],
+      "port": 5000
     }
   ]
 }
