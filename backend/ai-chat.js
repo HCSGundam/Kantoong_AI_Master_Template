@@ -106,13 +106,15 @@ function describeContext(raw) {
 
     return [
         `KONTEKS SAAT INI: pengguna berada di ${cleanText(ctx.surface_label, 40) || surface} milik brand "${brand}".`,
+        // Halaman yang SEDANG dibuka (ikut berubah tiap pindah halaman, tanpa perlu diingatkan pengguna).
+        cleanText(ctx.page, 120) ? `Halaman yang sedang dibuka: ${cleanText(ctx.page, 120)}. Jawab sesuai halaman ini bila relevan.` : '',
         SURFACE_RULES[surface],
         name ? `Nama pengguna: ${name}. Sapa dengan namanya sesekali secara wajar.` : 'Nama pengguna belum diketahui (tamu).',
         ctx.network_memory
             ? 'Pengguna MENGIZINKAN memori lintas toko Kantoong. Riwayat bisa berasal dari brand lain (ditandai "[di Nama Brand]"). ' +
               'Bila memakai preferensi dari brand lain, sebutkan sumbernya dengan halus, misalnya "karena kamu suka ... di toko X".'
             : 'Memori hanya untuk toko ini; jangan mengaku mengingat obrolan di toko lain.'
-    ].join('\n');
+    ].filter(Boolean).join('\n');
 }
 
 function buildContents(history, message) {

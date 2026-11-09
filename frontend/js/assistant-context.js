@@ -73,6 +73,16 @@ export function currentSurface() {
     return location.pathname.includes("/erp/") ? "erp" : "store";
 }
 
+/** Halaman yang sedang dibuka, dibaca ulang setiap pesan dikirim. */
+export function currentPage() {
+    const set = window.KantoongAssistantContext?.page;
+    if (typeof set === "function") return String(set() || "").slice(0, 120);
+    if (set) return String(set).slice(0, 120);
+    if (location.hash.startsWith("#produk/")) return `halaman produk "${document.title.split(" · ")[0]}"`;
+    if (location.pathname.includes("/erp/")) return `menu ERP "${document.title.split(" — ")[0]}"`;
+    return "";
+}
+
 /** Konteks ringkas yang dikirim ke AI (tanpa data sensitif). */
 export function assistantContext() {
     const ctx = window.KantoongAssistantContext || {};
@@ -85,5 +95,7 @@ export function assistantContext() {
         user_name: String(ctx.userName || "").slice(0, 60),
         network_memory: getMemoryScope() === "network",
         page_title: String(document.title || "").slice(0, 80),
+        // Halaman/fitur yang sedang dibuka saat pesan dikirim (bukan saat asisten dipasang).
+        page: currentPage(),
     };
 }

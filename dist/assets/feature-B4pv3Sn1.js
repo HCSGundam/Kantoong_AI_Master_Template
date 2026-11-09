@@ -1,1 +1,0 @@
-import{h as r,c as o}from"./details-B6dkb5Gi.js";import"./feature-contract-YJvZtFaw.js";import"./home-CLxaDq_S.js";import"./theme-VxaZG_SN.js";import"./supabase-client-DvLz8SWw.js";import"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";import"./catalog-view-D8vLm8iL.js";const n=r({id:"my-orders",name:"Pesanan Saya",order:50,mount:o});export{n as default};

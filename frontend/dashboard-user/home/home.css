@@ -2865,3 +2865,8 @@
     gap: 8px;
     padding-top: 6px;
 }
+
+/* Orb asisten AI tetap di atas halaman fitur (feature stage z-index 100). */
+#kantoongAssistantHost {
+    z-index: 1050;
+}

@@ -10,7 +10,7 @@
  *   saat itu juga (Supabase Realtime) — tanpa perlu membuka homepage.
  */
 
-import { el, pageHeader, toast, friendlyError } from "../ui.js";
+import { el, formDialog, pageHeader, toast, friendlyError } from "../ui.js";
 import {
     CHIP_KINDS,
     DEFAULT_CHIPS,
@@ -149,22 +149,39 @@ export async function render(ctx) {
         const select = el("select", { class: "erp-input erp-sf__add", "aria-label": "Tambah saran" },
             el("option", { value: "" }, "+ Tambah saran"),
             CHIP_KINDS.map((k) => el("option", { value: k.kind }, k.label)));
-        select.addEventListener("change", () => {
+        select.addEventListener("change", async () => {
             const kind = CHIP_KINDS.find((k) => k.kind === select.value);
             select.value = "";
             if (!kind) return;
             const chip = { kind: kind.kind, label: kind.label };
+            // Isian tambahan memakai dialog ERP (bukan kotak bawaan browser di atas layar).
             if (kind.needsValue === "price") {
-                const raw = window.prompt("Batas harga (Rupiah), contoh 50000:", "50000");
-                const value = Math.round(Number(String(raw ?? "").replace(/\D/g, "")));
+                const answer = await formDialog({
+                    title: `Saran “Di bawah …” · ${key}`,
+                    submitLabel: "Tambahkan",
+                    fields: [
+                        { name: "value", label: "Batas harga (Rupiah)", type: "number", min: 1000, step: 1000, value: 50000, required: true, hint: "Pelanggan yang mengetuk saran ini melihat produk di bawah harga tersebut." },
+                        { name: "label", label: "Tulisan di tombol (opsional)", placeholder: "Di bawah", max: 30 },
+                    ],
+                });
+                const value = Math.round(Number(answer?.value));
                 if (!value) return;
                 chip.value = value;
+                if (answer.label?.trim()) chip.label = answer.label.trim().slice(0, 30);
             }
             if (kind.needsValue === "text") {
-                const raw = String(window.prompt("Kata kunci yang dicari, contoh: coklat", "") ?? "").trim();
+                const answer = await formDialog({
+                    title: `Saran kata kunci · ${key}`,
+                    submitLabel: "Tambahkan",
+                    fields: [
+                        { name: "value", label: "Kata kunci yang dicari", placeholder: "Contoh: coklat", max: 40, required: true, hint: "Produk yang nama/deskripsinya memuat kata ini akan tampil." },
+                        { name: "label", label: "Tulisan di tombol (opsional)", placeholder: "Sama dengan kata kunci", max: 30 },
+                    ],
+                });
+                const raw = String(answer?.value ?? "").trim();
                 if (!raw) return;
                 chip.value = raw.slice(0, 40);
-                chip.label = raw.slice(0, 30);
+                chip.label = (answer.label?.trim() || raw).slice(0, 30);
             }
             chips.push(chip);
             drawCats();
