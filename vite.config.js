@@ -2,6 +2,39 @@ import { defineConfig } from "vite";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import CFG from "./frontend/client-config.js";
+
+/*
+ * sitemap.xml & robots.txt dibuat otomatis saat build, memakai
+ * client-config.js › site_url (alamat web klien). Syarat dasar Google.
+ */
+function seoFiles() {
+    const site = String(CFG?.site_url || "").replace(/\/$/, "");
+    const pages = ["/", "/info.html?halaman=kontak", "/info.html?halaman=retur", "/info.html?halaman=pengiriman", "/info.html?halaman=syarat", "/info.html?halaman=privasi"];
+    return {
+        name: "kantoong-seo-files",
+        generateBundle() {
+            const robots = [
+                "User-agent: *",
+                "Allow: /",
+                // Halaman internal tidak perlu diindeks mesin pencari.
+                "Disallow: /erp/",
+                "Disallow: /dashboard-admin/",
+                "Disallow: /auth/",
+                site ? `Sitemap: ${site}/sitemap.xml` : "",
+            ].filter(Boolean).join("\n");
+            this.emitFile({ type: "asset", fileName: "robots.txt", source: `${robots}\n` });
+            if (!site) return;
+            const today = new Date().toISOString().slice(0, 10);
+            const urls = pages.map((path) => `  <url><loc>${site}${path.replace(/&/g, "&amp;")}</loc><lastmod>${today}</lastmod></url>`).join("\n");
+            this.emitFile({
+                type: "asset",
+                fileName: "sitemap.xml",
+                source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
+            });
+        },
+    };
+}
 
 const frontendRoot = fileURLToPath(
     new URL("./frontend/", import.meta.url)
@@ -50,7 +83,7 @@ export default defineConfig({
 
     appType: "mpa",
 
-    plugins: [salesStoreFallback()],
+    plugins: [salesStoreFallback(), seoFiles()],
 
     server: {
         host: "127.0.0.1",
@@ -102,6 +135,14 @@ export default defineConfig({
                 erp: fileURLToPath(
                     new URL(
                         "./frontend/erp/erp.html",
+                        import.meta.url
+                    )
+                ),
+
+                // Halaman info toko: kontak & kebijakan (syarat Google).
+                info: fileURLToPath(
+                    new URL(
+                        "./frontend/info.html",
                         import.meta.url
                     )
                 ),

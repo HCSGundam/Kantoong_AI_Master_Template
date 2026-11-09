@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /erp/
+Disallow: /dashboard-admin/
+Disallow: /auth/
+Sitemap: https://master-kantoong-ai.netlify.app/sitemap.xml

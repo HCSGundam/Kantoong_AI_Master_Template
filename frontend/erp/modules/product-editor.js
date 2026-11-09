@@ -10,6 +10,9 @@
 
 import { PRODUCT_CONFIG, validateProductInput } from "../data/product-service.js";
 import { el, friendlyError, pageHeader, toast } from "../ui.js";
+import { getPlan } from "../../js/plan.js";
+import { INDUSTRIES, cleanAttributes } from "../../js/industry.js";
+import { loadAttributes, saveAttributes } from "../../js/product-attributes.js";
 import { getGalleryItems, initGalleryDeck, setGalleryItems, uploadPendingGallery } from "./gallery-deck.js";
 
 function field(label, input, hint) {
@@ -259,6 +262,12 @@ export async function renderEditor(ctx, productId) {
                 await data.saveProductCodes(saved.id, codes);
             }
 
+            if (Object.keys(specInputs).length) {
+                submit.textContent = "Menyimpan spesifikasi…";
+                const raw = Object.fromEntries(Object.entries(specInputs).map(([k, input]) => [k, input.value]));
+                await saveAttributes(saved.id, cleanAttributes(getPlan().industry, raw), { demo: data.mode === "demo" });
+            }
+
             toast(isNew ? "Produk ditambahkan." : "Perubahan disimpan.");
             location.hash = "#/catalog";
         } catch (error) {
@@ -266,6 +275,32 @@ export async function renderEditor(ctx, productId) {
             fail(friendlyError(error));
         }
     });
+
+    // Paket industri (properti / emas): kolom spesifikasi khusus, disimpan terpisah.
+    const industry = getPlan().industry;
+    const specInputs = {};
+    if (industry !== "umum") {
+        const attrs = isNew ? {} : (await loadAttributes()).get(String(product.id)) ?? {};
+        const grid = el("div", { class: "erp-spec-grid" }, INDUSTRIES[industry].fields.map((f) => {
+            let input;
+            if (f.type === "select") {
+                input = el("select", { name: `attr_${f.key}` }, el("option", { value: "" }, "—"), f.options.map((o) => el("option", { value: o, selected: attrs[f.key] === o }, o)));
+            } else {
+                input = el("input", { name: `attr_${f.key}`, type: f.type === "number" ? "number" : "text", step: f.step || (f.type === "number" ? "1" : null), min: f.type === "number" ? "0" : null, placeholder: f.placeholder || "", inputmode: f.type === "number" ? "decimal" : null });
+                input.value = attrs[f.key] ?? "";
+            }
+            specInputs[f.key] = input;
+            return el("label", { class: "erp-field" }, el("span", { text: f.label }), input);
+        }));
+        const section = el("section", { class: "erp-card" },
+            el("h2", { text: `Spesifikasi ${industry === "emas" ? "perhiasan" : "properti"}` }),
+            el("p", { class: "erp-muted" }, industry === "emas"
+                ? "Harga di toko dihitung otomatis: berat × harga emas hari ini (Etalase & Brand) + ongkos bikin. Kolom Harga di atas dipakai bila harga emas belum diisi."
+                : "Tampil di kartu & halaman listing (LT/LB/kamar/sertifikat), plus tombol jadwalkan survei via WhatsApp."),
+            grid);
+        const actions = form.querySelector(".erp-form__actions") ?? form.lastElementChild;
+        form.insertBefore(section, actions);
+    }
 
     page.appendChild(form);
 

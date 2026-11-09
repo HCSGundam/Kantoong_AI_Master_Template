@@ -11,6 +11,10 @@
 import CFG from "../../client-config.js";
 import { supabase } from "../../js/supabase-client.js";
 import { PRODUCT_PUBLIC_COLUMNS } from "../../js/product-columns.js";
+import { getPlan } from "../../js/plan.js";
+import { enrichProducts } from "../../js/industry.js";
+import { loadAttributes } from "../../js/product-attributes.js";
+import { getStorefront } from "../../js/storefront-settings.js";
 
 const BID = CFG?.business_id ?? "master_template_001";
 
@@ -49,7 +53,10 @@ export function loadProducts() {
                 if (CFG?.filter_by_business_id === true) q = q.eq("business_id", BID);
                 const { data, error } = await q.order("created_at", { ascending: false });
                 if (error) throw error;
-                return (data ?? []).filter((p) => p.is_published !== false);
+                const list = (data ?? []).filter((p) => p.is_published !== false);
+                // Paket industri: spesifikasi properti/emas + harga emas hari ini.
+                const { industry } = getPlan();
+                return industry === "umum" ? list : enrichProducts(list, await loadAttributes(), { industry, gold: getStorefront().catalog.gold });
             } catch (error) {
                 console.warn("[KANTOONG Dashboard] Produk gagal dimuat:", error?.message || error);
                 return [];

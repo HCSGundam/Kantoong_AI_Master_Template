@@ -63,6 +63,27 @@ const KantoongConfig = {
      */
     erp_demo: true,
 
+    /*
+     * PAKET LAYANAN (kontrak klien) — js/plan.js
+     * "pro"  = semua fitur (keranjang & checkout, ERP penuh, kasir POS, dashboard lengkap)
+     * "free" = WEB AI BOS FREE: katalog + AI gratis, pesan lewat WhatsApp,
+     *          tanpa keranjang/kasir; ERP hanya untuk katalog & etalase.
+     */
+    package: "pro",
+
+    /*
+     * INDUSTRI — js/industry.js
+     * "umum" | "properti" (listing: LT/LB/kamar/sertifikat, jadwal survei)
+     *        | "emas" (berat × harga emas hari ini + ongkos bikin)
+     */
+    industry: "umum",
+
+    /*
+     * Alamat web utama klien (untuk sitemap.xml, robots.txt, & data Google).
+     * Contoh: "https://tokoemaskenzo.com". Kosongkan bila belum punya domain.
+     */
+    site_url: "https://master-kantoong-ai.netlify.app",
+
 
     // ========================================================
     // 3. HERO / SLIDER UTAMA

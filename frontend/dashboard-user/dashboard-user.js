@@ -28,6 +28,7 @@
 import { createBento } from "./home/bento.js";
 import { getStorefront, onStorefrontChange, startStorefrontSync } from "../js/storefront-settings.js";
 import { applyTheme, setChoice, themeFor } from "../js/theme.js";
+import { featureAllowed } from "../js/plan.js";
 import { createShelf } from "./home/shelf.js";
 import { renderWelcome } from "./home/welcome.js";
 import "./home/home.css";
@@ -1223,9 +1224,10 @@ export function getDashboardFeatures() {
 
 
 export function getActiveDashboardFeatures() {
+    // Paket WEB AI BOS FREE hanya memuat fitur yang termasuk paketnya (js/plan.js).
     return [...state.activeFeatureIds]
         .map((id) => state.featureCatalog.get(id))
-        .filter(Boolean);
+        .filter((feature) => feature && featureAllowed(feature.id));
 }
 
 
@@ -1550,7 +1552,8 @@ function getShelf() {
             host: state.root ?? document.body,
             getFeatures: () => getDashboardFeatures(),
             isActive: (id) => state.activeFeatureIds.has(id),
-            canAdd: (feature) => feature.available && feature.status === "published",
+            canAdd: (feature) => feature.available && feature.status === "published" && featureAllowed(feature.id),
+            isLocked: (feature) => feature.status === "published" && !featureAllowed(feature.id),
             onAdd: (id) => addFeatureToDashboard(id),
         });
     }

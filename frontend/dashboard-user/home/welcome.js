@@ -9,6 +9,7 @@
 import { el, icon } from "./home-icons.js";
 import { brandInfo, getCart, getWishlistIds, isActiveOrder, loadMyOrders, shortRupiah } from "./home-data.js";
 import { supabase } from "../../js/supabase-client.js";
+import { getPlan } from "../../js/plan.js";
 
 function greeting(hour) {
     if (hour < 4) return "Selamat malam";
@@ -63,9 +64,13 @@ export async function renderWelcome(section) {
         el("h1", "bx-hero__title", `${greeting(now.getHours())}, ${first || "Kak"}`),
         el("p", "bx-hero__lead", user ? `Ruang pribadimu di ${brand}.` : `Ruang pribadimu di ${brand}. Masuk agar pesanan & poinmu tersimpan.`),
         el("div", "bx-hero__stats",
-            stat("product-catalog", cart.count ? `${cart.count} barang` : "Kosong", cart.count ? `Keranjang · ${shortRupiah(cart.total)}` : "Keranjang", openCart),
+            getPlan().commerce
+                ? stat("product-catalog", cart.count ? `${cart.count} barang` : "Kosong", cart.count ? `Keranjang · ${shortRupiah(cart.total)}` : "Keranjang", openCart)
+                : stat("product-catalog", "Katalog", "Lihat semua produk", () => openFeature("product-catalog")),
             stat("wishlist", String(favorites), "Favorit", () => openFeature("wishlist")),
-            stat("my-orders", user ? String(active) : "—", user ? "Pesanan aktif" : "Masuk untuk lihat", () => openFeature(user ? "my-orders" : "profile")),
+            getPlan().commerce
+                ? stat("my-orders", user ? String(active) : "—", user ? "Pesanan aktif" : "Masuk untuk lihat", () => openFeature(user ? "my-orders" : "profile"))
+                : stat("store-map", "Lokasi", "Kunjungi toko", () => openFeature("store-map")),
         ),
     );
 

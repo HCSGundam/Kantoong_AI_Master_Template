@@ -23,6 +23,8 @@ import {
 import { renderCatalog } from "../../dashboard-user/home/catalog-view.js";
 import { renderHomePromos } from "../../js/home-promos.js";
 import { grip, homeEditor, logoField, makeSortable } from "./storefront-home.js";
+import { goldCard, infoCard, planCard } from "./storefront-info.js";
+import { getPlan } from "../../js/plan.js";
 import "../../dashboard-user/home/home.css";
 import "../../css/promo.css";
 
@@ -374,7 +376,13 @@ export async function render(ctx) {
     page.append(
         pageHeader("Etalase & Brand", demo ? "Mode demo: perubahan hanya tersimpan di perangkat ini." : "Perubahan tampil realtime di toko & dashboard pelanggan.", previewBtn),
         el("div", { class: "erp-sf__layout" },
-            el("div", { class: "erp-sf__editor" }, brandCard, homeCard, catalogCard),
+            el("div", { class: "erp-sf__editor" },
+                planCard(),
+                brandCard,
+                infoCard({ draft, isOwner, demo, onChange: () => dirty(), onSaved: () => Object.assign(saved, clone(getStorefront())) }),
+                getPlan().industry === "emas" ? goldCard({ draft, demo, onChange: () => dirty() }) : null,
+                homeCard,
+                catalogCard),
             preview));
 
     refresh();

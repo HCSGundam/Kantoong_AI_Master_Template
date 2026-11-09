@@ -235,6 +235,80 @@ export function drawReward(rewards, rand = Math.random()) {
     return list[list.length - 1];
 }
 
+/* ---------- Info toko & kebijakan (syarat Google & kepercayaan pembeli) ---------- */
+
+export const POLICY_PAGES = Object.freeze([
+    { slug: "kontak", key: "contact", label: "Kontak & lokasi" },
+    { slug: "retur", key: "returns", label: "Tukar & retur" },
+    { slug: "pengiriman", key: "shipping", label: "Pengiriman" },
+    { slug: "syarat", key: "terms", label: "Syarat & ketentuan" },
+    { slug: "privasi", key: "privacy", label: "Kebijakan privasi" },
+]);
+
+/** Template awal (bahasa sederhana) — pemilik toko WAJIB menyesuaikan. */
+export function defaultPolicies(name = "Toko kami") {
+    return {
+        returns: `Kami ingin kamu puas dengan setiap pembelian di ${name}.\n\n• Penukaran/retur dapat diajukan paling lambat 3 hari setelah barang diterima.\n• Barang harus dalam kondisi asli, belum dipakai, dan lengkap dengan kemasan.\n• Sertakan nomor pesanan serta foto/video saat membuka paket.\n• Bila barang rusak atau salah kirim karena kesalahan kami, ongkos kirim penukaran kami tanggung.\n• Dana dikembalikan ke metode pembayaran semula paling lambat 7 hari kerja setelah retur disetujui.\n\nHubungi kami lewat halaman Kontak untuk mengajukan retur.`,
+        shipping: `• Pesanan diproses pada hari kerja, paling lambat 1×24 jam setelah pembayaran diterima.\n• Estimasi tiba tergantung kurir dan kota tujuan, tampil saat checkout.\n• Nomor resi dikirim begitu paket diserahkan ke kurir dan bisa dilacak di Dashboard › Lacak Paket.\n• Ongkos kirim dihitung otomatis sesuai berat dan tujuan.`,
+        terms: `Dengan berbelanja di ${name}, kamu menyetujui ketentuan berikut:\n\n• Harga dan stok dapat berubah sewaktu-waktu sebelum pesanan dibayar.\n• Foto produk diusahakan sesuai aslinya; perbedaan warna kecil bisa terjadi karena layar.\n• Pembayaran selalu dilakukan oleh pembeli sendiri. Asisten AI hanya membantu memilih dan tidak pernah membayar atas namamu.\n• Kami berhak membatalkan pesanan yang terindikasi penipuan.`,
+        privacy: `${name} menjaga data pribadimu sesuai UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi.\n\n• Data yang kami simpan: nama, kontak, alamat pengiriman, dan riwayat pesanan — hanya untuk memproses pesananmu.\n• Ingatan asisten AI lintas toko hanya aktif bila kamu mengizinkannya, dan bisa dihapus kapan saja (per toko, per jenis, atau semuanya).\n• Kami tidak menjual datamu dan tidak memakai sidik jari perangkat untuk melacakmu.\n• Kamu berhak melihat, mengunduh, dan meminta penghapusan datamu lewat Dashboard › Pengaturan atau halaman Kontak.`,
+    };
+}
+
+const cleanText = (v, max) => String(v ?? "").replace(/\r/g, "").trim().slice(0, max);
+
+function cleanContact(raw) {
+    const c = raw ?? {};
+    const phone = (v) => String(v ?? "").replace(/[^\d+]/g, "").slice(0, 20);
+    const email = String(c.email ?? "").trim().slice(0, 120);
+    return {
+        whatsapp: phone(c.whatsapp),
+        phone: phone(c.phone),
+        email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "",
+        address: cleanText(c.address, 300),
+        city: cleanText(c.city, 80),
+        hours: cleanText(c.hours, 120),
+        maps: /^https:\/\//i.test(String(c.maps ?? "")) ? String(c.maps).slice(0, 500) : "",
+        instagram: cleanText(c.instagram, 60).replace(/^@/, ""),
+    };
+}
+
+function cleanPolicies(raw) {
+    const p = raw ?? {};
+    return {
+        returns: cleanText(p.returns, 5000),
+        shipping: cleanText(p.shipping, 5000),
+        terms: cleanText(p.terms, 5000),
+        privacy: cleanText(p.privacy, 5000),
+    };
+}
+
+/** Isi kebijakan yang dipakai (isi pemilik, atau template bila kosong). */
+export function policyText(settings, key) {
+    return settings?.brand?.policies?.[key] || defaultPolicies(settings?.brand?.name)[key] || "";
+}
+
+/** Link WhatsApp dengan pesan siap kirim (pembeli tetap menekan kirim sendiri). */
+export function whatsappLink(settings, text = "") {
+    let number = String(settings?.brand?.contact?.whatsapp ?? "").replace(/\D/g, "");
+    if (!number) return "";
+    if (number.startsWith("0")) number = `62${number.slice(1)}`;
+    return `https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+}
+
+/* ---------- Harga emas harian (paket industri Emas) ---------- */
+
+export const GOLD_KARATS = Object.freeze(["24K", "23K", "22K", "18K", "17K", "16K", "9K"]);
+
+function cleanGold(raw) {
+    const prices = {};
+    GOLD_KARATS.forEach((k) => {
+        const v = Math.round(Number(raw?.prices?.[k]) || 0);
+        if (v > 0) prices[k] = Math.min(v, 100_000_000);
+    });
+    return { prices, updatedAt: cleanText(raw?.updatedAt, 30) };
+}
+
 /** Logo: URL https (Supabase Storage) atau data:image kecil (mode demo). */
 function cleanLogo(v) {
     const value = String(v ?? "").trim();
@@ -245,8 +319,8 @@ function cleanLogo(v) {
 
 export function defaultStorefront() {
     return {
-        brand: { name: str(CFG?.app_name) || "Toko", tagline: "", logo: "" },
-        catalog: { categories: {}, chips: {}, chipLimit: 6 },
+        brand: { name: str(CFG?.app_name) || "Toko", tagline: "", logo: "", contact: cleanContact(null), policies: cleanPolicies(null) },
+        catalog: { categories: {}, chips: {}, chipLimit: 6, gold: cleanGold(null) },
         home: sampleHome(),
     };
 }
@@ -289,11 +363,18 @@ export function sanitizeStorefront(raw) {
         chips[str(key, 60)] = list.map(cleanChip).filter(Boolean).slice(0, 20);
     });
     return {
-        brand: { name: str(brand.name, 60) || base.brand.name, tagline: str(brand.tagline, 120), logo: cleanLogo(brand.logo) },
+        brand: {
+            name: str(brand.name, 60) || base.brand.name,
+            tagline: str(brand.tagline, 120),
+            logo: cleanLogo(brand.logo),
+            contact: cleanContact(brand.contact),
+            policies: cleanPolicies(brand.policies),
+        },
         catalog: {
             categories,
             chips,
             chipLimit: Math.min(20, Math.max(1, Math.round(Number(catalog.chipLimit) || base.catalog.chipLimit))),
+            gold: cleanGold(catalog.gold),
         },
         home: sanitizeHome(raw?.home),
     };

@@ -13,7 +13,7 @@ import { el, icon } from "./home-icons.js";
 
 const TIER_LABEL = { package: "Termasuk paket", addon: "Add-on" };
 
-export function createShelf({ host, getFeatures, isActive, canAdd, onAdd }) {
+export function createShelf({ host, getFeatures, isActive, canAdd, isLocked = () => false, onAdd }) {
     let root = null;
     let query = "";
     let category = "all";
@@ -41,7 +41,7 @@ export function createShelf({ host, getFeatures, isActive, canAdd, onAdd }) {
         const head = el("button", "bx-wallet__head",
             el("span", "bx-wallet__icon", icon(feature.id)),
             el("span", "bx-wallet__name", feature.title),
-            el("span", "bx-wallet__tag", ready ? TIER_LABEL[feature.tier] ?? "Tersedia" : "Segera hadir"));
+            el("span", "bx-wallet__tag", ready ? TIER_LABEL[feature.tier] ?? "Tersedia" : isLocked(feature) ? "Paket Pro" : "Segera hadir"));
         head.type = "button";
         head.setAttribute("aria-expanded", String(openId === feature.id));
         head.addEventListener("click", () => {
@@ -66,7 +66,9 @@ export function createShelf({ host, getFeatures, isActive, canAdd, onAdd }) {
             });
             body.append(add);
         } else {
-            body.append(el("p", "bx-wallet__soon", icon("lock"), "Sedang kami siapkan. Kamu akan melihatnya di sini begitu siap."));
+            body.append(el("p", "bx-wallet__soon", icon("lock"), isLocked(feature)
+                ? "Fitur ini tersedia di paket Kantoong Pro."
+                : "Sedang kami siapkan. Kamu akan melihatnya di sini begitu siap."));
         }
 
         item.append(head, art, body);

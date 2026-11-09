@@ -17,6 +17,8 @@ import { el, icon } from "./home-icons.js";
 import { PRICE_BANDS, SORTS, describeFilters, searchCatalog, suggest } from "./catalog-search.js";
 import { applyChip, chipLabel, chipsFor, orderedCategories } from "../../js/storefront-settings.js";
 import { productImage, rupiah } from "./home-data.js";
+import { getPlan } from "../../js/plan.js";
+import { bigPrice } from "../../js/industry.js";
 
 const FILTER_ICON = ["M4 7h10", "M18 7h2", "M4 17h4", "M12 17h8", "M16 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z", "M10 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"];
 
@@ -69,7 +71,8 @@ export function productTile(p, { onOpen } = {}) {
     open.append(
         img,
         el("span", "bx-tile__name", p.name),
-        el("span", "bx-tile__price", rupiah(now), was > now ? el("s", "", rupiah(was)) : null),
+        p.spec_line ? el("span", "bx-tile__spec", p.spec_line) : null,
+        el("span", "bx-tile__price", getPlan().industry === "properti" ? bigPrice(now) : rupiah(now), was > now ? el("s", "", rupiah(was)) : null),
         el("span", "bx-tile__meta", stars, el("span", "bx-tile__dot", "·"), `${Number(p.sales_count) || 0} terjual`),
     );
     open.addEventListener("click", () => onOpen?.(p));

@@ -15,6 +15,7 @@
  */
 
 import { applyTheme } from "../js/theme.js";
+import { getPlan } from "../js/plan.js";
 import { openAppearanceSheet } from "../js/appearance-panel.js";
 import CFG from "../client-config.js";
 import { PRODUCT_PUBLIC_COLUMNS } from "../js/product-columns.js";
@@ -262,7 +263,8 @@ function start(adapter, member, userId = null) {
     if (adapter.mode === "supabase") startIdleWatch(userId);
     app.data = adapter;
     app.me = member;
-    app.modules = modulesFor(member);
+    // Paket (Pro/Free): Free hanya katalog, etalase, akun & tim (js/plan.js).
+    app.modules = modulesFor(member, getPlan().erpModules);
 
     $("loginView").hidden = true;
     $("appView").hidden = false;

@@ -2920,3 +2920,11 @@ html[data-theme="dark"]:has(> body .dashboard-user) {
     --text-muted: #a59c8a;
     --line: rgb(255 240 205 / 9%);
 }
+
+.bx-tile__spec {
+    overflow: hidden;
+    color: var(--bx-muted);
+    font-size: 11.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

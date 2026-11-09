@@ -25,6 +25,10 @@ import { PRODUCT_PUBLIC_COLUMNS } from "./product-columns.js";
 import { applyTheme } from "./theme.js";
 import { getStorefront, onStorefrontChange, startStorefrontSync } from "./storefront-settings.js";
 import { renderHomePromos } from "./home-promos.js";
+import { getPlan, markPlan } from "./plan.js";
+import { bigPrice, enrichProducts, specRows } from "./industry.js";
+import { loadAttributes } from "./product-attributes.js";
+import { POLICY_PAGES, whatsappLink } from "./storefront-settings.js";
 import {
   clampQty,
   priceSaving,
@@ -1208,7 +1212,12 @@ async function loadProducts() {
 
   try {
     // Toko sales: hanya produk pilihan sales (kode & harga tetap dari katalog master).
-    const products = applyStoreProducts(await fetchProductsFromSupabase(), state.salesStore);
+    const raw = applyStoreProducts(await fetchProductsFromSupabase(), state.salesStore);
+    // Paket industri: spesifikasi (properti/emas) + harga emas hari ini.
+    const plan = getPlan();
+    const products = plan.industry === "umum"
+      ? raw
+      : enrichProducts(raw, await loadAttributes(), { industry: plan.industry, gold: getStorefront().catalog.gold });
 
     state.products = products;
     state.usingDemo = false;
@@ -1479,10 +1488,13 @@ function createProductDetails(product) {
 
   info.appendChild(makeElement("h3", "product-name", getProductName(product)));
 
+  // Paket industri: ringkasan spesifikasi (mis. "LT 120 · LB 90 · 3 KT" atau "24K · 2,5 gr").
+  if (product?.spec_line) info.appendChild(makeElement("p", "product-spec", product.spec_line));
+
   const buyRow = makeElement("div", "product-buy");
   const priceWrap = makeElement("p", "product-price");
   priceWrap.appendChild(
-    document.createTextNode(formatCurrency(getProductPrice(product)))
+    document.createTextNode(getPlan().industry === "properti" ? bigPrice(getProductPrice(product)) : formatCurrency(getProductPrice(product)))
   );
 
   if (getDiscountPercent(product) > 0) {
@@ -2379,6 +2391,44 @@ function openWaitDialog(product, quantity) {
   ask.focus({ preventScroll: true });
 }
 
+/* ---------- Paket Free & industri: pesan via WhatsApp, spesifikasi ---------- */
+
+function orderViaWhatsApp(product, quantity = 1) {
+  const name = getProductName(product);
+  const text = `Halo ${CFG?.app_name || ""}, saya tertarik dengan ${name}${quantity > 1 ? ` (${quantity})` : ""}. Link: ${location.origin}${location.pathname}#produk/${encodeURIComponent(getProductId(product))}`;
+  const link = whatsappLink(getStorefront(), text);
+  if (!link) {
+    showToast("Nomor WhatsApp toko belum diisi. Tanyakan lewat asisten, ya.");
+    attachProductToChat(product);
+    return;
+  }
+  window.open(link, "_blank", "noopener");
+}
+
+function createPdpSpecs(product) {
+  const plan = getPlan();
+  const rows = specRows(plan.industry, product?.attributes ?? {});
+  if (!rows.length) return null;
+  const box = makeElement("section", "pdp-specs");
+  box.appendChild(makeElement("p", "pdp-eyebrow", plan.industry === "properti" ? "Detail properti" : "Detail perhiasan"));
+  const list = makeElement("dl", "pdp-specs__grid");
+  rows.forEach((row) => {
+    const item = makeElement("div", "pdp-specs__item");
+    item.append(makeElement("dt", "", row.label), makeElement("dd", "", row.value));
+    list.appendChild(item);
+  });
+  box.appendChild(list);
+  if (product?.price_note) box.appendChild(makeElement("p", "pdp-specs__note", product.price_note));
+  if (plan.industry === "properti" && product?.attributes?.maps) {
+    const map = makeElement("a", "pdp-specs__map", "Lihat lokasi di Google Maps ↗");
+    map.href = product.attributes.maps;
+    map.target = "_blank";
+    map.rel = "noopener";
+    box.appendChild(map);
+  }
+  return box;
+}
+
 /* ---------- Bagian-bagian halaman ---------- */
 
 function createPdpGallery(product) {
@@ -2461,7 +2511,10 @@ function createPdpSummary(product) {
 
   // Harga: harga coret hanya bila memang lebih tinggi (diskon asli).
   const priceBox = makeElement("div", "pdp-price");
-  priceBox.appendChild(makeElement("p", "pdp-price__now", formatCurrency(getProductPrice(product))));
+  priceBox.appendChild(makeElement("p", "pdp-price__now", getPlan().industry === "properti" ? bigPrice(getProductPrice(product)) : formatCurrency(getProductPrice(product))));
+  if (getPlan().industry === "properti" && product?.attributes?.listing === "Disewakan") {
+    priceBox.appendChild(makeElement("p", "pdp-price__was", "per tahun"));
+  }
   const saving = priceSaving(getProductPrice(product), getCompareAtPrice(product));
   if (saving > 0) {
     const was = makeElement("p", "pdp-price__was");
@@ -2530,7 +2583,22 @@ function createPdpBuy(product) {
   box.appendChild(ask);
 
   const row = makeElement("div", "pdp-buy__row");
-  if (stock.key === "out") {
+  const plan = getPlan();
+  if (!plan.commerce || plan.industry === "properti") {
+    // Tanpa keranjang: pesan / jadwalkan survei lewat WhatsApp (pembeli menekan kirim sendiri).
+    const wa = pdpButton("pdp-btn pdp-btn--secondary pdp-btn--wa", "", null, plan.industry === "properti" ? "Jadwalkan survei via WhatsApp" : "Pesan via WhatsApp");
+    wa.addEventListener("click", () => {
+      if (plan.industry === "properti") {
+        const link = whatsappLink(getStorefront(), `Halo, saya ingin jadwalkan survei untuk ${getProductName(product)}. ${location.href}`);
+        if (link) window.open(link, "_blank", "noopener");
+        else orderViaWhatsApp(product, 1);
+      } else {
+        orderViaWhatsApp(product, qty);
+      }
+    });
+    row.classList.add("pdp-buy__row--single");
+    row.append(wa);
+  } else if (stock.key === "out") {
     const remind = pdpButton("pdp-btn pdp-btn--secondary", "", ICONS.heart, isWishlisted(product) ? "Tersimpan di wishlist" : "Simpan & cek lagi nanti");
     remind.addEventListener("click", () => {
       if (!isWishlisted(product)) toggleWishlist(product);
@@ -2840,7 +2908,10 @@ function renderProductPage(product) {
 
   const body = makeElement("div", "product-page__body pdp-body");
   const buy = createPdpBuy(product);
-  body.append(createPdpSummary(product), buy, createPdpAssurance(product));
+  body.append(createPdpSummary(product));
+  const specs = createPdpSpecs(product);
+  if (specs) body.append(specs);
+  body.append(buy, createPdpAssurance(product));
 
   const main = makeElement("div", "pdp-main");
   main.append(galleryEl, body);
@@ -3756,6 +3827,80 @@ function renderStorefront() {
   renderPromos();
 }
 
+/** Footer toko: nama, kontak, jam buka, & tautan halaman kebijakan (syarat Google). */
+function renderFooter() {
+  const root = $("#storeFooter");
+  if (!root) return;
+  const settings = getStorefront();
+  const brand = settings.brand ?? {};
+  const contact = brand.contact ?? {};
+  const infoUrl = (slug) => new URL(`./info.html?halaman=${slug}`, document.baseURI).href;
+
+  const col = (title, ...nodes) => {
+    const box = makeElement("div", "kc-footer__col");
+    box.appendChild(makeElement("p", "kc-footer__title", title));
+    nodes.filter(Boolean).forEach((n) => box.appendChild(n));
+    return box;
+  };
+  const link = (text, href, external = false) => {
+    const a = makeElement("a", "kc-footer__link", text);
+    a.href = href;
+    if (external) {
+      a.target = "_blank";
+      a.rel = "noopener";
+    }
+    return a;
+  };
+
+  const brandCol = makeElement("div", "kc-footer__brand");
+  brandCol.append(makeElement("p", "kc-footer__name", brand.name || CFG?.app_name || "Toko"));
+  if (brand.tagline) brandCol.append(makeElement("p", "kc-footer__tagline", brand.tagline));
+
+  const wa = whatsappLink(settings);
+  const contactCol = col("Hubungi kami",
+    wa ? link(`WhatsApp ${contact.whatsapp}`, wa, true) : null,
+    contact.email ? link(contact.email, `mailto:${contact.email}`) : null,
+    contact.phone ? link(`Telepon ${contact.phone}`, `tel:${contact.phone}`) : null,
+    contact.instagram ? link(`Instagram @${contact.instagram}`, `https://instagram.com/${contact.instagram}`, true) : null,
+    (!wa && !contact.email && !contact.phone) ? makeElement("p", "kc-footer__text", "Tanya apa saja lewat asisten di bawah.") : null);
+
+  const placeCol = col("Kunjungi",
+    contact.address ? makeElement("p", "kc-footer__text", [contact.address, contact.city].filter(Boolean).join(", ")) : null,
+    contact.hours ? makeElement("p", "kc-footer__text", `Jam buka: ${contact.hours}`) : null,
+    contact.maps ? link("Buka di Google Maps", contact.maps, true) : link("Kontak & lokasi", infoUrl("kontak")));
+
+  const infoCol = col("Info", ...POLICY_PAGES.map((page) => link(page.label, infoUrl(page.slug))));
+
+  const bottom = makeElement("div", "kc-footer__bottom");
+  bottom.append(makeElement("span", "", `© ${new Date().getFullYear()} ${brand.name || CFG?.app_name || ""}`), makeElement("span", "", "Pembayaran selalu kamu lakukan sendiri · Data dilindungi UU PDP"));
+
+  const grid = makeElement("div", "kc-footer__grid");
+  grid.append(brandCol, contactCol, placeCol, infoCol);
+  root.replaceChildren(grid, bottom);
+
+  // Data terstruktur toko untuk Google & mesin AI (GEO).
+  let ld = document.getElementById("storeJsonLd");
+  if (!ld) {
+    ld = document.createElement("script");
+    ld.type = "application/ld+json";
+    ld.id = "storeJsonLd";
+    document.head.appendChild(ld);
+  }
+  ld.textContent = JSON.stringify(JSON.parse(JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": contact.address ? "Store" : "Organization",
+    name: brand.name || CFG?.app_name,
+    description: brand.tagline || undefined,
+    url: CFG?.site_url || location.origin,
+    logo: /^https:/.test(brand.logo || "") ? brand.logo : undefined,
+    telephone: contact.phone || contact.whatsapp || undefined,
+    email: contact.email || undefined,
+    address: contact.address ? { "@type": "PostalAddress", streetAddress: contact.address, addressLocality: contact.city || undefined, addressCountry: "ID" } : undefined,
+    openingHours: contact.hours || undefined,
+    sameAs: contact.instagram ? [`https://instagram.com/${contact.instagram}`] : undefined,
+  })));
+}
+
 /** Zona promosi homepage (banner, kupon, kotak misteri, poster, produk pilihan). */
 function renderPromos() {
   const root = $("#homePromos");
@@ -4119,6 +4264,12 @@ function updateCartCount() {
 
 function addToCart(product, quantity = 1) {
   if (!product || typeof product !== "object") return;
+
+  // Paket WEB AI BOS FREE: tanpa keranjang — pesan lewat WhatsApp.
+  if (!getPlan().commerce) {
+    orderViaWhatsApp(product, quantity);
+    return;
+  }
 
   const id = getProductId(product);
   const amount = Math.max(1, Math.floor(toNumber(quantity, 1)));
@@ -4509,12 +4660,16 @@ async function initKantoongEngine() {
 
   // Tema gelap/terang toko (diatur di Dashboard › Pengaturan, js/theme.js).
   applyTheme("store");
+  // Paket (Pro/Free) & industri: CSS menyembunyikan keranjang di paket Free.
+  markPlan();
 
   // Nama brand diatur owner di ERP › Etalase & Brand; berubah realtime.
   onStorefrontChange(() => {
     applyConfig();
     renderPromos();
+    renderFooter();
   });
+  renderFooter();
   startStorefrontSync();
 
   try {
