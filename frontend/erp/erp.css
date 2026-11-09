@@ -27,8 +27,8 @@
     color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
+/* tema gelap (diatur js/theme.js) */
+:root[data-theme="dark"] {
         --e-bg: #0f0f0f;
         --e-surface: #181818;
         --e-soft: #222222;
@@ -47,7 +47,7 @@
 
         color-scheme: dark;
     }
-}
+
 
 *,
 *::before,
@@ -60,7 +60,7 @@ body {
     min-height: 100dvh;
     color: var(--e-text);
     background: var(--e-bg);
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-size: 14px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -298,7 +298,7 @@ code {
 
 .erp-dialog__title {
     margin-bottom: 4px;
-    font-size: 18px;
+    font-size: 15.1px;
 }
 
 .erp-scan__video {
@@ -569,7 +569,7 @@ code {
     gap: 12px;
 }
 
-.erp-page__title { font-size: clamp(20px, 3vw, 26px); }
+.erp-page__title { font-size: clamp(16.8px, 2.5vw, 21.8px); }
 
 .erp-page__sub {
     margin: 4px 0 0;
@@ -2167,10 +2167,9 @@ code {
 .erp-neuron__event > span:last-child { display: grid; }
 .erp-neuron__privacy { margin: 0; font-size: 11.5px; }
 
-@media (prefers-color-scheme: dark) {
-    .erp-neuron__badge,
-    .erp-neuron__chips span { color: #93c5fd; }
-}
+/* tema gelap (diatur js/theme.js) */
+:root[data-theme="dark"] .erp-neuron__badge, :root[data-theme="dark"] .erp-neuron__chips span { color: #93c5fd; }
+
 
 @media (max-width: 1100px) {
     .erp-neuron.is-open { grid-template-columns: minmax(0, 1fr); }
@@ -2800,7 +2799,7 @@ body.erp-display .erp-app { grid-template-columns: minmax(0, 1fr); }
     --e-night-2: #0c0b09;
     --e-night-ink: #efe7d2;
     --e-amber: #f2ae2e;
-    --e-lux-serif: "Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif;
+    --e-lux-serif: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 .erp-pos__media { position: relative; display: block; overflow: hidden; border-radius: 10px; margin-bottom: 4px; container-type: inline-size; }
@@ -2854,8 +2853,8 @@ body.erp-display .erp-app { grid-template-columns: minmax(0, 1fr); }
     padding-left: 0.3em;
     color: var(--e-gold-soft);
     font-family: var(--e-lux-serif);
-    font-size: clamp(13px, 12cqi, 22px);
-    font-weight: 600;
+    font-size: clamp(10.9px, 10.1cqi, 18.5px);
+    font-weight: 500;
     letter-spacing: 0.3em;
     text-transform: uppercase;
     text-shadow: 0 0 18px rgba(227, 196, 106, 0.35);
@@ -2922,7 +2921,7 @@ body.erp-display .erp-app { grid-template-columns: minmax(0, 1fr); }
     gap: 4px;
     background: linear-gradient(180deg, rgba(12, 11, 9, 0.1), rgba(12, 11, 9, 0.85));
 }
-.erp-soldout__title { margin: 0; font-family: var(--e-lux-serif); font-size: 30px; font-weight: 600; letter-spacing: 0.01em; color: #fbf4e2; }
+.erp-soldout__title { margin: 0; font-family: var(--e-lux-serif); font-size: 25.2px; font-weight: 500; letter-spacing: 0.01em; color: #fbf4e2; }
 .erp-soldout__body { display: grid; gap: 14px; padding: 18px 20px 20px; }
 .erp-soldout__lead { margin: 0; text-align: center; font-size: 14.5px; line-height: 1.5; color: rgba(239, 231, 210, 0.86); }
 .erp-soldout__lead strong { color: #ffffff; }
@@ -3017,13 +3016,13 @@ body.erp-display .erp-app { grid-template-columns: minmax(0, 1fr); }
     --e-shadow-2: 0 1px 2px rgba(18, 17, 15, 0.04), 0 14px 34px -18px rgba(18, 17, 15, 0.16);
     --e-shadow-3: 0 40px 90px -30px rgba(18, 17, 15, 0.42), 0 2px 6px rgba(18, 17, 15, 0.06);
     --e-hi: inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    --e-display: "Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif;
-    --e-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --e-display: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --e-sans: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --e-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
+/* tema gelap (diatur js/theme.js) */
+:root[data-theme="dark"] {
         --e-bg: #0b0a09;
         --e-surface: #141311;
         --e-soft: #1c1a17;
@@ -3040,7 +3039,7 @@ body.erp-display .erp-app { grid-template-columns: minmax(0, 1fr); }
         --e-shadow-3: 0 40px 100px -30px rgba(0, 0, 0, 0.9);
         --e-hi: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
-}
+
 
 body {
     font-family: var(--e-sans);
@@ -3053,14 +3052,14 @@ body {
     background-attachment: fixed;
     font-feature-settings: "cv11", "ss03";
 }
-@media (prefers-color-scheme: dark) {
-    body {
+/* tema gelap (diatur js/theme.js) */
+:root[data-theme="dark"] body {
         background:
             radial-gradient(1000px 520px at -10% -10%, rgba(255, 245, 220, 0.05), transparent 60%),
             var(--e-bg);
         background-attachment: fixed;
     }
-}
+
 
 ::selection { color: var(--e-accent-text); background: var(--e-text); }
 
@@ -3078,8 +3077,8 @@ body {
     padding: 2px 10px 18px;
     border-bottom: 1px solid var(--e-border);
     font-family: var(--e-display);
-    font-size: 22px;
-    font-weight: 600;
+    font-size: 18.5px;
+    font-weight: 500;
     letter-spacing: 0.01em;
 }
 .erp-nav__logo {
@@ -3089,8 +3088,8 @@ body {
     background: var(--e-ink-grad);
     border-radius: 12px;
     font-family: var(--e-display);
-    font-size: 22px;
-    font-weight: 600;
+    font-size: 18.5px;
+    font-weight: 500;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 10px 20px -10px rgba(0, 0, 0, 0.55);
 }
 .erp-nav__list { gap: 3px; }
@@ -3137,8 +3136,8 @@ body {
 .erp-page__head { padding: 14px 0 6px; gap: 16px; align-items: flex-end; }
 .erp-page__title {
     font-family: var(--e-display);
-    font-size: clamp(32px, 3.6vw, 44px);
-    font-weight: 600;
+    font-size: clamp(26.9px, 3vw, 37px);
+    font-weight: 500;
     line-height: 1.02;
     letter-spacing: -0.012em;
 }
@@ -3311,7 +3310,7 @@ body {
 }
 .erp-dialog[open] { animation: erp-pop 0.34s var(--e-ease) both; }
 .erp-dialog::backdrop { background: rgba(12, 11, 9, 0.42); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-.erp-dialog__title { font-family: var(--e-display); font-size: 28px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; }
+.erp-dialog__title { font-family: var(--e-display); font-size: 23.5px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.1; }
 .erp-toast {
     color: var(--e-accent-text);
     background: var(--e-ink-grad);
@@ -3336,7 +3335,7 @@ body {
     animation: erp-pop 0.5s var(--e-ease) both;
 }
 .erp-login__brand { letter-spacing: 0.32em; font-weight: 600; }
-.erp-login__card h1 { font-family: var(--e-display); font-size: clamp(30px, 4vw, 40px); font-weight: 600; letter-spacing: -0.01em; line-height: 1.05; }
+.erp-login__card h1 { font-family: var(--e-display); font-size: clamp(25.2px, 3.4vw, 33.6px); font-weight: 500; letter-spacing: -0.015em; line-height: 1.05; }
 .erp-persona {
     border-radius: 14px !important;
     transition: transform 0.2s var(--e-ease), box-shadow 0.2s var(--e-ease), border-color 0.2s !important;
@@ -3346,7 +3345,7 @@ body {
 /* Tabel & kartu di layar sempit tetap lega */
 @media (max-width: 720px) {
     .erp-card { padding: 18px; }
-    .erp-page__title { font-size: 30px; }
+    .erp-page__title { font-size: 25.2px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3390,7 +3389,7 @@ body {
     box-shadow: var(--e-hi), var(--e-shadow-2);
 }
 .erp-pos-panel .erp-pos__cart { display: grid; gap: 14px; }
-.erp-pos-panel .erp-card__head h2 { font-family: var(--e-display); font-size: 27px; font-weight: 600; letter-spacing: -0.01em; }
+.erp-pos-panel .erp-card__head h2 { font-family: var(--e-display); font-size: 22.7px; font-weight: 500; letter-spacing: -0.015em; }
 .erp-pos-panel .erp-pos__lines { gap: 2px; }
 .erp-pos-panel .erp-pos__lines li { padding: 10px 0; border-bottom: 1px solid var(--e-border); }
 .erp-pos-panel .erp-pos__sum {
@@ -3400,7 +3399,7 @@ body {
     border-radius: 16px;
     font-variant-numeric: tabular-nums;
 }
-.erp-pos-panel .erp-pos__total { font-family: var(--e-display); font-size: 24px !important; font-weight: 600; }
+.erp-pos-panel .erp-pos__total { font-family: var(--e-display); font-size: 20.2px !important; font-weight: 500; }
 .erp-pos-panel .erp-pos__payments .erp-seg {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3439,7 +3438,7 @@ body {
 /* Pesanan berjalan */
 .erp-orderline { display: grid; gap: 12px; min-width: 0; }
 .erp-orderline__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
-.erp-orderline__head h2 { font-family: var(--e-display); font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+.erp-orderline__head h2 { font-family: var(--e-display); font-size: 21.8px; font-weight: 500; letter-spacing: -0.015em; }
 .erp-orderline__tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 .erp-orderline__tabs button {
     display: inline-flex;
@@ -3502,16 +3501,13 @@ body {
 .erp-orderline__card.is-cooking { --tint: #f5ead6; --ink: #8a5a00; }
 .erp-orderline__card.is-ready { --tint: #e1efe6; --ink: #1d6a43; }
 .erp-orderline__card.is-unpaid { --tint: #f3e3e3; --ink: #9a3a32; }
-@media (prefers-color-scheme: dark) {
-    .erp-orderline__card.is-queued { --tint: #1b2633; --ink: #9fc2e6; }
-    .erp-orderline__card.is-cooking { --tint: #2e2412; --ink: #f2c25b; }
-    .erp-orderline__card.is-ready { --tint: #13281c; --ink: #7fd5a3; }
-    .erp-orderline__card.is-unpaid { --tint: #2e1716; --ink: #ff9d93; }
-}
+/* tema gelap (diatur js/theme.js) */
+:root[data-theme="dark"] .erp-orderline__card.is-queued { --tint: #1b2633; --ink: #9fc2e6; }:root[data-theme="dark"] .erp-orderline__card.is-cooking { --tint: #2e2412; --ink: #f2c25b; }:root[data-theme="dark"] .erp-orderline__card.is-ready { --tint: #13281c; --ink: #7fd5a3; }:root[data-theme="dark"] .erp-orderline__card.is-unpaid { --tint: #2e1716; --ink: #ff9d93; }
+
 .erp-orderline__top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
 .erp-orderline__top strong { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
 .erp-orderline__top span { overflow: hidden; color: var(--e-muted); font-size: 12.5px; white-space: nowrap; text-overflow: ellipsis; }
-.erp-orderline__items { font-family: var(--e-display); font-size: 26px; font-weight: 600; line-height: 1; }
+.erp-orderline__items { font-family: var(--e-display); font-size: 21.8px; font-weight: 500; line-height: 1; }
 .erp-orderline__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .erp-orderline__foot small { color: var(--e-muted); font-size: 11.5px; }
 .erp-orderline__foot em {
@@ -3553,7 +3549,7 @@ body {
 .erp-pos__cat[aria-selected="true"] { border-color: var(--e-text); box-shadow: 0 0 0 1px var(--e-text), var(--e-shadow-2); }
 .erp-pos__cat-img { display: grid; flex: none; place-items: center; width: 42px; height: 42px; overflow: hidden; background: var(--e-soft); border-radius: 12px; }
 .erp-pos__cat-img img { width: 100%; height: 100%; object-fit: cover; }
-.erp-pos__cat-all { font-family: var(--e-display); font-size: 21px; color: var(--e-text); }
+.erp-pos__cat-all { font-family: var(--e-display); font-size: 17.6px; color: var(--e-text); }
 .erp-pos__cat-text { display: grid; min-width: 0; line-height: 1.25; }
 .erp-pos__cat-text strong { overflow: hidden; font-size: 13px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
 .erp-pos__cat-text small { color: var(--e-muted); font-size: 11.5px; }
@@ -3622,7 +3618,7 @@ body {
 .erp-stats--compact .erp-stat { padding: 14px 16px; }
 .erp-stats--compact .erp-stat__value { font-size: 19px; }
 @media (max-width: 900px) { .erp-stats--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.erp-pos-panel .erp-pos__total { font-family: var(--e-sans); font-size: 20px !important; font-weight: 700; letter-spacing: -0.02em; }
+.erp-pos-panel .erp-pos__total { font-family: var(--e-sans); font-size: 16.8px !important; font-weight: 500; letter-spacing: -0.015em; }
 .erp-orderline__items,
 .erp-page__title,
 .erp-dialog__title,
@@ -3643,3 +3639,90 @@ body {
     .erp-persona-switch { max-width: 112px; }
     .erp-top__right .erp-badge { display: none; }
 }
+
+/* ---------- Layar pelanggan: pasangan tablet ---------- */
+.erp-dialog.erp-pair { width: min(720px, calc(100% - 24px)); }
+.erp-pair__options { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 14px 0; }
+.erp-pair__option { display: grid; align-content: start; gap: 10px; padding: 18px; border: 1px solid var(--e-border); border-radius: 18px; background: var(--e-surface); }
+.erp-pair__option h3 { margin: 0; font-size: 15px; }
+.erp-pair__option p { margin: 0; color: var(--e-muted); font-size: 13px; line-height: 1.5; }
+.erp-pair__code-box { display: grid; gap: 8px; }
+.erp-pair__label { font-size: 10.5px !important; letter-spacing: 0.15em; text-transform: uppercase; }
+.erp-pair__code { color: var(--e-text) !important; font-family: var(--e-display); font-size: 38.6px !important; font-weight: 500; letter-spacing: 0.12em; line-height: 1 !important; font-variant-numeric: lining-nums; }
+.erp-pair__steps { margin: 0; padding-left: 18px; color: var(--e-muted); font-size: 12.5px; line-height: 1.6; }
+.erp-pair__url { display: block; padding: 8px 10px; overflow-wrap: anywhere; font-size: 11.5px; }
+.erp-pair__status { font-weight: 600; color: var(--e-text) !important; }
+.erp-pair__tablet { justify-self: start; font-size: 12.5px; }
+
+.erp-cdisplay__bar { align-items: center; }
+.erp-cdisplay__status { padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--e-muted); background: var(--e-soft); }
+.erp-cdisplay__status:empty { display: none; }
+.erp-cdisplay__status.is-on { color: var(--e-good); background: var(--e-good-bg); }
+.erp-cdisplay__status.is-wait { color: var(--e-warn); background: var(--e-warn-bg); }
+.erp-cdisplay__status.is-off { color: var(--e-bad); background: var(--e-bad-bg); }
+.erp-cdisplay__pair { display: grid; gap: 14px; justify-items: center; width: min(460px, 100%); text-align: center; }
+.erp-cdisplay__code-input {
+    width: 100%;
+    padding: 14px 18px;
+    color: var(--e-text);
+    background: var(--e-surface);
+    border: 1px solid var(--e-border-strong);
+    border-radius: 18px;
+    font-family: var(--e-display);
+    font-size: 33.6px;
+    letter-spacing: 0.2em;
+    text-align: center;
+    text-transform: uppercase;
+}
+.erp-cdisplay__code-input:focus { outline: none; border-color: var(--e-text); box-shadow: 0 0 0 4px color-mix(in srgb, var(--e-text) 9%, transparent); }
+.erp-cdisplay__pair .erp-btn { min-width: 200px; min-height: 48px; }
+
+/* ============================================================
+   ETALASE & BRAND (modules/storefront.js)
+   Panel pratinjau di samping (desktop), pop-up di HP.
+   ============================================================ */
+.erp-sf__layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); gap: 20px; align-items: start; }
+.erp-sf__editor { display: grid; gap: 16px; min-width: 0; }
+.erp-sf__card { display: grid; gap: 12px; }
+.erp-sf__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.erp-sf__actions--sticky { position: sticky; bottom: 0; z-index: 3; margin: 0 -4px -4px; padding: 10px 4px 4px; background: linear-gradient(transparent, var(--e-surface) 30%); }
+.erp-sf__dirty { margin-right: auto; color: var(--e-muted); font-size: 12px; }
+.erp-sf__dirty.is-dirty { color: var(--e-warn); font-weight: 600; }
+.erp-sf__limit-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.erp-sf__limit { width: 90px; }
+.erp-sf__cats { display: grid; gap: 10px; }
+.erp-sf__cat { display: grid; gap: 8px; padding: 14px; background: var(--e-soft); border: 1px solid var(--e-border); border-radius: 16px; }
+.erp-sf__cat.is-hidden { opacity: 0.55; }
+.erp-sf__cat-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 10px; }
+.erp-sf__order { display: grid; gap: 4px; }
+.erp-sf__move { min-width: 34px; padding: 4px 8px; }
+.erp-sf__toggle { display: inline-flex; align-items: center; gap: 6px; padding-bottom: 8px; font-size: 13px; font-weight: 600; }
+.erp-sf__hint { margin: 2px 0 0; color: var(--e-muted); font-size: 12px; }
+.erp-sf__chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.erp-sf__chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px 4px 4px; background: var(--e-surface); border: 1px solid var(--e-border-strong, var(--e-border)); border-radius: 999px; font-size: 12.5px; font-weight: 500; }
+.erp-sf__chip.is-over { opacity: 0.45; border-style: dashed; }
+.erp-sf__chip-x, .erp-sf__chip-move { display: grid; place-items: center; width: 22px; height: 22px; padding: 0; color: var(--e-muted); background: var(--e-soft); border: 0; border-radius: 50%; cursor: pointer; font: inherit; }
+.erp-sf__chip-move:disabled { visibility: hidden; }
+.erp-sf__add { width: auto; padding: 6px 10px; border-radius: 999px; font-size: 12.5px; }
+.erp-sf__preview { position: sticky; top: 16px; display: grid; gap: 10px; }
+.erp-sf__preview-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.erp-sf__live { color: var(--e-good); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; }
+.erp-sf__brand { font-weight: 500; }
+.erp-sf__phone { height: min(78vh, 760px); overflow: auto; padding: 14px; border: 1px solid var(--e-border); border-radius: 30px; box-shadow: var(--e-shadow-2); }
+.erp-sf__phone .bx-cat2__top { top: -14px; }
+.erp-sf__preview-btn, .erp-sf__preview-close { display: none; }
+@media (max-width: 1080px) {
+    .erp-sf__layout { grid-template-columns: minmax(0, 1fr); }
+    .erp-sf__preview { display: none; }
+    .erp-sf__preview-btn { display: inline-flex; }
+    .erp-sf__preview.is-popup {
+        position: fixed; inset: 0; z-index: 1200; display: grid; grid-template-rows: auto 1fr; padding: 14px;
+        background: rgb(8 7 5 / 55%); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    }
+    .erp-sf__preview.is-popup .erp-sf__preview-head { padding: 10px 14px; color: #fff; }
+    .erp-sf__preview.is-popup .erp-sf__phone { height: auto; min-height: 0; }
+    .erp-sf__preview-close { display: grid; place-items: center; width: 40px; height: 40px; color: #fff; background: rgb(255 255 255 / 14%); border: 0; border-radius: 50%; font-size: 22px; cursor: pointer; }
+    .erp-sf__cat-head { grid-template-columns: auto minmax(0, 1fr); }
+    .erp-sf__toggle { grid-column: 2; padding: 0; }
+}
+body.erp-sf-lock { overflow: hidden; }

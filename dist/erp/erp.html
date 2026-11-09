@@ -4,19 +4,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex">
+    <!-- Keamanan (docs/KEAMANAN.md): hanya sumber resmi yang boleh menjalankan kode/terhubung.
+         Tidak ada skrip tertanam; skrip & koneksi asing (mis. hasil XSS) ditolak browser. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Kantoong ERP</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" />
-  <script type="module" crossorigin src="/assets/erp-BI-75wOM.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="modulepreload" crossorigin href="/assets/client-config-C5cOf8VT.js">
-  <link rel="modulepreload" crossorigin href="/assets/supabase-client-vYFxeodt.js">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+  <script type="module" crossorigin src="/assets/erp-Cr7TkqsM.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-client-DvLz8SWw.js">
+  <link rel="modulepreload" crossorigin href="/assets/theme-VxaZG_SN.js">
   <link rel="modulepreload" crossorigin href="/assets/password-rules-BefxxVvK.js">
-  <link rel="modulepreload" crossorigin href="/assets/auth-service-Bp4RrR2T.js">
-  <link rel="modulepreload" crossorigin href="/assets/preload-helper-BXl3LOEh.js">
-  <link rel="modulepreload" crossorigin href="/assets/kantoong-assistant-DxjzuX6a.js">
-  <link rel="stylesheet" crossorigin href="/assets/erp-C07RH0_c.css">
+  <link rel="modulepreload" crossorigin href="/assets/auth-service-qbjUzGwR.js">
+  <link rel="modulepreload" crossorigin href="/assets/kantoong-assistant-vCaze9AL.js">
+  <link rel="modulepreload" crossorigin href="/assets/home-CLxaDq_S.js">
+  <link rel="modulepreload" crossorigin href="/assets/catalog-view-D8vLm8iL.js">
+  <link rel="stylesheet" crossorigin href="/assets/home-CnkQQwpQ.css">
+  <link rel="stylesheet" crossorigin href="/assets/erp-C1b4UqvZ.css">
 </head>
 <body>
     <!-- =========================================
@@ -97,21 +102,6 @@
     <!-- Asisten AI Kantoong: sama dengan di toko, nyambung lintas halaman & brand.
          ERP & kasir: selalu mulai sebagai ORB bulat bermata. Ketuk orb = kotak
          "Halo Kak" (mode BEBAS: geser kiri/kanan, dibuka naik seperti di HP).
-         Tidak pernah menempel di samping. -->
-    <script>
-        window.KantoongAssistantContext = {
-            surface: "erp",
-            dock: false,
-            startMinimized: true,
-            greetings: ["Ada yang bisa kubantu di dashboard kerjamu?"],
-            suggestions: [
-                "Cara menambah karyawan baru?",
-                "Bagaimana membuat purchase order?",
-                "Cara mengatur target & komisi sales?",
-                "Bagaimana proses retur pelanggan?",
-                "Apa bedanya Tim & Target dengan Ruang Kerjaku?"
-            ]
-        };
-    </script>
+         Tidak pernah menempel di samping. -->
 </body>
 </html>

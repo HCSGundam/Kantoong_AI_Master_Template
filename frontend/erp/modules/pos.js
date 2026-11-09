@@ -47,7 +47,9 @@ import { greetingText, pointsRedeemable } from "../core/loyalty.js";
 import { capacity, hasRecipe, orderUsage, sellOutAt } from "../core/recipe.js";
 import { enqueue, equalShares, isNetworkError, readQueue, removeFromQueue, splitLines, syncQueue } from "../core/pos-split.js";
 import { RATING_FACES } from "../core/pos-report.js";
-import { DISPLAY_CHANNEL, render as renderCustomerDisplay } from "./customer-display.js";
+import { render as renderCustomerDisplay } from "./customer-display.js";
+import { openDisplayLink, readPairCode, savePairCode } from "../data/display-link.js";
+import { generateCode } from "../core/display-code.js";
 import { confirmDialog, dateTime, el, emptyState, formDialog, friendlyError, pageHeader, rupiah, segmented, statCard, toast } from "../ui.js";
 import { scanBarcode } from "./catalog.js";
 
@@ -150,25 +152,91 @@ export async function render(ctx) {
         return null;
     };
 
-    // ---------- Layar pelanggan (Tahap 6) ----------
-    const display = typeof BroadcastChannel === "function" ? new BroadcastChannel(DISPLAY_CHANNEL) : null;
+    // ---------- Layar pelanggan: monitor kedua (lokal) + tablet (Supabase Realtime, kode pasangan) ----------
     let lastCart = null;
-    const publish = (message) => {
-        try {
-            display?.postMessage(message);
-        } catch {
-            // Layar pelanggan opsional.
+    let tabletStatus = "lokal";
+    let statusEl = null; // teks status di dialog yang sedang terbuka (diperbarui langsung)
+    const STATUS_TEXT = { tersambung: "🟢 Saluran tablet aktif", menyambung: "🟡 Menyambung ke internet…", terputus: "🔴 Saluran tablet terputus (cek internet)", lokal: "" };
+    const pairCode = readPairCode(pos.outlet);
+    const display = openDisplayLink({
+        code: pairCode,
+        isPrivate: ctx.data.mode !== "demo",
+        onStatus: (status) => {
+            tabletStatus = status;
+            if (statusEl) statusEl.textContent = STATUS_TEXT[status] || "";
+        },
+    });
+    const publish = (message) => display.post(message);
+    display.onMessage((message) => {
+        if (message.type === "hello") {
+            if (message.remote) toast("📱 Tablet layar pelanggan tersambung.");
+            if (lastCart) publish(lastCart);
         }
-    };
-    if (display) {
-        display.onmessage = (event) => {
-            const message = event.data || {};
-            if (message.type === "hello" && lastCart) publish(lastCart);
-            if (message.type === "rated") {
-                toast(`Pelanggan menilai ${RATING_FACES[message.score] || ""} untuk ${message.receipt_no}`);
-                if (message.sale_id && !message.offline) ctx.data.rateSale?.(message.sale_id, message.score).catch(() => {});
-            }
+        if (message.type === "rated") {
+            toast(`Pelanggan menilai ${RATING_FACES[message.score] || ""} untuk ${message.receipt_no}`);
+            if (message.sale_id && !message.offline) ctx.data.rateSale?.(message.sale_id, message.score).catch(() => {});
+        }
+    });
+
+    /** Pilih layar pelanggan: monitor kedua di komputer ini, atau tablet terpisah dengan kode pasangan. */
+    function displayDialog() {
+        const dialog = el("dialog", { class: "erp-dialog erp-pair" });
+        const close = () => dialog.close();
+        const code = readPairCode(pos.outlet);
+        const link = `${location.origin}${location.pathname}#/pos/layar/${code}`;
+        statusEl = el("p", { class: "erp-pair__status", text: STATUS_TEXT[tabletStatus] || "" });
+        const setCode = (next) => {
+            savePairCode(pos.outlet, next);
+            pos.reopenDisplay = Boolean(next); // dibuka lagi oleh render baru (dengan saluran baru)
+            close();
+            ctx.rerender();
         };
+        dialog.append(
+            el("h2", { class: "erp-dialog__title", text: "Layar pelanggan" }),
+            el("p", { class: "erp-muted", text: "Pelanggan melihat setiap item, promo, poin & total secara langsung — lalu menilai pelayanan dengan 1 ketukan." }),
+            el("div", { class: "erp-pair__options" },
+                el("section", { class: "erp-pair__option" },
+                    el("h3", { text: "🖥️ Monitor kedua" }),
+                    el("p", { text: "Komputer kasir dengan 2 layar. Jendela baru dibuka, lalu seret ke monitor yang menghadap pelanggan." }),
+                    el("button", {
+                        class: "erp-btn", type: "button",
+                        onclick: () => {
+                            window.open(`${location.pathname}#/pos/layar`, "kantoong-layar-pelanggan", "popup,width=1024,height=720");
+                            close();
+                        },
+                    }, "Buka jendela")),
+                el("section", { class: "erp-pair__option" },
+                    el("h3", { text: "📱 Tablet terpisah" }),
+                    code
+                        ? el("div", { class: "erp-pair__code-box" },
+                            el("p", { class: "erp-pair__label", text: "Kode pasangan" }),
+                            el("p", { class: "erp-pair__code", text: code.replace(/(...)(...)/, "$1 $2") }),
+                            el("ol", { class: "erp-pair__steps" },
+                                el("li", { text: "Di tablet, buka ERP & masuk dengan akun kasir." }),
+                                el("li", {}, "Buka menu ", el("strong", { text: "Kasir POS › Layar pelanggan" }), " atau alamat di bawah."),
+                                el("li", { text: "Ketik kode di atas. Selesai!" })),
+                            el("code", { class: "erp-pair__url", text: link }),
+                            statusEl,
+                            el("div", { class: "erp-form__actions" },
+                                el("button", { class: "erp-btn erp-btn--sm", type: "button", onclick: () => navigator.clipboard?.writeText(link).then(() => toast("Alamat disalin.")).catch(() => {}) }, "Salin alamat"),
+                                el("button", { class: "erp-btn erp-btn--sm", type: "button", title: "Tablet lama otomatis terputus", onclick: () => setCode(generateCode()) }, "Ganti kode"),
+                                el("button", { class: "erp-btn erp-btn--sm erp-btn--danger", type: "button", onclick: () => setCode("") }, "Putuskan tablet")))
+                        : el("div", {},
+                            el("p", { text: "Tablet di meja kasir, tersambung lewat internet dengan kode pasangan. Hanya akun staf yang bisa ikut melihat." }),
+                            el("button", { class: "erp-btn erp-btn--primary", type: "button", onclick: () => setCode(generateCode()) }, "Buat kode pasangan")),
+                    el("a", { class: "erp-link erp-pair__tablet", href: "#/pos/layar", onclick: close }, "Ini tablet pelanggannya? Masukkan kode →"))),
+            el("div", { class: "erp-form__actions" }, el("span", { class: "erp-spacer" }), el("button", { class: "erp-btn", type: "button", onclick: close }, "Tutup"))
+        );
+        dialog.addEventListener("close", () => {
+            statusEl = null;
+            dialog.remove();
+        });
+        document.body.appendChild(dialog);
+        dialog.showModal();
+    }
+    if (pos.reopenDisplay) {
+        pos.reopenDisplay = false;
+        setTimeout(() => displayDialog(), 300);
     }
 
     // ---------- Mode offline (Tahap 6) ----------
@@ -227,7 +295,7 @@ export async function render(ctx) {
         el("button", { class: "erp-btn", type: "button", onclick: () => openBills() }, `📋 Bill terbuka (${bills.length})`),
         el("button", {
             class: "erp-btn", type: "button", title: "Buka di monitor/tablet yang menghadap pelanggan",
-            onclick: () => window.open(`${location.pathname}#/pos/layar`, "kantoong-layar-pelanggan", "popup,width=1024,height=720"),
+            onclick: () => displayDialog(),
         }, "🖥️ Layar pelanggan"),
         settings.kitchen_enabled ? el("a", { class: "erp-btn", href: "#/kitchen" }, "🍳 Layar dapur") : null,
         hasRole(me, "produk") ? el("button", { class: "erp-btn", type: "button", onclick: () => manageModifiers(ctx, products) }, "🧩 Varian") : null,

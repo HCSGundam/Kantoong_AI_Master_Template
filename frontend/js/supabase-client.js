@@ -1,5 +1,6 @@
 // Import Supabase Client dari CDN resmi (untuk web statis / vanilla JS)
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+// Versi DIKUNCI (bukan 'terbaru'): paket yang disusupi di internet tidak otomatis ikut termuat.
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
 
 // Masukkan URL dan Publishable Key dari dashboard Supabase kamu
 const SUPABASE_URL = 'https://bkhsmyabckdpxmboopar.supabase.co';

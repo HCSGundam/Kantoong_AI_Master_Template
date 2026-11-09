@@ -21,6 +21,19 @@
  */
 
 import { supabase } from "./supabase-client.js";
+import { PRODUCT_PUBLIC_COLUMNS } from "./product-columns.js";
+import { applyTheme } from "./theme.js";
+import { onStorefrontChange, startStorefrontSync } from "./storefront-settings.js";
+import {
+  clampQty,
+  priceSaving,
+  productJsonLd,
+  pushRecent,
+  relatedProducts,
+  reviewSummary,
+  stockState,
+  timeAgo,
+} from "./product-detail.js";
 import CFG from "../client-config.js";
 import {
   applyStoreProducts,
@@ -545,6 +558,25 @@ window.addEventListener("message", (event) => {
       closeDashboard();
       break;
 
+    // Dari Dashboard User: buka produk / keranjang / asisten di toko.
+    case "kantoong:open-product": {
+      const product = findProductById(String(message.id ?? ""));
+      productPage.returnTo = String(message.from ?? "").replace(/[^a-z0-9-]/g, "");
+      closeDashboard();
+      if (product) setTimeout(() => openProductPage(product), 120);
+      break;
+    }
+
+    case "kantoong:open-cart":
+      closeDashboard();
+      setTimeout(() => $(SELECTORS.cartButton)?.click(), 160);
+      break;
+
+    case "kantoong:open-assistant":
+      closeDashboard();
+      setTimeout(() => askConsultation(""), 160);
+      break;
+
     case "dashboard-bootstrap-error":
     case "kantoong:dashboard-bootstrap-error":
       reportError(
@@ -858,9 +890,26 @@ function scrollToCatalog() {
  * tanpa mengirim. Pembeli lalu menulis sendiri keinginannya, mis.
  * "yang mirip ini tapi warna hitam". Ditangani chat-sheet.js.
  */
-function attachProductToChat(product) {
+/**
+ * Lampirkan produk ke kotak ketik chat (TIDAK mengirim, TIDAK menulis kata-kata).
+ * photoIndex (0-based) = foto ke-berapa yang sedang dilihat pembeli, agar AI
+ * tahu persis foto/model/warna mana yang ditanyakan (satu kartu bisa berisi
+ * beberapa model, mis. "cuci gudang").
+ */
+function attachProductToChat(product, { photoIndex = null } = {}) {
   if (!product) return;
   emit("product-selected", { product });
+
+  const media = getProductMedia(product);
+  const picked = Number.isInteger(photoIndex) && photoIndex >= 0 ? media[photoIndex] : null;
+  const photo = picked && picked.type === "image" && media.length > 1
+    ? {
+        photo_index: photoIndex + 1,
+        photo_total: media.length,
+        photo_label: picked.custom ? picked.label : "",
+      }
+    : {};
+
   window.dispatchEvent(
     new CustomEvent("kantoong:attach-product", {
       detail: {
@@ -868,17 +917,23 @@ function attachProductToChat(product) {
           id: getProductId(product),
           name: getProductName(product),
           price: getProductPrice(product),
-          image_url: getProductImage(product),
+          image_url: picked?.type === "image" ? picked.src : getProductImage(product),
+          ...photo,
         },
       },
     })
   );
 }
 
-function askConsultation(text) {
+/**
+ * Buka chat dengan kotak ketik KOSONG. Kalimat dari owner (ai_prompt)
+ * hanya jadi petunjuk abu-abu (placeholder): tidak ditulis, tidak dikirim.
+ * Pembeli sendiri yang menulis pertanyaannya.
+ */
+function askConsultation(hint) {
   window.dispatchEvent(
     new CustomEvent("kantoong:consult", {
-      detail: { text: String(text || "") },
+      detail: { text: "", hint: String(hint || "") },
     })
   );
 }
@@ -1118,7 +1173,7 @@ async function fetchProductsFromSupabase() {
     );
   }
 
-  let query = supabase.from("products").select("*");
+  let query = supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS);
 
   if (filterByTenant) {
     query = query.eq("business_id", tenantId);
@@ -1567,7 +1622,7 @@ function getProductMedia(product) {
  * - Tiap foto punya nama produk/varian sendiri (label), teks utama tetap.
  * Mengembalikan { element, foot, start, stop }.
  */
-function createMediaGallery(product, { className = "" } = {}) {
+function createMediaGallery(product, { className = "", onChange } = {}) {
   const media = getProductMedia(product);
   const name = getProductName(product);
   const seconds = Math.max(2, toNumber(CFG?.quick_view?.slide_seconds, 4));
@@ -1713,6 +1768,7 @@ function createMediaGallery(product, { className = "" } = {}) {
     showLabel(target);
     playActive();
     schedule(manual);
+    onChange?.(target);
   }
 
   // Geser foto besar = flip ke kartu berikut/sebelumnya.
@@ -1752,6 +1808,13 @@ function createMediaGallery(product, { className = "" } = {}) {
   return {
     element: gallery,
     foot,
+    media,
+    get index() {
+      return Math.max(0, current);
+    },
+    show(index) {
+      goTo(index, index >= current ? 1 : -1, { manual: true });
+    },
     start() {
       running = true;
       current = -1;
@@ -1955,7 +2018,7 @@ function openQuickView(product) {
 
 /* ---------- Fase 3: halaman produk penuh ---------- */
 
-const productPage = { root: null, gallery: null, pushed: false };
+const productPage = { root: null, gallery: null, pushed: false, observer: null, returnTo: "" };
 
 function findProductById(productId) {
   return state.products.find((item) => getProductId(item) === String(productId));
@@ -1975,7 +2038,34 @@ function openProductPage(product) {
   }
 }
 
+/** Kembali ke fitur dashboard asal (mis. Katalog Produk) bila produk dibuka dari sana. */
+function returnToDashboardFeature() {
+  const featureId = productPage.returnTo;
+  productPage.returnTo = "";
+  if (!featureId) return;
+  openDashboard();
+  setTimeout(() => {
+    state.dashboardFrame?.contentWindow?.postMessage(
+      { type: "kantoong:dashboard-open-feature", id: featureId },
+      window.location.origin
+    );
+  }, 120);
+}
+
 function closeProductPage() {
+  if (productPage.returnTo) {
+    // Tutup halaman produk tanpa animasi kembali ke beranda, lalu buka lagi katalognya.
+    if (productPage.pushed) {
+      productPage.pushed = false;
+      history.back();
+    } else {
+      history.replaceState(null, "", location.pathname + location.search);
+      hideProductPage();
+    }
+    returnToDashboardFeature();
+    return;
+  }
+
   if (productPage.pushed) {
     productPage.pushed = false;
     history.back();
@@ -1989,7 +2079,680 @@ function closeProductPage() {
 
 function hideProductPage() {
   productPage.gallery?.stop();
+  clearProductSeo();
   if (productPage.root) productPage.root.hidden = true;
+}
+
+/* ---------- Fase 3: halaman produk ala e-commerce kelas atas ---------- */
+
+const PDP_ICONS = {
+  share: ["M12 4v11", "M8 8l4-4 4 4", "M5 13v6h14v-6"],
+  shield: ["M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z", "M9 12l2 2 4-4"],
+  refresh: ["M20 11a8 8 0 1 0-2.3 5.6", "M20 5v6h-6"],
+  close: ["M6 6l12 12", "M18 6L6 18"],
+  left: ["M15 5l-7 7 7 7"],
+  right: ["M9 5l7 7-7 7"],
+  expand: ["M4 9V4h5", "M20 9V4h-5", "M4 15v5h5", "M20 15v5h-5"],
+  play: ["M8 5l11 7-11 7z"],
+};
+
+const pdp = { title: "", description: "", reviewsFor: "" };
+
+function pdpButton(className, label, iconPaths, text) {
+  const button = makeElement("button", className);
+  button.type = "button";
+  if (label) button.setAttribute("aria-label", label);
+  if (iconPaths) button.appendChild(makeIcon("pdp-icon", iconPaths));
+  if (text) button.appendChild(makeElement("span", "", text));
+  return button;
+}
+
+/** Judul tab, deskripsi & data terstruktur (schema.org) untuk Google / mesin AI. */
+function applyProductSeo(product) {
+  if (!pdp.title) {
+    pdp.title = document.title;
+    pdp.description = document.querySelector('meta[name="description"]')?.content ?? "";
+  }
+
+  const brand = CFG?.app_name || "Kantoong";
+  document.title = `${getProductName(product)} · ${brand}`;
+
+  let meta = document.querySelector('meta[name="description"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "description";
+    document.head.appendChild(meta);
+  }
+  meta.content = (escapeText(product?.caption) || escapeText(product?.description) || getProductName(product)).slice(0, 160);
+
+  let script = document.getElementById("pdpJsonLd");
+  if (!script) {
+    script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.id = "pdpJsonLd";
+    document.head.appendChild(script);
+  }
+  const image = getProductImage(product);
+  script.textContent = JSON.stringify(
+    productJsonLd(product, {
+      url: location.href,
+      brand,
+      image: isSafeImageURL(image) ? image : undefined,
+    })
+  );
+}
+
+function clearProductSeo() {
+  document.getElementById("pdpJsonLd")?.remove();
+  if (pdp.title) {
+    document.title = pdp.title;
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.content = pdp.description;
+  }
+}
+
+async function shareProduct(product) {
+  const data = { title: getProductName(product), text: getProductName(product), url: location.href };
+  try {
+    if (navigator.share) {
+      await navigator.share(data);
+      return;
+    }
+    await navigator.clipboard.writeText(location.href);
+    showToast("Tautan produk disalin.");
+  } catch {
+    /* dibatalkan user */
+  }
+}
+
+/* ---------- Lihat foto layar penuh + zoom ---------- */
+
+function openMediaLightbox(product, startIndex = 0) {
+  const media = getProductMedia(product);
+  if (!media.length) return;
+
+  let index = Math.min(Math.max(0, startIndex), media.length - 1);
+  const lastFocus = document.activeElement;
+
+  const root = makeElement("div", "pdp-lightbox");
+  root.setAttribute("role", "dialog");
+  root.setAttribute("aria-modal", "true");
+  root.setAttribute("aria-label", `Foto ${getProductName(product)}`);
+
+  const stage = makeElement("div", "pdp-lightbox__stage");
+  const count = makeElement("p", "pdp-lightbox__count");
+  const close = pdpButton("pdp-lightbox__btn pdp-lightbox__close", "Tutup", PDP_ICONS.close);
+  const prev = pdpButton("pdp-lightbox__btn pdp-lightbox__prev", "Foto sebelumnya", PDP_ICONS.left);
+  const next = pdpButton("pdp-lightbox__btn pdp-lightbox__next", "Foto berikutnya", PDP_ICONS.right);
+  const strip = makeElement("div", "pdp-lightbox__strip");
+
+  const draw = () => {
+    const item = media[index];
+    stage.classList.remove("is-zoomed");
+    stage.replaceChildren();
+    if (item.type === "video") {
+      const video = document.createElement("video");
+      video.src = item.src;
+      video.controls = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      stage.appendChild(video);
+    } else {
+      const img = document.createElement("img");
+      img.src = item.src;
+      img.alt = item.label;
+      stage.appendChild(img);
+    }
+    count.textContent = `${index + 1} / ${media.length}`;
+    root.querySelector(".pdp-lightbox__ask")?.toggleAttribute("hidden", item.type === "video");
+    Array.from(strip.children).forEach((thumb, i) => thumb.classList.toggle("is-active", i === index));
+  };
+
+  const go = (step) => {
+    index = (index + step + media.length) % media.length;
+    draw();
+  };
+
+  media.forEach((item, i) => {
+    const thumb = makeElement("button", "pdp-lightbox__thumb");
+    thumb.type = "button";
+    thumb.setAttribute("aria-label", `Foto ${i + 1}`);
+    if (item.type === "video") thumb.appendChild(makeIcon("pdp-icon", PDP_ICONS.play));
+    else {
+      const img = document.createElement("img");
+      img.src = item.src;
+      img.alt = "";
+      img.loading = "lazy";
+      thumb.appendChild(img);
+    }
+    thumb.addEventListener("click", () => {
+      index = i;
+      draw();
+    });
+    strip.appendChild(thumb);
+  });
+
+  // Ketuk foto = perbesar 2,2× di titik yang diketuk; geser kursor = jelajah.
+  stage.addEventListener("click", (event) => {
+    const img = stage.querySelector("img");
+    if (!img) return;
+    const rect = stage.getBoundingClientRect();
+    img.style.transformOrigin = `${((event.clientX - rect.left) / rect.width) * 100}% ${((event.clientY - rect.top) / rect.height) * 100}%`;
+    stage.classList.toggle("is-zoomed");
+  });
+  stage.addEventListener("pointermove", (event) => {
+    if (!stage.classList.contains("is-zoomed")) return;
+    const img = stage.querySelector("img");
+    const rect = stage.getBoundingClientRect();
+    if (img) img.style.transformOrigin = `${((event.clientX - rect.left) / rect.width) * 100}% ${((event.clientY - rect.top) / rect.height) * 100}%`;
+  });
+
+  let swipeX = 0;
+  stage.addEventListener("touchstart", (event) => {
+    swipeX = event.touches[0].clientX;
+  }, { passive: true });
+  stage.addEventListener("touchend", (event) => {
+    if (stage.classList.contains("is-zoomed")) return;
+    const dx = event.changedTouches[0].clientX - swipeX;
+    if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+  });
+
+  const onKey = (event) => {
+    if (event.key === "Escape") shut();
+    else if (event.key === "ArrowRight") go(1);
+    else if (event.key === "ArrowLeft") go(-1);
+  };
+
+  function shut() {
+    document.removeEventListener("keydown", onKey);
+    root.classList.remove("is-open");
+    setTimeout(() => root.remove(), 200);
+    lastFocus?.focus?.({ preventScroll: true });
+  }
+
+  close.addEventListener("click", shut);
+  prev.addEventListener("click", () => go(-1));
+  next.addEventListener("click", () => go(1));
+  document.addEventListener("keydown", onKey);
+
+  if (media.length < 2) {
+    prev.hidden = true;
+    next.hidden = true;
+    strip.hidden = true;
+  }
+
+  const askPhoto = makeElement("button", "pdp-lightbox__ask", "Tanyakan foto ini");
+  askPhoto.type = "button";
+  askPhoto.addEventListener("click", () => {
+    const at = index;
+    shut();
+    attachProductToChat(product, { photoIndex: at });
+  });
+
+  root.append(stage, count, close, prev, next, askPhoto, strip);
+  ($("#appRoot") || document.body).appendChild(root);
+  draw();
+  requestAnimationFrame(() => root.classList.add("is-open"));
+  close.focus({ preventScroll: true });
+}
+
+/* ---------- Pop-up "Tunggu Kak" sebelum lanjut beli ---------- */
+
+function openWaitDialog(product, quantity) {
+  const root = makeElement("div", "pdp-wait");
+  root.setAttribute("role", "dialog");
+  root.setAttribute("aria-modal", "true");
+  root.setAttribute("aria-labelledby", "pdpWaitTitle");
+
+  const card = makeElement("div", "pdp-wait__card");
+  const orb = makeElement("span", "product-ask pdp-wait__orb");
+  orb.setAttribute("aria-hidden", "true");
+  orb.append(makeElement("span", "product-ask__eye"), makeElement("span", "product-ask__eye"));
+
+  const title = makeElement("h2", "pdp-wait__title", "Tunggu sebentar, Kak");
+  title.id = "pdpWaitTitle";
+
+  const text = makeElement(
+    "p",
+    "pdp-wait__text",
+    `Mau dicek dulu bareng asisten? Ukuran, kecocokan, dan pilihan yang lebih hemat untuk ${getProductName(product)} bisa dicek kurang dari semenit.`
+  );
+
+  const ask = pdpButton("pdp-btn pdp-btn--primary", "", null, "Tanya asisten dulu");
+  const go = pdpButton("pdp-btn pdp-btn--ghost", "", null, "Lanjut ke keranjang");
+
+  const shut = () => {
+    document.removeEventListener("keydown", onKey);
+    root.classList.remove("is-open");
+    setTimeout(() => root.remove(), 200);
+  };
+  const onKey = (event) => {
+    if (event.key === "Escape") shut();
+  };
+
+  ask.addEventListener("click", () => {
+    shut();
+    attachProductToChat(product, { photoIndex: productPage.gallery?.index ?? null });
+  });
+  go.addEventListener("click", () => {
+    shut();
+    addToCart(product, quantity);
+    $(SELECTORS.cartButton)?.click();
+  });
+  root.addEventListener("click", (event) => {
+    if (event.target === root) shut();
+  });
+  document.addEventListener("keydown", onKey);
+
+  const actions = makeElement("div", "pdp-wait__actions");
+  actions.append(ask, go);
+  card.append(orb, title, text, actions);
+  root.appendChild(card);
+  ($("#appRoot") || document.body).appendChild(root);
+  requestAnimationFrame(() => root.classList.add("is-open"));
+  ask.focus({ preventScroll: true });
+}
+
+/* ---------- Bagian-bagian halaman ---------- */
+
+function createPdpGallery(product) {
+  const wrap = makeElement("div", "pdp-gallery");
+  const thumbs = makeElement("div", "pdp-thumbs");
+  thumbs.setAttribute("role", "tablist");
+  thumbs.setAttribute("aria-label", "Pilih foto");
+
+  const gallery = createMediaGallery(product, {
+    className: "product-page__media",
+    onChange(index) {
+      Array.from(thumbs.children).forEach((thumb, i) => {
+        thumb.classList.toggle("is-active", i === index);
+        thumb.setAttribute("aria-selected", String(i === index));
+      });
+    },
+  });
+
+  const hero = makeElement("div", "product-page__hero");
+  hero.append(gallery.element, gallery.foot);
+
+  const discount = getDiscountPercent(product);
+  if (discount > 0) hero.appendChild(makeElement("span", "product-discount", `-${discount}%`));
+
+  const zoom = pdpButton("pdp-zoom", "Lihat foto layar penuh", PDP_ICONS.expand);
+  zoom.addEventListener("click", (event) => {
+    event.stopPropagation();
+    openMediaLightbox(product, gallery.index);
+  });
+  hero.appendChild(zoom);
+  hero.addEventListener("dblclick", () => openMediaLightbox(product, gallery.index));
+
+  gallery.media.forEach((item, i) => {
+    const thumb = makeElement("button", "pdp-thumb");
+    thumb.type = "button";
+    thumb.setAttribute("role", "tab");
+    thumb.setAttribute("aria-label", `Foto ${i + 1}`);
+    if (item.type === "video") {
+      thumb.classList.add("is-video");
+      thumb.appendChild(makeIcon("pdp-icon", PDP_ICONS.play));
+    } else {
+      const img = document.createElement("img");
+      img.src = item.src;
+      img.alt = "";
+      img.loading = "lazy";
+      thumb.appendChild(img);
+    }
+    thumb.addEventListener("click", () => gallery.show(i));
+    thumbs.appendChild(thumb);
+  });
+
+  wrap.append(hero);
+  if (gallery.media.length > 1) wrap.append(thumbs);
+  return { element: wrap, gallery };
+}
+
+function createPdpSummary(product) {
+  const box = makeElement("div", "pdp-summary");
+  const category = getProductCategory(product);
+  if (category && category !== "Lainnya") box.appendChild(makeElement("p", "pdp-eyebrow", category));
+
+  box.appendChild(makeElement("h1", "pdp-name", getProductName(product)));
+
+  // Rating & terjual (angka asli). Klik rating = loncat ke ulasan.
+  const meta = createProductMeta(product);
+  meta.classList.add("pdp-meta");
+  const reviews = toNumber(product?.review_count, 0);
+  const link = makeElement("button", "pdp-meta__link", reviews > 0 ? `${reviews} ulasan` : "Belum ada ulasan");
+  link.type = "button";
+  link.addEventListener("click", () => {
+    const tab = productPage.root?.querySelector('[data-pdp-tab="reviews"]');
+    tab?.click();
+    tab?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  meta.appendChild(link);
+  box.appendChild(meta);
+
+  const caption = escapeText(product?.caption);
+  if (caption) box.appendChild(makeElement("p", "pdp-caption", caption));
+
+  // Harga: harga coret hanya bila memang lebih tinggi (diskon asli).
+  const priceBox = makeElement("div", "pdp-price");
+  priceBox.appendChild(makeElement("p", "pdp-price__now", formatCurrency(getProductPrice(product))));
+  const saving = priceSaving(getProductPrice(product), getCompareAtPrice(product));
+  if (saving > 0) {
+    const was = makeElement("p", "pdp-price__was");
+    was.append(
+      makeElement("s", "", formatCurrency(getCompareAtPrice(product))),
+      makeElement("span", "pdp-price__off", `-${getDiscountPercent(product)}%`),
+      makeElement("span", "pdp-price__save", `Hemat ${formatCurrency(saving)}`)
+    );
+    priceBox.appendChild(was);
+  }
+  box.appendChild(priceBox);
+
+  return box;
+}
+
+function createPdpBuy(product) {
+  const stock = stockState(product?.stock);
+  const box = makeElement("div", "pdp-buy");
+  box.dataset.stock = stock.key;
+
+  const top = makeElement("div", "pdp-buy__top");
+  const pill = makeElement("span", `pdp-stock pdp-stock--${stock.key}`);
+  pill.append(makeElement("span", "pdp-stock__dot"), document.createTextNode(stock.label));
+  top.appendChild(pill);
+
+  let qty = clampQty(1, stock.max);
+  const stepper = makeElement("div", "pdp-qty");
+  stepper.setAttribute("role", "group");
+  stepper.setAttribute("aria-label", "Jumlah");
+  const minus = pdpButton("pdp-qty__btn", "Kurangi", null, "−");
+  const value = makeElement("output", "pdp-qty__value", String(qty));
+  const plus = pdpButton("pdp-qty__btn", "Tambah", null, "+");
+  const sync = () => {
+    value.textContent = String(qty);
+    minus.disabled = qty <= 1;
+    plus.disabled = qty >= stock.max;
+  };
+  minus.addEventListener("click", () => {
+    qty = clampQty(qty - 1, stock.max);
+    sync();
+  });
+  plus.addEventListener("click", () => {
+    qty = clampQty(qty + 1, stock.max);
+    sync();
+  });
+  stepper.append(minus, value, plus);
+  if (stock.key !== "out") top.appendChild(stepper);
+  sync();
+  box.appendChild(top);
+
+  // Tombol utama = konsultasi (bukan checkout). Checkout tombol sekunder.
+  const ask = makeElement("button", "pdp-btn pdp-btn--ask");
+  ask.type = "button";
+  const orb = makeElement("span", "product-ask pdp-btn__orb");
+  orb.setAttribute("aria-hidden", "true");
+  orb.append(makeElement("span", "product-ask__eye"), makeElement("span", "product-ask__eye"));
+  const askText = makeElement("span", "pdp-btn__stack");
+  askText.append(
+    makeElement("strong", "", "Tanyakan seputar produk ini"),
+    makeElement("small", "", "Ukuran, kecocokan & pilihan terbaik untukmu")
+  );
+  ask.append(orb, askText);
+  ask.addEventListener("click", () =>
+    attachProductToChat(product, { photoIndex: productPage.gallery?.index ?? null })
+  );
+  box.appendChild(ask);
+
+  const row = makeElement("div", "pdp-buy__row");
+  if (stock.key === "out") {
+    const remind = pdpButton("pdp-btn pdp-btn--secondary", "", ICONS.heart, isWishlisted(product) ? "Tersimpan di wishlist" : "Simpan & cek lagi nanti");
+    remind.addEventListener("click", () => {
+      if (!isWishlisted(product)) toggleWishlist(product);
+      remind.querySelector("span").textContent = "Tersimpan di wishlist";
+    });
+    const askStock = pdpButton("pdp-btn pdp-btn--ghost", "", null, "Tanya kapan restok");
+    askStock.addEventListener("click", () => {
+      attachProductToChat(product, { photoIndex: productPage.gallery?.index ?? null });
+    });
+    row.append(remind, askStock);
+  } else {
+    const cart = pdpButton("pdp-btn pdp-btn--secondary", `Tambah ${getProductName(product)} ke keranjang`, ICONS.bag, "Keranjang");
+    cart.dataset.action = "add-to-cart";
+    cart.addEventListener("click", () => addToCart(product, qty));
+    const buy = pdpButton("pdp-btn pdp-btn--ghost", "", null, "Beli sekarang");
+    buy.addEventListener("click", () => openWaitDialog(product, qty));
+    row.append(cart, buy);
+  }
+  box.appendChild(row);
+
+  return box;
+}
+
+function createPdpAssurance(product) {
+  const list = makeElement("ul", "pdp-assure");
+  const estimate = escapeText(product?.ship_estimate) || escapeText(CFG?.shipping?.estimate) || "Cek ongkir saat checkout";
+  const from = escapeText(product?.ship_from) || escapeText(CFG?.shipping?.from) || "Indonesia";
+  const policy = CFG?.policies || {};
+
+  const items = [
+    [ICONS.truck, "Pengiriman", `${estimate} · dari ${from}`],
+    [PDP_ICONS.refresh, "Tukar & retur", escapeText(policy.returns) || "Tanyakan kebijakan tukar ke toko lewat asisten"],
+    [PDP_ICONS.shield, "Pembayaran aman", "Pembayaran selalu kamu lakukan sendiri. Asisten tidak pernah membayar atas namamu."],
+  ];
+
+  items.forEach(([icon, title, text]) => {
+    const li = makeElement("li", "pdp-assure__item");
+    const body = makeElement("div", "");
+    body.append(makeElement("strong", "", title), makeElement("span", "", text));
+    li.append(makeIcon("pdp-icon", icon), body);
+    list.appendChild(li);
+  });
+
+  return list;
+}
+
+function createSpecTable(product) {
+  const rows = [
+    ["Kategori", getProductCategory(product)],
+    ["SKU", escapeText(product?.sku)],
+    ["Barcode", escapeText(product?.barcode)],
+    ["Ketersediaan", stockState(product?.stock).label],
+    ["Dikirim dari", escapeText(product?.ship_from) || escapeText(CFG?.shipping?.from)],
+    ["Estimasi kirim", escapeText(product?.ship_estimate) || escapeText(CFG?.shipping?.estimate)],
+  ].filter(([, value]) => value && value !== "Lainnya");
+
+  const table = makeElement("dl", "pdp-spec");
+  rows.forEach(([key, value]) => {
+    const row = makeElement("div", "pdp-spec__row");
+    row.append(makeElement("dt", "", key), makeElement("dd", "", value));
+    table.appendChild(row);
+  });
+  return table;
+}
+
+function renderReviewList(container, product, reviews) {
+  container.replaceChildren();
+  const summary = reviewSummary(reviews);
+
+  if (!summary.total) {
+    const empty = makeElement("div", "pdp-reviews__empty");
+    empty.append(
+      makeElement("strong", "", "Belum ada ulasan"),
+      makeElement("span", "", "Ulasan hanya bisa ditulis pembeli asli setelah pesanannya selesai, jadi semua ulasan di sini jujur.")
+    );
+    container.appendChild(empty);
+    return;
+  }
+
+  const head = makeElement("div", "pdp-reviews__head");
+  const score = makeElement("div", "pdp-reviews__score");
+  score.append(
+    makeElement("strong", "", summary.avg.toFixed(1).replace(".", ",")),
+    makeElement("span", "pdp-stars", "★★★★★"),
+    makeElement("small", "", `${summary.total} ulasan`)
+  );
+  score.querySelector(".pdp-stars").style.setProperty("--fill", `${(summary.avg / 5) * 100}%`);
+
+  const bars = makeElement("div", "pdp-reviews__bars");
+  summary.bars.forEach((bar) => {
+    const row = makeElement("div", "pdp-bar");
+    const track = makeElement("span", "pdp-bar__track");
+    const fill = makeElement("span", "pdp-bar__fill");
+    fill.style.width = `${bar.pct}%`;
+    track.appendChild(fill);
+    row.append(makeElement("span", "", `${bar.star}★`), track, makeElement("span", "pdp-bar__n", String(bar.count)));
+    bars.appendChild(row);
+  });
+  head.append(score, bars);
+  container.appendChild(head);
+
+  const list = makeElement("ul", "pdp-reviews__list");
+  reviews.slice(0, 20).forEach((review) => {
+    const li = makeElement("li", "pdp-review");
+    const top = makeElement("div", "pdp-review__top");
+    const stars = Math.round(toNumber(review?.rating, 0));
+    top.append(
+      makeElement("strong", "", escapeText(review?.reviewer_label) || "Pembeli"),
+      makeElement("span", "pdp-review__badge", "Pembeli terverifikasi"),
+      makeElement("span", "pdp-review__time", timeAgo(review?.created_at))
+    );
+    li.append(top, makeElement("span", "pdp-review__stars", "★".repeat(stars) + "☆".repeat(5 - stars)));
+    const comment = escapeText(review?.comment);
+    if (comment) li.appendChild(makeElement("p", "", comment));
+    list.appendChild(li);
+  });
+  container.appendChild(list);
+}
+
+async function loadProductReviews(product, container) {
+  const id = getProductId(product);
+  pdp.reviewsFor = id;
+  container.replaceChildren(makeElement("p", "pdp-muted", "Memuat ulasan…"));
+
+  let reviews = [];
+  try {
+    if (supabase && typeof supabase.from === "function" && toNumber(product?.review_count, 0) > 0) {
+      const { data, error } = await supabase
+        .from("product_reviews")
+        .select("rating, comment, reviewer_label, created_at")
+        .eq("product_id", id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      reviews = Array.isArray(data) ? data : [];
+    }
+  } catch (error) {
+    warn("Ulasan gagal dimuat:", error?.message || error);
+  }
+
+  if (pdp.reviewsFor !== id) return; // user sudah pindah produk
+  renderReviewList(container, product, reviews);
+}
+
+function createPdpTabs(product) {
+  const wrap = makeElement("section", "pdp-tabs");
+  const nav = makeElement("div", "pdp-tabs__nav");
+  nav.setAttribute("role", "tablist");
+  const panels = makeElement("div", "pdp-tabs__panels");
+
+  const reviews = makeElement("div", "pdp-reviews");
+  const description = escapeText(product?.description);
+  const about = makeElement("div", "pdp-about");
+  about.appendChild(
+    makeElement("p", "", description || escapeText(product?.caption) || "Deskripsi belum diisi. Tanyakan detailnya ke asisten.")
+  );
+
+  const tabs = [
+    ["about", "Deskripsi", about],
+    ["spec", "Spesifikasi", createSpecTable(product)],
+    ["reviews", `Ulasan${toNumber(product?.review_count, 0) ? ` (${toNumber(product.review_count, 0)})` : ""}`, reviews],
+  ];
+
+  tabs.forEach(([key, label, panel], i) => {
+    const button = makeElement("button", "pdp-tabs__btn", label);
+    button.type = "button";
+    button.dataset.pdpTab = key;
+    button.setAttribute("role", "tab");
+    panel.classList.add("pdp-tabs__panel");
+    panel.setAttribute("role", "tabpanel");
+    const select = () => {
+      nav.querySelectorAll(".pdp-tabs__btn").forEach((b) => {
+        const on = b === button;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-selected", String(on));
+      });
+      panels.querySelectorAll(".pdp-tabs__panel").forEach((p) => {
+        p.hidden = p !== panel;
+      });
+    };
+    button.addEventListener("click", select);
+    nav.appendChild(button);
+    panels.appendChild(panel);
+    if (i === 0) select();
+  });
+
+  loadProductReviews(product, reviews);
+  wrap.append(nav, panels);
+  return wrap;
+}
+
+function createMiniCard(product) {
+  const card = makeElement("button", "pdp-mini");
+  card.type = "button";
+  card.dataset.productId = getProductId(product);
+  card.setAttribute("aria-label", `Lihat ${getProductName(product)}`);
+
+  const thumb = makeElement("span", "pdp-mini__img");
+  const src = getProductImage(product);
+  if (isSafeImageURL(src)) {
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = "";
+    img.loading = "lazy";
+    thumb.appendChild(img);
+  }
+  const discount = getDiscountPercent(product);
+  if (discount > 0) thumb.appendChild(makeElement("span", "pdp-mini__off", `-${discount}%`));
+
+  const rating = toNumber(product?.rating_avg ?? product?.rating, 0);
+  card.append(
+    thumb,
+    makeElement("span", "pdp-mini__name", getProductName(product)),
+    makeElement("span", "pdp-mini__price", formatCurrency(getProductPrice(product))),
+    makeElement("span", "pdp-mini__meta", `${rating > 0 ? `★ ${rating.toFixed(1).replace(".", ",")} · ` : ""}${formatSocialCount(product?.sales_count)} terjual`)
+  );
+  card.addEventListener("click", () => openProductPage(product));
+  return card;
+}
+
+function createPdpRail(title, products) {
+  if (!products.length) return null;
+  const section = makeElement("section", "pdp-rail");
+  section.appendChild(makeElement("h2", "pdp-rail__title", title));
+  const track = makeElement("div", "pdp-rail__track");
+  products.forEach((p) => track.appendChild(createMiniCard(p)));
+  section.appendChild(track);
+  return section;
+}
+
+/** Bar beli yang menempel di bawah (HP). */
+function createPdpStickyBar(product, buyBox) {
+  const bar = makeElement("div", "pdp-sticky");
+  const info = makeElement("div", "pdp-sticky__info");
+  info.append(
+    makeElement("span", "pdp-sticky__name", getProductName(product)),
+    makeElement("strong", "", formatCurrency(getProductPrice(product)))
+  );
+  const ask = pdpButton("pdp-btn pdp-btn--ghost pdp-sticky__ask", "Tanyakan produk ini ke asisten", null, "Tanya");
+  ask.addEventListener("click", () =>
+    attachProductToChat(product, { photoIndex: productPage.gallery?.index ?? null })
+  );
+  const out = stockState(product?.stock).key === "out";
+  const cart = pdpButton("pdp-btn pdp-btn--secondary", out ? "Stok habis" : `Tambah ${getProductName(product)} ke keranjang`, out ? null : ICONS.bag, out ? "Habis" : "Keranjang");
+  cart.disabled = out;
+  cart.addEventListener("click", () => buyBox.querySelector('[data-action="add-to-cart"]')?.click());
+  bar.append(info, ask, cart);
+  return bar;
 }
 
 function renderProductPage(product) {
@@ -1998,52 +2761,96 @@ function renderProductPage(product) {
   const host = $("#appRoot") || document.body;
 
   if (!productPage.root) {
-    productPage.root = makeElement("section", "product-page");
+    productPage.root = makeElement("section", "product-page pdp");
     productPage.root.setAttribute("aria-label", "Detail produk");
     host.appendChild(productPage.root);
   }
 
   productPage.gallery?.stop();
 
+  const id = getProductId(product);
   const page = productPage.root;
   page.replaceChildren();
+  page.dataset.productId = id;
 
-  const bar = makeElement("div", "product-page__bar");
-  const back = makeElement("button", "quickview__icon product-page__back");
-  back.type = "button";
-  back.setAttribute("aria-label", "Kembali");
-  back.appendChild(makeIcon("", ["M15 5l-7 7 7 7"]));
+  // Bar atas: kembali, jejak halaman, bagikan, wishlist.
+  const bar = makeElement("div", "product-page__bar pdp-bar");
+  const back = pdpButton("quickview__icon product-page__back", "Kembali", PDP_ICONS.left);
   back.addEventListener("click", closeProductPage);
-  bar.append(back, makeElement("p", "product-page__crumb", getProductCategory(product)));
 
-  const gallery = createMediaGallery(product, { className: "product-page__media" });
+  const crumb = makeElement("nav", "pdp-crumb");
+  crumb.setAttribute("aria-label", "Jejak halaman");
+  const home = makeElement("button", "pdp-crumb__link", "Beranda");
+  home.type = "button";
+  home.addEventListener("click", closeProductPage);
+  crumb.appendChild(home);
+  const category = getProductCategory(product);
+  if (category && category !== "Lainnya") {
+    const cat = makeElement("button", "pdp-crumb__link", category);
+    cat.type = "button";
+    cat.addEventListener("click", () => {
+      closeProductPage();
+      setTimeout(() => {
+        filterByCategory(category);
+        scrollToCatalog();
+      }, 60);
+    });
+    crumb.append(makeElement("span", "pdp-crumb__sep", "/"), cat);
+  }
+  crumb.append(makeElement("span", "pdp-crumb__sep", "/"), makeElement("span", "pdp-crumb__here", getProductName(product)));
+
+  const share = pdpButton("quickview__icon pdp-bar__icon", "Bagikan produk", PDP_ICONS.share);
+  share.addEventListener("click", () => shareProduct(product));
+  const like = pdpButton("quickview__icon pdp-bar__icon product-like", "Simpan ke wishlist", ICONS.heart);
+  setLikeState(like, isWishlisted(product));
+  like.addEventListener("click", () => {
+    toggleWishlist(product);
+    setLikeState(like, isWishlisted(product));
+  });
+  bar.append(back, crumb, makeElement("span", "pdp-bar__space"), share, like);
+
+  const { element: galleryEl, gallery } = createPdpGallery(product);
   productPage.gallery = gallery;
 
-  const discount = getDiscountPercent(product);
-  const mediaWrap = makeElement("div", "product-page__hero");
-  mediaWrap.append(gallery.element, gallery.foot);
-  if (discount > 0) {
-    mediaWrap.appendChild(makeElement("span", "product-discount", `-${discount}%`));
-  }
+  const body = makeElement("div", "product-page__body pdp-body");
+  const buy = createPdpBuy(product);
+  body.append(createPdpSummary(product), buy, createPdpAssurance(product));
 
-  const body = makeElement("div", "product-page__body");
-  body.appendChild(createProductDetails(product));
-  body.appendChild(createProductActions(product));
+  const main = makeElement("div", "pdp-main");
+  main.append(galleryEl, body);
 
-  const description = escapeText(product?.description);
-  if (description) {
-    const about = makeElement("div", "product-page__about");
-    about.append(
-      makeElement("h2", "", "Tentang produk"),
-      makeElement("p", "", description)
+  const below = makeElement("div", "pdp-below");
+  below.appendChild(createPdpTabs(product));
+
+  const related = createPdpRail("Produk serupa", relatedProducts(product, state.products, { limit: 10, idOf: getProductId }));
+  if (related) below.appendChild(related);
+
+  const recent = pushRecent(id)
+    .filter((x) => x !== id)
+    .map(findProductById)
+    .filter(Boolean)
+    .slice(0, 10);
+  const recentRail = createPdpRail("Terakhir kamu lihat", recent);
+  if (recentRail) below.appendChild(recentRail);
+
+  // Bar ringkas (nama, harga, tombol) muncul di atas saat kotak beli tergulir lewat.
+  const sticky = createPdpStickyBar(product, buy);
+  page.append(bar, sticky, main, below);
+  productPage.observer?.disconnect();
+  if ("IntersectionObserver" in window) {
+    productPage.observer = new IntersectionObserver(
+      ([entry]) => {
+        sticky.classList.toggle("is-shown", !entry.isIntersecting && entry.boundingClientRect.top < 0);
+      },
+      { root: page, threshold: 0 }
     );
-    body.appendChild(about);
+    productPage.observer.observe(buy);
   }
 
-  page.append(bar, mediaWrap, body);
   page.hidden = false;
   page.scrollTop = 0;
   gallery.start();
+  applyProductSeo(product);
 
   emit("product-page-opened", { product });
 }
@@ -3639,6 +4446,13 @@ async function initKantoongEngine() {
   }
 
   state.initialized = true;
+
+  // Tema gelap/terang toko (diatur di Dashboard › Pengaturan, js/theme.js).
+  applyTheme("store");
+
+  // Nama brand diatur owner di ERP › Etalase & Brand; berubah realtime.
+  onStorefrontChange(() => applyConfig());
+  startStorefrontSync();
 
   try {
     log(`Memulai engine versi ${ENGINE_VERSION}...`);

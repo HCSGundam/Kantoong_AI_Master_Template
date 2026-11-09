@@ -8,6 +8,7 @@
  */
 
 import { supabase } from "../../js/supabase-client.js";
+import { PRODUCT_PUBLIC_COLUMNS } from "../../js/product-columns.js";
 import { unitPath } from "../core/org.js";
 import { phase2SupabaseMethods } from "./supabase-adapter-phase2.js";
 import { phase3SupabaseMethods } from "./supabase-adapter-phase3.js";
@@ -199,7 +200,12 @@ export function createSupabaseAdapter() {
         /* ---------- Katalog master ---------- */
 
         async listProducts() {
-            return check(await supabase.from("products").select("*").order("name")) || [];
+            // Kolom publik + harga modal hanya untuk staf berwenang (erp_product_costs, security-hardening.sql).
+            const rows = check(await supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).order("name")) || [];
+            const { data: costs, error } = await supabase.rpc("erp_product_costs");
+            if (error || !Array.isArray(costs)) return rows;
+            const costOf = new Map(costs.map((row) => [String(row.product_id), row.cost_price]));
+            return rows.map((row) => (costOf.has(String(row.id)) ? { ...row, cost_price: costOf.get(String(row.id)) } : row));
         },
 
         /* Editor produk lengkap (dulu di dashboard admin lama). */

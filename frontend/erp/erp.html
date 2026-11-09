@@ -4,11 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="robots" content="noindex">
+    <!-- Keamanan (docs/KEAMANAN.md): hanya sumber resmi yang boleh menjalankan kode/terhubung.
+         Tidak ada skrip tertanam; skrip & koneksi asing (mis. hasil XSS) ditolak browser. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net ws://localhost:* ws://127.0.0.1:*; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Kantoong ERP</title>
     <link rel="stylesheet" href="./erp.css">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 </head>
 <body>
     <!-- =========================================
@@ -91,21 +95,7 @@
          ERP & kasir: selalu mulai sebagai ORB bulat bermata. Ketuk orb = kotak
          "Halo Kak" (mode BEBAS: geser kiri/kanan, dibuka naik seperti di HP).
          Tidak pernah menempel di samping. -->
-    <script>
-        window.KantoongAssistantContext = {
-            surface: "erp",
-            dock: false,
-            startMinimized: true,
-            greetings: ["Ada yang bisa kubantu di dashboard kerjamu?"],
-            suggestions: [
-                "Cara menambah karyawan baru?",
-                "Bagaimana membuat purchase order?",
-                "Cara mengatur target & komisi sales?",
-                "Bagaimana proses retur pelanggan?",
-                "Apa bedanya Tim & Target dengan Ruang Kerjaku?"
-            ]
-        };
-    </script>
+    <script type="module" src="./erp-assistant-context.js"></script>
     <script type="module" src="../js/kantoong-assistant.js"></script>
 </body>
 </html>

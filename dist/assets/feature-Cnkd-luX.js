@@ -1,0 +1,1 @@
+import{h as t,i}from"./details-B6dkb5Gi.js";import"./feature-contract-YJvZtFaw.js";import"./home-CLxaDq_S.js";import"./theme-VxaZG_SN.js";import"./supabase-client-DvLz8SWw.js";import"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm";import"./catalog-view-D8vLm8iL.js";const h=t({id:"wishlist",name:"Wishlist",order:40,mount:i});export{h as default};

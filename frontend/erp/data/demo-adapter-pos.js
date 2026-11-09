@@ -112,6 +112,19 @@ export function posProMethods({ db: getDb, save, me, audit, journalWrite, record
     const openShiftOf = (db, memberId, outletId = null) =>
         db.pos_shifts.find((shift) => shift.cashier_id === memberId && shift.status === "open" && (!outletId || shift.outlet_id === outletId));
 
+    /** Kunci PIN (sama dengan SQL bagian 13): 5x salah dalam 15 menit = dikunci 15 menit. */
+    const PIN_WINDOW = 15 * 60000;
+    const pinFailures = (db, actor) => (db.pos_pin_failures ||= []).filter((row) => row.actor_id === actor.id && Date.now() - new Date(row.at).getTime() < PIN_WINDOW);
+    const checkPinLock = (db, actor) => {
+        if (pinFailures(db, actor).length >= 5) throw new Error("PIN atasan dikunci 15 menit karena terlalu banyak salah. Minta atasan datang langsung.");
+    };
+    const recordPinFailure = (db, actor, context) => {
+        db.pos_pin_failures.push({ actor_id: actor.id, context, at: new Date().toISOString() });
+        db.pos_pin_failures = db.pos_pin_failures.slice(-500);
+        save();
+        return Math.max(0, 5 - pinFailures(db, actor).length);
+    };
+
     /** PIN atasan: level 3+ aktif. Tidak boleh menyetujui dirinya sendiri, kecuali owner/manajer. */
     const approverByPin = (db, pin, actor) => {
         const clean = String(pin || "").trim();
@@ -278,12 +291,13 @@ export function posProMethods({ db: getDb, save, me, audit, journalWrite, record
         async kitchenInterest({ hours = 2 } = {}) {
             if (!kitchenRole(me())) return [];
             const since = Date.now() - hours * 3600000;
-            const counts = {};
+            // Dihitung per SESI unik (sama dengan SQL): bot yang mengulang event tidak bisa meracuni prediksi.
+            const sessions = {};
             for (const event of ready().ai_events || []) {
                 if (!event.product_name || new Date(event.at).getTime() < since) continue;
-                counts[event.product_name] = (counts[event.product_name] || 0) + 1;
+                (sessions[event.product_name] ||= new Set()).add(event.session_key || event.at);
             }
-            return Object.entries(counts).map(([product_name, count]) => ({ product_name, count }));
+            return Object.entries(sessions).map(([product_name, set]) => ({ product_name, count: set.size }));
         },
 
         /* ---------- Tahap 3: shift kasir ---------- */
@@ -370,8 +384,12 @@ export function posProMethods({ db: getDb, save, me, audit, journalWrite, record
             const sale = db.pos_sales.find((entry) => entry.id === sale_id);
             if (!sale || sale.status === "batal") throw new Error("Transaksi tidak ditemukan atau sudah dibatalkan.");
             if (!VOID_REASONS[reason]) throw new Error("Pilih alasan pembatalan.");
+            checkPinLock(db, viewer);
             const approver = approverByPin(db, pin, viewer);
-            if (!approver) throw new Error("PIN atasan salah (atau atasan tidak boleh menyetujui dirinya sendiri).");
+            if (!approver) {
+                const left = recordPinFailure(db, viewer, "void");
+                throw new Error(`PIN atasan salah (atau atasan tidak boleh menyetujui dirinya sendiri). Sisa percobaan: ${left}.`);
+            }
 
             const refundCash = cashOf(sale);
             const refundShift = refundCash > 0 ? openShiftOf(db, viewer.id) : null;
@@ -852,8 +870,12 @@ export function posProMethods({ db: getDb, save, me, audit, journalWrite, record
             const rules = posSettings(db.pos_settings[outletId]);
             let approver = null;
             if (needsDiscountApproval(priced.subtotal, priced.discount, rules.discount_pin_percent)) {
+                checkPinLock(db, viewer);
                 approver = approverByPin(db, approval_pin, viewer);
-                if (!approver) throw new Error(`Diskon di atas ${rules.discount_pin_percent}% butuh PIN atasan yang benar.`);
+                if (!approver) {
+                    const left = recordPinFailure(db, viewer, "diskon");
+                    throw new Error(`Diskon di atas ${rules.discount_pin_percent}% butuh PIN atasan yang benar. Sisa percobaan: ${left}.`);
+                }
             }
 
             // Stok barang jadi: hanya menu TANPA resep (menu ber-resep dibuat saat dipesan -> bahan dipotong).

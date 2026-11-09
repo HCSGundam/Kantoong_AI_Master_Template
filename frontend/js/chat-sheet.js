@@ -20,7 +20,7 @@
  * Percakapan dan pengiriman pesan TETAP di ai-brain.js.
  *
  * EVENT YANG DITERIMA (window):
- *   kantoong:consult     -> buka chat (kirim pesan bila ada detail.text)
+ *   kantoong:consult     -> buka chat (kirim pesan bila ada detail.text; detail.hint = petunjuk abu-abu saja)
  *   kantoong:attach-product -> buka chat & LAMPIRKAN produk (foto, nama, harga)
  *                              ke kotak ketik. TIDAK dikirim otomatis: pembeli
  *                              menulis sendiri keinginannya (warna, model, dll).
@@ -520,6 +520,12 @@ function initChatSheet() {
         }, 3200);
     }
 
+    function photoText(product) {
+        const total = product.photo_total ? ` dari ${product.photo_total}` : "";
+        const label = product.photo_label ? ` · ${product.photo_label}` : "";
+        return `Foto ke-${product.photo_index}${total}${label}`;
+    }
+
     function renderAttachments() {
         const chips = pending.map((entry, index) => {
             const chip = document.createElement("span");
@@ -544,6 +550,13 @@ function initChatSheet() {
                 const title = document.createElement("strong");
                 title.textContent = entry.product.name;
                 text.append(title);
+
+                if (entry.product.photo_index) {
+                    const which = document.createElement("small");
+                    which.className = "kc-attach__photo";
+                    which.textContent = photoText(entry.product);
+                    text.append(which);
+                }
 
                 if (entry.product.price) {
                     const price = document.createElement("small");
@@ -624,7 +637,11 @@ function initChatSheet() {
     function attachProduct(product) {
         if (!product?.id) return;
 
-        if (!pending.some((entry) => entry.product?.id === String(product.id))) {
+        const photoIndex = Number(product.photo_index) || 0;
+        const same = (entry) =>
+            entry.product?.id === String(product.id) && (entry.product.photo_index || 0) === photoIndex;
+
+        if (!pending.some(same)) {
             if (pending.length >= MAX_FILES) {
                 notify(`Maksimal ${MAX_FILES} lampiran.`);
                 return;
@@ -637,6 +654,12 @@ function initChatSheet() {
                     name: String(product.name || "Produk").slice(0, 80),
                     price: Number(product.price) || 0,
                     image_url: String(product.image_url || ""),
+                    // Foto ke-berapa yang ditanyakan (1 kartu bisa berisi beberapa model).
+                    ...(photoIndex ? {
+                        photo_index: photoIndex,
+                        photo_total: Number(product.photo_total) || 0,
+                        photo_label: String(product.photo_label || "").slice(0, 80),
+                    } : {}),
                 },
             });
         }
@@ -980,6 +1003,8 @@ function initChatSheet() {
         }
 
         if (!event.detail?.text) {
+            const hint = String(event.detail?.hint || "").trim();
+            if (textarea && hint) textarea.placeholder = hint.slice(0, 90);
             textarea?.focus({ preventScroll: true });
         }
     });

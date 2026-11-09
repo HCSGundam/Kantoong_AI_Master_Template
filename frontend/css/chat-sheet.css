@@ -1698,7 +1698,7 @@ body.kc-overlay-open .kc-sheet {
 
 /* Ukuran huruf asisten sama di semua halaman (ERP tidak memakai CSS toko). */
 .kc-host {
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-size: 14px;
     line-height: 1.5;
 }

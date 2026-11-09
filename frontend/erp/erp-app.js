@@ -14,7 +14,9 @@
  *    (template master / presentasi). Web klien: erp_demo = false -> demo hilang.
  */
 
+import { applyTheme } from "../js/theme.js";
 import CFG from "../client-config.js";
+import { PRODUCT_PUBLIC_COLUMNS } from "../js/product-columns.js";
 import { sendPasswordReset, signInWithEmail } from "../auth/auth-service.js";
 import { describePasswordError, isEmail } from "../auth/password-rules.js";
 import { supabase } from "../js/supabase-client.js";
@@ -49,10 +51,11 @@ import * as cs from "./modules/cs.js";
 import * as marketing from "./modules/marketing.js";
 import * as crm from "./modules/crm.js";
 import * as brain from "./modules/brain.js";
+import * as storefront from "./modules/storefront.js";
 
 const RENDERERS = {
     workspace, cockpit, sales, team, catalog, approvals, org, inventory, pos, kitchen, cashcontrol, posreport, recipes, promos, finance, hr, payroll,
-    purchasing, logistics, cs, marketing, crm, brain,
+    purchasing, logistics, cs, marketing, crm, brain, storefront,
 };
 const DEMO_KEY = "kantoong_erp_demo_persona";
 
@@ -106,7 +109,7 @@ function showLogin(message = "", { email = "" } = {}) {
 
 async function loadRealProducts() {
     try {
-        const { data } = await supabase.from("products").select("*").limit(40);
+        const { data } = await supabase.from("products").select(PRODUCT_PUBLIC_COLUMNS).limit(40);
         return data || [];
     } catch {
         return [];
@@ -320,6 +323,10 @@ async function boot() {
     setNavCollapsed(collapsed, false);
     $("navBackdrop").addEventListener("click", closeNav);
     window.addEventListener("hashchange", () => app.data && renderPage());
+    // Tema: ERP dan kasir bisa diatur terpisah (js/theme.js).
+    const themeArea = () => (/^#\/?pos(\/|$)/.test(location.hash) ? "pos" : "erp");
+    applyTheme(themeArea());
+    window.addEventListener("hashchange", () => applyTheme(themeArea()));
 
     ["pointerdown", "keydown", "scroll"].forEach((type) =>
         window.addEventListener(type, onActivity, { passive: true, capture: true })

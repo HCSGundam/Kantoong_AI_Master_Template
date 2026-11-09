@@ -1,0 +1,157 @@
+/* =========================================================
+   KANTOONG — LAPISAN MEWAH BERSAMA (toko + halaman produk + keranjang)
+   File: frontend/css/luxe.css (dimuat PALING AKHIR di index.html)
+
+   Menyamakan "dunia" toko dengan Dashboard User & ERP: kertas gading,
+   tinta pekat, aksen emas, Poppins. Terang/gelap diatur js/theme.js
+   (atribut <html data-theme>). Untuk klien: ganti nilai token di sini.
+   ========================================================= */
+
+:root {
+    --bg-main: #f5f1e8;
+    --container-bg: #fbf8f1;
+    --surface: #fffdf8;
+    --surface-soft: #f1ece0;
+    --text-primary: #16130e;
+    --text-muted: #7b7365;
+    --bg-dark: #16130e;
+    --line: rgb(22 19 14 / 10%);
+    --line-strong: #16130e;
+    --accent-color: #16130e;
+    --primary-color: #16130e;
+    --shadow-color: 22, 19, 14;
+    --lux-gold: #b8913f;
+    --lux-gold-soft: #e8d6a6;
+    --lux-shadow: 0 1px 1px rgb(22 19 14 / 4%), 0 4px 12px rgb(22 19 14 / 5%), 0 18px 40px -18px rgb(22 19 14 / 18%);
+}
+
+:root[data-theme="dark"] {
+    --bg-main: #0e0d0b;
+    --container-bg: #13120f;
+    --surface: #191713;
+    --surface-soft: #221f1a;
+    --text-primary: #f1ead9;
+    --text-muted: #a59c8a;
+    --bg-dark: #050504;
+    --line: rgb(255 240 205 / 9%);
+    --line-strong: #f1ead9;
+    --accent-color: #f1ead9;
+    --primary-color: #f1ead9;
+    --shadow-color: 0, 0, 0;
+    --lux-shadow: 0 1px 1px rgb(0 0 0 / 30%), 0 10px 30px -12px rgb(0 0 0 / 60%);
+}
+
+body {
+    font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Transisi halus saat tema diganti */
+html.kc-theme-switching,
+html.kc-theme-switching * {
+    transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease !important;
+}
+
+/* ---------- Tombol ikon bulat yang seragam (kembali, bagikan, wishlist) ---------- */
+
+#appRoot .pdp .pdp-bar .quickview__icon {
+    width: 44px;
+    height: 44px;
+    color: var(--text-primary);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--lux-shadow);
+    transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+#appRoot .pdp .pdp-bar .quickview__icon:hover {
+    border-color: var(--lux-gold);
+    transform: translateY(-1px);
+}
+
+#appRoot .pdp .pdp-bar .quickview__icon:active {
+    transform: scale(0.95);
+}
+
+#appRoot .pdp .pdp-bar .quickview__icon svg {
+    width: 19px;
+    height: 19px;
+    stroke-width: 1.7;
+}
+
+#appRoot .pdp .pdp-bar {
+    background: color-mix(in srgb, var(--bg-main) 84%, transparent);
+}
+
+/* ---------- Halaman produk dengan bahasa visual yang sama ---------- */
+
+#appRoot .product-page.pdp {
+    --pdp-line: var(--line);
+    --pdp-soft: var(--surface-soft);
+    --pdp-gold: var(--lux-gold);
+    --pdp-radius: 22px;
+    background: var(--bg-main);
+}
+
+#appRoot .pdp .product-page__hero,
+#appRoot .pdp-thumb,
+#appRoot .pdp-mini__img {
+    box-shadow: var(--lux-shadow);
+}
+
+#appRoot .pdp-eyebrow {
+    color: var(--lux-gold);
+}
+
+#appRoot .pdp-name {
+    font-weight: 500;
+    letter-spacing: -0.015em;
+}
+
+#appRoot .pdp-price {
+    background: var(--surface);
+    border-color: var(--line);
+    box-shadow: var(--lux-shadow);
+}
+
+#appRoot .pdp-price__now {
+    font-weight: 600;
+}
+
+#appRoot .pdp-qty {
+    background: var(--surface);
+}
+
+#appRoot .pdp-btn--secondary {
+    color: var(--surface);
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+}
+
+#appRoot .pdp-btn--ghost {
+    background: var(--surface);
+    border-color: var(--line);
+}
+
+#appRoot .pdp-btn--ghost:hover {
+    border-color: var(--lux-gold);
+}
+
+#appRoot .pdp-assure {
+    background: var(--surface);
+    border-color: var(--line);
+    box-shadow: var(--lux-shadow);
+}
+
+#appRoot .pdp-tabs__btn.is-active::after {
+    background: var(--lux-gold);
+}
+
+#appRoot .pdp-thumb.is-active {
+    border-color: var(--lux-gold);
+    box-shadow: 0 0 0 1px var(--lux-gold);
+}
+
+#appRoot .pdp-rail__title,
+#appRoot .pdp-reviews__score strong {
+    font-weight: 500;
+}

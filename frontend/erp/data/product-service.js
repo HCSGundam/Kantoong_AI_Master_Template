@@ -9,6 +9,7 @@
  */
 
 import { supabase } from "../../js/supabase-client.js";
+import { PRODUCT_PUBLIC_COLUMNS } from "../../js/product-columns.js";
 import CFG from "../../client-config.js";
 
 export const PRODUCT_CONFIG = Object.freeze({
@@ -31,7 +32,7 @@ export async function setPublication(productId, changes) {
     if (typeof changes.is_hero === "boolean") patch.is_hero = changes.is_hero;
     if (!Object.keys(patch).length) return null;
 
-    const { data, error } = await supabase.from(TABLE).update(patch).eq("id", productId).select().single();
+    const { data, error } = await supabase.from(TABLE).update(patch).eq("id", productId).select(PRODUCT_PUBLIC_COLUMNS).single();
     if (error) throw error;
     return data;
 }
@@ -151,7 +152,7 @@ export function validateProductInput(input) {
 export async function listProducts() {
     const { data, error } = await supabase
         .from(TABLE)
-        .select("*")
+        .select(PRODUCT_PUBLIC_COLUMNS)
         .order("created_at", { ascending: false });
 
     if (error) {
@@ -170,7 +171,7 @@ export async function createProduct(input) {
     const { data, error } = await supabase
         .from(TABLE)
         .insert([payload])
-        .select()
+        .select(PRODUCT_PUBLIC_COLUMNS)
         .single();
 
     if (error) {
@@ -185,7 +186,7 @@ export async function updateProduct(id, input) {
         .from(TABLE)
         .update(buildPayload(input))
         .eq("id", id)
-        .select()
+        .select(PRODUCT_PUBLIC_COLUMNS)
         .single();
 
     if (error) {

@@ -695,6 +695,10 @@ function renderMessage(message, options = {}) {
                 }
                 const info = createElement("span", "ai-attachment-product__info");
                 info.appendChild(createElement("strong", "", String(file.product.name ?? "Produk")));
+                if (file.product.photo_index) {
+                    const total = file.product.photo_total ? ` dari ${file.product.photo_total}` : "";
+                    info.appendChild(createElement("small", "", `Foto ke-${file.product.photo_index}${total}`));
+                }
                 if (file.product.price) {
                     info.appendChild(createElement("small", "", `Rp ${Number(file.product.price).toLocaleString("id-ID")}`));
                 }
@@ -1668,7 +1672,13 @@ export async function sendMessage(rawText) {
     // Yang dibaca AI: tulisan pembeli + produk yang dilampirkan sebagai konteks.
     const promptForAI = products.length
         ? `${message}\n\n[Produk yang dilampirkan pembeli: ${products
-            .map((entry) => `${entry.product.name} (Rp ${Number(entry.product.price || 0).toLocaleString("id-ID")})`)
+            .map((entry) => {
+                const p = entry.product;
+                const photo = p.photo_index
+                    ? `, yang ditanyakan FOTO KE-${p.photo_index}${p.photo_total ? ` dari ${p.photo_total}` : ""}${p.photo_label ? ` (${p.photo_label})` : ""}; satu kartu bisa berisi beberapa model, jangan disamakan dengan foto lain`
+                    : "";
+                return `${p.name} (Rp ${Number(p.price || 0).toLocaleString("id-ID")}${photo})`;
+            })
             .join("; ")}]`.slice(0, MAX_MESSAGE_LENGTH + 400)
         : message;
 

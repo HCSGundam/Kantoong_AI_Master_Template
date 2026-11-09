@@ -29,6 +29,11 @@
 --      disinkron dengan jam aslinya (maks 48 jam) untuk harga promo & laporan.
 --  12. Permintaan restok dari kasir (menu habis) -> gudang/owner; selesai otomatis
 --      saat belanja bahannya dicatat.
+--  13. KEAMANAN: PIN atasan dikunci 15 menit setelah 5x salah (percobaan tetap
+--      tercatat walau transaksi gagal), pembatas kecepatan pencarian member
+--      (anti pencurian daftar pelanggan), fungsi internal tertutup untuk API.
+--  14. LAYAR PELANGGAN DI TABLET: saluran Supabase Realtime "pos-display:<KODE>"
+--      PRIVAT — hanya staf kasir yang login boleh mendengar & mengirim.
 -- =========================================================
 
 
@@ -450,9 +455,17 @@ begin
     -- Tahap 3: diskon di atas batas wajib PIN atasan ("diskon untuk teman").
     if v_discount > 0 and v_subtotal > 0
        and v_discount * 100 / v_subtotal > coalesce((v_set ->> 'discount_pin_percent')::numeric, 20) then
+        -- Bagian 13: PIN dikunci setelah 5x salah dalam 15 menit.
+        if public.erp_pos_pin_locked(v_me) then
+            raise exception 'PIN atasan dikunci 15 menit karena terlalu banyak salah. Minta atasan datang langsung.';
+        end if;
         v_approver := public.erp_pos_approver(p ->> 'approval_pin', v_me);
         if v_approver is null then
-            raise exception 'Diskon di atas % persen butuh PIN atasan yang benar.', coalesce((v_set ->> 'discount_pin_percent')::numeric, 20);
+            -- Dikembalikan sebagai error (bukan raise) agar catatan PIN salah TIDAK ikut dibatalkan.
+            -- Belum ada stok/penjualan yang ditulis di titik ini.
+            insert into public.pos_pin_failures (actor_id, context) values (v_me, 'diskon');
+            return jsonb_build_object('error', format('Diskon di atas %s persen butuh PIN atasan yang benar. Sisa percobaan: %s.',
+                coalesce((v_set ->> 'discount_pin_percent')::numeric, 20), public.erp_pos_pin_left(v_me)));
         end if;
     end if;
 
@@ -807,7 +820,7 @@ begin
     end if;
 
     return query execute
-        'select product_name, count(*) from public.ai_events
+        'select product_name, count(distinct session_key) from public.ai_events
          where product_name is not null and at >= now() - make_interval(hours => $1)
          group by product_name'
         using least(greatest(coalesce(p_hours, 2), 1), 24);
@@ -877,6 +890,7 @@ begin
     if v_me is null or public.erp_my_level() < 3 then
         raise exception 'Akses ditolak: PIN persetujuan khusus supervisor ke atas.';
     end if;
+    perform public.erp_sec_guard('pin-set', 5, interval '1 hour');
     if p_pin !~ '^[0-9]{4,6}$' then
         raise exception 'PIN harus 4–6 angka.';
     end if;
@@ -920,6 +934,8 @@ as $$
 $$;
 
 revoke all on function public.erp_pos_approver(text, uuid) from public;
+-- Supabase memberi izin bawaan langsung ke anon/authenticated: cabut eksplisit (fungsi internal).
+revoke all on function public.erp_pos_approver(text, uuid) from anon, authenticated;
 
 
 -- ---------- Shift kasir & kas masuk/keluar ----------
@@ -1030,6 +1046,8 @@ end;
 $$;
 
 revoke all on function public.erp_pos_shift_summary(uuid) from public;
+-- Supabase memberi izin bawaan langsung ke anon/authenticated: cabut eksplisit (fungsi internal).
+revoke all on function public.erp_pos_shift_summary(uuid) from anon, authenticated;
 
 create or replace function public.erp_pos_my_shift(p_outlet uuid)
 returns jsonb
@@ -1173,9 +1191,15 @@ begin
         raise exception 'Transaksi tidak ditemukan atau sudah dibatalkan.';
     end if;
 
+    if public.erp_pos_pin_locked(v_me) then
+        raise exception 'PIN atasan dikunci 15 menit karena terlalu banyak salah. Minta atasan datang langsung.';
+    end if;
     v_approver := public.erp_pos_approver(p_pin, v_me);
     if v_approver is null then
-        raise exception 'PIN atasan salah (atau atasan tidak boleh menyetujui dirinya sendiri).';
+        -- Dikembalikan sebagai error agar catatan PIN salah tersimpan (belum ada data yang diubah).
+        insert into public.pos_pin_failures (actor_id, context) values (v_me, 'void');
+        return jsonb_build_object('error', format('PIN atasan salah (atau atasan tidak boleh menyetujui dirinya sendiri). Sisa percobaan: %s.',
+            public.erp_pos_pin_left(v_me)));
     end if;
 
     v_cash := public.erp_pos_cash_of(v_sale.payments, v_sale.method, v_sale.total);
@@ -1388,10 +1412,12 @@ as $$
     );
 $$;
 revoke all on function public.erp_pos_member_json(public.pos_members, boolean) from public;
+-- Supabase memberi izin bawaan langsung ke anon/authenticated: cabut eksplisit (fungsi internal).
+revoke all on function public.erp_pos_member_json(public.pos_members, boolean) from anon, authenticated;
 
 create or replace function public.erp_pos_member_find(p_query text)
 returns jsonb
-language plpgsql stable security definer set search_path = public
+language plpgsql volatile security definer set search_path = public
 as $$
 declare
     v_text   text := lower(trim(coalesce(p_query, '')));
@@ -1400,6 +1426,8 @@ declare
 begin
     if not public.erp_has_role(array['kasir', 'marketing', 'cs']) then return '[]'::jsonb; end if;
     if char_length(v_text) < 3 then return '[]'::jsonb; end if;
+    -- Bagian 13: maks 120 pencarian / 10 menit per orang (anti menyedot daftar pelanggan).
+    perform public.erp_sec_guard('member-find', 120, interval '10 minutes');
     return coalesce((
         select jsonb_agg(public.erp_pos_member_json(m, false))
         from (
@@ -1419,7 +1447,7 @@ grant execute on function public.erp_pos_member_find(text) to authenticated;
 -- Kartu member di kasir: data aman + riwayat belanja (hanya bila member mengizinkan) -> Kasir yang Ingat.
 create or replace function public.erp_pos_member_card(p_member uuid)
 returns jsonb
-language plpgsql stable security definer set search_path = public
+language plpgsql volatile security definer set search_path = public
 as $$
 declare
     v_member public.pos_members%rowtype;
@@ -1427,6 +1455,7 @@ begin
     if not public.erp_has_role(array['kasir', 'marketing', 'cs']) then
         raise exception 'Akses ditolak: jabatanmu tidak boleh melakukan ini.';
     end if;
+    perform public.erp_sec_guard('member-card', 120, interval '10 minutes');
     select * into v_member from public.pos_members where id = p_member;
     if not found then raise exception 'Member tidak ditemukan.'; end if;
     return jsonb_build_object(
@@ -1647,6 +1676,8 @@ begin
 end;
 $$;
 revoke all on function public.erp_pos_ingredient_write(uuid, uuid, text, numeric, text, text, numeric) from public;
+-- Supabase memberi izin bawaan langsung ke anon/authenticated: cabut eksplisit (fungsi internal).
+revoke all on function public.erp_pos_ingredient_write(uuid, uuid, text, numeric, text, text, numeric) from anon, authenticated;
 
 -- Bahan + stok outlet. Harga modal hanya untuk supervisor ke atas / produk / gudang / keuangan.
 create or replace function public.erp_pos_ingredients(p_outlet uuid)
@@ -1856,3 +1887,97 @@ end;
 $$;
 revoke all on function public.erp_pos_resolve_restock(uuid, text) from public;
 grant execute on function public.erp_pos_resolve_restock(uuid, text) to authenticated;
+
+
+-- =========================================================
+-- 13. KEAMANAN BERLAPIS (kasir)
+--     - PIN atasan: 5x salah dalam 15 menit = dikunci 15 menit (per kasir).
+--     - erp_sec_guard: pembatas kecepatan umum per orang (pencarian member, set PIN).
+--     Fungsi dipanggil saat dijalankan, jadi aman walau didefinisikan di akhir file.
+-- =========================================================
+
+create table if not exists public.pos_pin_failures (
+    id         bigserial primary key,
+    actor_id   uuid references public.members(id) on delete cascade,
+    context    text not null default '',
+    created_at timestamptz not null default now()
+);
+create index if not exists pos_pin_failures_actor_idx on public.pos_pin_failures (actor_id, created_at desc);
+alter table public.pos_pin_failures enable row level security;
+drop policy if exists "erp baca pin salah" on public.pos_pin_failures;
+create policy "erp baca pin salah" on public.pos_pin_failures for select
+    using (public.erp_my_level() >= 4 or public.erp_has_role(array['keuangan']));
+
+create or replace function public.erp_pos_pin_left(p_actor uuid)
+returns int
+language sql stable security definer set search_path = public
+as $$
+    select greatest(0, 5 - count(*)::int) from public.pos_pin_failures
+    where actor_id = p_actor and created_at > now() - interval '15 minutes';
+$$;
+
+create or replace function public.erp_pos_pin_locked(p_actor uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+    select public.erp_pos_pin_left(p_actor) = 0;
+$$;
+
+revoke all on function public.erp_pos_pin_left(uuid) from public, anon, authenticated;
+revoke all on function public.erp_pos_pin_locked(uuid) from public, anon, authenticated;
+
+create table if not exists public.security_rate_events (
+    id     bigserial primary key,
+    bucket text not null,
+    actor  text not null,
+    at     timestamptz not null default now()
+);
+create index if not exists security_rate_events_idx on public.security_rate_events (bucket, actor, at desc);
+alter table public.security_rate_events enable row level security;
+-- Tanpa policy: hanya fungsi yang menulis/membaca.
+
+-- Pembatas kecepatan per orang (anggota ERP). Melebihi batas = ditolak.
+create or replace function public.erp_sec_guard(p_bucket text, p_max int, p_window interval)
+returns void
+language plpgsql security definer set search_path = public
+as $$
+declare
+    v_actor text := coalesce(public.erp_me()::text, 'tamu');
+begin
+    if (select count(*) from public.security_rate_events
+        where bucket = p_bucket and actor = v_actor and at > now() - p_window) >= p_max then
+        raise exception 'Terlalu banyak permintaan dalam waktu singkat. Tunggu sebentar.';
+    end if;
+    insert into public.security_rate_events (bucket, actor) values (p_bucket, v_actor);
+    if random() < 0.01 then
+        delete from public.security_rate_events where at < now() - interval '2 days';
+    end if;
+end;
+$$;
+revoke all on function public.erp_sec_guard(text, int, interval) from public, anon, authenticated;
+
+
+-- =========================================================
+-- 14. LAYAR PELANGGAN DI TABLET (Supabase Realtime, saluran privat)
+--     Kasir & tablet berbicara lewat saluran "pos-display:<KODE 6 huruf>".
+--     Tanpa izin ini, akun yang tidak berhak tidak bisa ikut mendengar isi keranjang.
+-- =========================================================
+do $$
+begin
+    if to_regclass('realtime.messages') is null then
+        raise notice 'Realtime belum tersedia di proyek ini: layar pelanggan tablet memakai mode monitor kedua saja.';
+        return;
+    end if;
+
+    execute 'drop policy if exists "erp layar pelanggan dengar" on realtime.messages';
+    execute $p$
+        create policy "erp layar pelanggan dengar" on realtime.messages for select to authenticated
+        using (realtime.topic() like 'pos-display:%' and public.erp_has_role(array['kasir']))
+    $p$;
+
+    execute 'drop policy if exists "erp layar pelanggan kirim" on realtime.messages';
+    execute $p$
+        create policy "erp layar pelanggan kirim" on realtime.messages for insert to authenticated
+        with check (realtime.topic() like 'pos-display:%' and public.erp_has_role(array['kasir']))
+    $p$;
+end $$;

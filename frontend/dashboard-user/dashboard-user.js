@@ -25,6 +25,12 @@
  * ============================================================
  */
 
+import { createBento } from "./home/bento.js";
+import { getStorefront, onStorefrontChange, startStorefrontSync } from "../js/storefront-settings.js";
+import { applyTheme, setChoice, themeFor } from "../js/theme.js";
+import { createShelf } from "./home/shelf.js";
+import { renderWelcome } from "./home/welcome.js";
+import "./home/home.css";
 import {
     DASHBOARD_USER_CONFIG,
     getDashboardGridColumns,
@@ -926,12 +932,16 @@ function loadFeatureSelection() {
             )
         );
 
+        // "Dikenal" = pernah tersedia (published). Fitur yang dulu hanya
+        // "Segera hadir" lalu rilis tetap muncul otomatis di menu.
+        // Data lama (knownFeatureIds) ikut berisi fitur Segera hadir, jadi
+        // dipindah: hanya fitur yang dulu sudah rilis (profil & pengaturan).
+        const known = Array.isArray(saved.knownPublishedIds)
+            ? saved.knownPublishedIds
+            : [...state.activeFeatureIds, "profile", "settings"];
+
         state.knownFeatureIds = new Set(
-            Array.isArray(saved.knownFeatureIds)
-                ? saved.knownFeatureIds.filter(
-                    (id) => typeof id === "string"
-                )
-                : []
+            known.filter((id) => typeof id === "string")
         );
 
         return;
@@ -953,7 +963,7 @@ function saveFeatureSelection() {
             ...state.activeFeatureIds,
         ],
 
-        knownFeatureIds: [
+        knownPublishedIds: [
             ...state.knownFeatureIds,
         ],
 
@@ -1174,7 +1184,7 @@ export function registerDashboardFeatures(features = []) {
     }
 
     for (const feature of normalizedFeatures) {
-        if (!feature.defaultActive) {
+        if (!feature.defaultActive || feature.status !== "published") {
             continue;
         }
 
@@ -1190,7 +1200,9 @@ export function registerDashboardFeatures(features = []) {
     }
 
     for (const feature of normalizedFeatures) {
-        state.knownFeatureIds.add(feature.id);
+        if (feature.status === "published") {
+            state.knownFeatureIds.add(feature.id);
+        }
     }
 
     ensureLayoutsContainActiveFeatures();
@@ -1427,8 +1439,123 @@ function revealCardEditControls(card, visible) {
 }
 
 
+/* ============================================================
+   14B. GRID BENTO BARU (home/bento.js) + LEMARI FITUR (home/shelf.js)
+   ============================================================ */
+
+/** Ukuran awal kartu (bisa diubah user lewat mode atur). */
+const BENTO_DEFAULTS = Object.freeze({
+    profile: "2x2",
+    "product-catalog": "4x2",
+    "package-tracking": "2x2",
+    "total-spending": "2x2",
+    "my-orders": "2x1",
+    wishlist: "2x2",
+    "ai-chat-history": "2x1",
+    clock: "2x1",
+    "store-map": "2x2",
+    "customer-support": "2x1",
+    settings: "1x1",
+});
+
+let bento = null;
+let shelf = null;
+
+/** Nama brand dari pengaturan etalase (diubah owner di ERP), realtime. */
+function applyStorefrontBrand(settings = getStorefront()) {
+    const name = settings?.brand?.name || "Toko";
+
+    if (state.elements.brandName) {
+        state.elements.brandName.textContent = name;
+    }
+
+    if (state.elements.brandSubtitle) {
+        state.elements.brandSubtitle.textContent = settings?.brand?.tagline || "Ruang pribadimu";
+    }
+
+    document.title = `${name} · Ruang Pribadi`;
+}
+
+let brandSyncStarted = false;
+
+function startBrandSync() {
+    if (brandSyncStarted) {
+        return;
+    }
+
+    brandSyncStarted = true;
+    applyStorefrontBrand();
+    onStorefrontChange((settings) => {
+        applyStorefrontBrand(settings);
+        renderWelcome(state.elements.welcomeTitle?.closest("[data-welcome-card]"));
+    });
+    startStorefrontSync();
+}
+
+function getBento() {
+    if (bento || !state.elements.featureGrid) {
+        return bento;
+    }
+
+    startBrandSync();
+
+    bento = createBento({
+        grid: state.elements.featureGrid,
+        storageKey: getStorageKey("bento:v1"),
+        defaults: BENTO_DEFAULTS,
+        onOpen: (id) => openDashboardFeature(id),
+        onArchive: (id) => archiveFeatureFromDashboard(id),
+        onAdd: () => getShelf().show(),
+        getContext: () => ({ dashboardApi: getDashboardApi() }),
+        onEditChange: (editing) => {
+            state.mode = editing ? LAYOUT_MODE_EDIT : LAYOUT_MODE_VIEW;
+
+            if (state.root) {
+                state.root.dataset.layoutMode = state.mode;
+                state.root.dataset.bentoEditing = editing ? "true" : "false";
+            }
+
+            announce(
+                editing
+                    ? "Mode atur aktif. Geser kartu untuk memindahkan, tarik sudutnya untuk mengubah ukuran."
+                    : "Tata letak disimpan."
+            );
+        },
+    });
+
+    return bento;
+}
+
+function getShelf() {
+    if (!shelf) {
+        shelf = createShelf({
+            host: state.root ?? document.body,
+            getFeatures: () => getDashboardFeatures(),
+            isActive: (id) => state.activeFeatureIds.has(id),
+            canAdd: (feature) => feature.available && feature.status === "published",
+            onAdd: (id) => addFeatureToDashboard(id),
+        });
+    }
+
+    return shelf;
+}
+
 export function renderDashboardFeatures() {
     const grid = state.elements.featureGrid;
+
+    if (grid && getBento()) {
+        bento.render(getActiveDashboardFeatures());
+        renderWelcome(state.elements.welcomeTitle?.closest("[data-welcome-card]"));
+        shelf?.refresh();
+
+        if (state.elements.featureLoading) state.elements.featureLoading.hidden = true;
+        if (state.elements.featureError) state.elements.featureError.hidden = true;
+        if (state.elements.featureEmpty) {
+            state.elements.featureEmpty.hidden = getActiveDashboardFeatures().length > 0;
+        }
+
+        return;
+    }
 
     if (!grid) {
         return;
@@ -1577,6 +1704,12 @@ async function hydrateCard(card, feature) {
 
 /** Menyegarkan ringkasan semua kartu (setelah login, tema berubah, dll). */
 export function refreshFeatureSummaries() {
+    if (bento) {
+        bento.refresh();
+        renderWelcome(state.elements.welcomeTitle?.closest("[data-welcome-card]"));
+        return;
+    }
+
     const cards = state.elements.featureGrid?.querySelectorAll(
         "[data-feature-card]"
     ) ?? [];
@@ -1745,6 +1878,12 @@ export function setDashboardLayoutMode(mode) {
 
 
 export function beginDashboardLayoutEdit() {
+    if (getBento()) {
+        // Tombol pensil = masuk/keluar mode atur.
+        bento.setEditing(!bento.isEditing());
+        return;
+    }
+
     if (state.mode === LAYOUT_MODE_EDIT) {
         return;
     }
@@ -1760,6 +1899,11 @@ export function beginDashboardLayoutEdit() {
 
 
 export function finishDashboardLayoutEdit({ save = true } = {}) {
+    if (bento) {
+        bento.setEditing(false);
+        return;
+    }
+
     if (save) {
         saveLayouts();
     } else {
@@ -1777,6 +1921,11 @@ export function finishDashboardLayoutEdit({ save = true } = {}) {
 
 
 export function cancelDashboardLayoutEdit() {
+    if (bento) {
+        bento.setEditing(false);
+        return;
+    }
+
     if (state.layoutEditSnapshot) {
         state.layouts = {
             mobile: state.layoutEditSnapshot.mobile.map((entry) => ({ ...entry })),
@@ -2074,6 +2223,12 @@ export function resizeFeatureCard(
    ============================================================ */
 
 export function resetDashboardLayout() {
+    if (bento) {
+        bento.reset();
+        announce("Tata letak dikembalikan ke susunan awal.");
+        return;
+    }
+
     const ids = [...state.activeFeatureIds];
 
     state.layouts[state.gridProfile] = createDefaultLayout(
@@ -2186,9 +2341,9 @@ export async function openFeatureStage(feature) {
 
     const back = document.createElement("button");
     back.type = "button";
-    back.className = "dashboard-icon-button";
+    back.className = "dashboard-icon-button dashboard-back-button";
     back.setAttribute("aria-label", "Kembali ke dashboard");
-    back.textContent = "\u2190";
+    back.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 
     const heading = document.createElement("h2");
     heading.className = "dashboard-feature-stage__title";
@@ -2400,7 +2555,7 @@ export function renderFeatureHub(query = "") {
 }
 
 export function openFeatureHub() {
-    return featureHub.open();
+    return getShelf().show();
 }
 
 export function closeFeatureHub() {
@@ -3031,17 +3186,28 @@ function loadThemePreference() {
         CONFIG.persistence.keys.preferences
     );
 
-    const saved = readStorage(key, {});
-
-    if (
-        isObject(saved) &&
-        CONFIG.theme.supported.includes(saved.theme)
-    ) {
-        state.theme = saved.theme;
-    } else {
-        state.theme = CONFIG.theme.default;
-    }
+    // Tema kini diatur bersama untuk seluruh web (js/theme.js, area "dashboard").
+    void key;
+    state.theme = themeFor("dashboard");
+    applyTheme("dashboard");
 }
+
+// Ikut berubah bila tema diganti dari halaman lain / pengaturan.
+window.addEventListener("kantoong:theme-applied", (event) => {
+    const theme = event.detail?.theme;
+
+    if (event.detail?.area !== "dashboard" || !theme || theme === state.theme) {
+        return;
+    }
+
+    state.theme = theme;
+
+    if (state.root) {
+        state.root.dataset.theme = theme;
+    }
+
+    bento?.refresh();
+});
 
 
 function saveThemePreference() {
@@ -3073,6 +3239,7 @@ export function setDashboardTheme(theme) {
     }
 
     saveThemePreference();
+    setChoice("dashboard", theme);
 
     dispatchDashboardEvent(
         THEME_EVENT_NAME,
@@ -3296,6 +3463,31 @@ function handleViewportChange() {
  * Module feature loader nantinya memanggil
  * registerDashboardFeatures(...) setelah modul ditemukan.
  */
+
+// Dari toko (halaman induk): buka fitur tertentu, mis. kembali ke Katalog Produk.
+window.addEventListener("message", (event) => {
+    if (event.origin !== window.location.origin || event.data?.type !== "kantoong:dashboard-open-feature") {
+        return;
+    }
+
+    window.dispatchEvent(new CustomEvent("kantoong:bento-open", { detail: { id: String(event.data.id ?? "") } }));
+});
+
+window.addEventListener("kantoong:bento-open", async (event) => {
+    const id = event.detail?.id;
+
+    if (!id) {
+        return;
+    }
+
+    await closeFeatureStage();
+
+    if (!state.activeFeatureIds.has(id) && state.featureCatalog.get(id)?.status === "published") {
+        addFeatureToDashboard(id);
+    }
+
+    openDashboardFeature(id);
+});
 
 export function initDashboardUser() {
     if (state.initialized) {

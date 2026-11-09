@@ -1,0 +1,1262 @@
+/* =========================================================
+   KANTOONG — HALAMAN DETAIL PRODUK (#produk/<id>)
+   File: frontend/css/product-page.css (dimuat setelah compact.css)
+
+   Pola e-commerce kelas atas: galeri + thumbnail, jejak halaman,
+   harga jujur, stok jujur, jumlah, tombol utama = konsultasi,
+   jaminan, tab deskripsi/spesifikasi/ulasan, produk serupa,
+   terakhir dilihat, bar ringkas menempel saat menggulir.
+   Warna mengikuti token toko (--store-*) agar ikut skin brand.
+   ========================================================= */
+
+#appRoot .product-page.pdp {
+  --pdp-text: var(--store-text, #171717);
+  --pdp-muted: var(--store-text-muted, #737373);
+  --pdp-line: color-mix(in srgb, var(--pdp-text) 12%, transparent);
+  --pdp-soft: color-mix(in srgb, var(--pdp-text) 5%, transparent);
+  --pdp-ink: var(--store-accent, #171717);
+  --pdp-ink-text: var(--store-accent-contrast, #ffffff);
+  --pdp-ok: #1f9d55;
+  --pdp-warn: #c27c0e;
+  --pdp-bad: #c53030;
+  --pdp-gold: #c9a24a;
+  --pdp-radius: 18px;
+
+  display: block;
+  padding: 0 0 200px;
+  font-variant-numeric: tabular-nums;
+}
+
+#appRoot .product-page.pdp[hidden] {
+  display: none;
+}
+
+#appRoot .pdp .pdp-icon,
+#appRoot .pdp-lightbox .pdp-icon,
+#appRoot .pdp-wait .pdp-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- Bar atas ---------- */
+
+#appRoot .pdp .pdp-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 10px;
+  background: color-mix(in srgb, var(--store-bg, #fff) 82%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid var(--pdp-line);
+}
+
+#appRoot .pdp .pdp-bar .quickview__icon {
+  position: static;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  min-height: 0;
+  padding: 0;
+  flex: none;
+  color: var(--pdp-text);
+  background: var(--pdp-soft);
+  border: 1px solid var(--pdp-line);
+  border-radius: 999px;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+#appRoot .pdp .pdp-bar .quickview__icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+#appRoot .pdp .pdp-bar .product-like.is-liked {
+  color: #e0245e;
+}
+
+#appRoot .pdp .pdp-bar .product-like.is-liked svg {
+  fill: currentColor;
+}
+
+#appRoot .pdp .pdp-bar__space {
+  flex: 1;
+}
+
+#appRoot .pdp-crumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#appRoot .pdp-crumb__link {
+  padding: 0;
+  color: var(--pdp-muted);
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+#appRoot .pdp-crumb__link:hover {
+  color: var(--pdp-text);
+  text-decoration: underline;
+}
+
+#appRoot .pdp-crumb__sep {
+  color: var(--pdp-line);
+}
+
+#appRoot .pdp-crumb__here {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--pdp-text);
+  font-weight: 600;
+}
+
+/* ---------- Bar ringkas saat menggulir ---------- */
+
+#appRoot .pdp-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 7;
+  height: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0 14px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+#appRoot .pdp-sticky > * {
+  transform: translateY(-120%);
+  opacity: 0;
+  transition: transform 260ms cubic-bezier(.2, .8, .2, 1), opacity 200ms ease;
+}
+
+#appRoot .pdp-sticky::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(62px + env(safe-area-inset-top, 0px));
+  background: color-mix(in srgb, var(--store-bg, #fff) 94%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--pdp-line);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 8%);
+  opacity: 0;
+  transform: translateY(-100%);
+  transition: transform 260ms cubic-bezier(.2, .8, .2, 1), opacity 200ms ease;
+}
+
+#appRoot .pdp-sticky.is-shown {
+  pointer-events: auto;
+}
+
+#appRoot .pdp-sticky.is-shown::before,
+#appRoot .pdp-sticky.is-shown > * {
+  transform: none;
+  opacity: 1;
+}
+
+#appRoot .pdp-sticky__info {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  margin-top: calc(12px + env(safe-area-inset-top, 0px));
+  line-height: 1.2;
+}
+
+#appRoot .pdp-sticky__name {
+  overflow: hidden;
+  color: var(--pdp-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#appRoot .pdp-sticky__info strong {
+  font-size: 15px;
+}
+
+#appRoot .pdp-sticky .pdp-btn {
+  position: relative;
+  margin-top: calc(11px + env(safe-area-inset-top, 0px));
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+/* ---------- Kerangka utama ---------- */
+
+#appRoot .pdp-main {
+  display: grid;
+  gap: 18px;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 14px 14px 0;
+}
+
+#appRoot .pdp-gallery {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+#appRoot .pdp .product-page__hero {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 1 / 1;
+  max-height: none;
+  overflow: hidden;
+  background: var(--pdp-soft);
+  border-radius: var(--pdp-radius);
+  cursor: zoom-in;
+}
+
+#appRoot .pdp .product-page__hero > .product-discount {
+  top: 14px;
+  left: 14px;
+  z-index: 4;
+}
+
+/* Tumpukan kartu mini galeri diganti thumbnail di halaman ini. */
+#appRoot .pdp .media-deck {
+  display: none;
+}
+
+#appRoot .pdp-zoom {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: #fff;
+  background: rgb(0 0 0 / 38%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+#appRoot .pdp-thumbs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+#appRoot .pdp-thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+#appRoot .pdp-thumb {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  overflow: hidden;
+  color: var(--pdp-text);
+  background: var(--pdp-soft);
+  border: 1px solid var(--pdp-line);
+  border-radius: 12px;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+#appRoot .pdp-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#appRoot .pdp-thumb:hover {
+  opacity: 0.9;
+}
+
+#appRoot .pdp-thumb.is-active {
+  opacity: 1;
+  border-color: var(--pdp-text);
+  box-shadow: 0 0 0 1px var(--pdp-text);
+}
+
+/* ---------- Ringkasan ---------- */
+
+#appRoot .pdp-body {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  min-width: 0;
+  padding: 0;
+}
+
+#appRoot .pdp-summary {
+  display: grid;
+  gap: 8px;
+}
+
+#appRoot .pdp-eyebrow {
+  margin: 0;
+  color: var(--pdp-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+#appRoot .pdp-name {
+  margin: 0;
+  color: var(--pdp-text);
+  font-size: clamp(22px, 5.4vw, 32px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+#appRoot .pdp-meta {
+  grid-area: auto; /* compact.css memberi grid-area: meta untuk kartu */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 13px;
+}
+
+#appRoot .pdp-meta__link {
+  padding: 0;
+  color: var(--pdp-muted);
+  background: none;
+  border: 0;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+#appRoot .pdp-caption {
+  margin: 0;
+  color: var(--pdp-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+#appRoot .pdp-price {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 14px 16px;
+  background: var(--pdp-soft);
+  border: 1px solid var(--pdp-line);
+  border-radius: var(--pdp-radius);
+}
+
+#appRoot .pdp-price__now {
+  margin: 0;
+  color: var(--pdp-text);
+  font-size: clamp(24px, 6vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+#appRoot .pdp-price__was {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--pdp-muted);
+  font-size: 13px;
+}
+
+#appRoot .pdp-price__off {
+  padding: 2px 7px;
+  color: #fff;
+  background: var(--pdp-bad);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+#appRoot .pdp-price__save {
+  color: var(--pdp-ok);
+  font-weight: 700;
+}
+
+/* ---------- Kotak beli ---------- */
+
+#appRoot .pdp-buy {
+  display: grid;
+  gap: 10px;
+}
+
+#appRoot .pdp-buy__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#appRoot .pdp-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#appRoot .pdp-stock__dot {
+  width: 8px;
+  height: 8px;
+  background: var(--pdp-ok);
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pdp-ok) 18%, transparent);
+}
+
+#appRoot .pdp-stock--low {
+  color: var(--pdp-warn);
+}
+
+#appRoot .pdp-stock--low .pdp-stock__dot {
+  background: var(--pdp-warn);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pdp-warn) 20%, transparent);
+  animation: pdp-pulse 1.8s ease-in-out infinite;
+}
+
+#appRoot .pdp-stock--out {
+  color: var(--pdp-bad);
+}
+
+#appRoot .pdp-stock--out .pdp-stock__dot {
+  background: var(--pdp-bad);
+  box-shadow: none;
+}
+
+@keyframes pdp-pulse {
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--pdp-warn) 4%, transparent); }
+}
+
+#appRoot .pdp-qty {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--pdp-line);
+  border-radius: 999px;
+}
+
+#appRoot .pdp-qty__btn {
+  width: 38px;
+  height: 38px;
+  min-height: 0;
+  padding: 0;
+  color: var(--pdp-text);
+  background: transparent;
+  border: 0;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+#appRoot .pdp-qty__btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#appRoot .pdp-qty__value {
+  min-width: 30px;
+  text-align: center;
+  font-weight: 700;
+}
+
+#appRoot .pdp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  color: var(--pdp-text);
+  background: transparent;
+  border: 1px solid var(--pdp-line);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 140ms ease, background 160ms ease, box-shadow 200ms ease;
+}
+
+#appRoot .pdp-btn:active {
+  transform: scale(0.98);
+}
+
+#appRoot .pdp-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#appRoot .pdp-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+#appRoot .pdp-btn--primary,
+#appRoot .pdp-btn--secondary {
+  color: var(--pdp-ink-text);
+  background: var(--pdp-ink);
+  border-color: var(--pdp-ink);
+}
+
+#appRoot .pdp-btn--ghost:hover {
+  background: var(--pdp-soft);
+}
+
+/* Tombol utama: konsultasi. Dibuat megah: gradien tinta, kilau emas pelan. */
+#appRoot .pdp-btn--ask {
+  position: relative;
+  justify-content: flex-start;
+  gap: 14px;
+  min-height: 64px;
+  padding: 10px 20px 10px 12px;
+  overflow: hidden;
+  color: #fff;
+  text-align: left;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgb(201 162 74 / 35%), transparent 55%),
+    linear-gradient(135deg, #17140f, #2a241a 60%, #17140f);
+  border: 1px solid rgb(201 162 74 / 45%);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgb(23 20 15 / 28%), inset 0 1px 0 rgb(255 255 255 / 8%);
+}
+
+#appRoot .pdp-btn--ask::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 232 170 / 22%) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: pdp-sheen 4.5s ease-in-out infinite 1s;
+  pointer-events: none;
+}
+
+@keyframes pdp-sheen {
+  0%, 60% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+#appRoot .pdp-btn--ask:hover {
+  box-shadow: 0 14px 36px rgb(23 20 15 / 36%), 0 0 0 4px rgb(201 162 74 / 14%);
+}
+
+#appRoot .pdp-btn__orb.product-ask {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  gap: 5px;
+  background: radial-gradient(circle at 35% 30%, #3a3328, #0c0a07 70%);
+  border: 1.5px solid rgb(255 236 190 / 70%);
+  box-shadow: 0 0 0 4px rgb(201 162 74 / 18%), 0 0 18px rgb(201 162 74 / 45%);
+  animation: pdp-breathe 3.2s ease-in-out infinite;
+}
+
+#appRoot .pdp-btn__orb .product-ask__eye {
+  width: 4px;
+  height: 11px;
+  animation: pdp-blink 5s infinite;
+}
+
+@keyframes pdp-breathe {
+  50% { box-shadow: 0 0 0 7px rgb(201 162 74 / 8%), 0 0 26px rgb(201 162 74 / 60%); }
+}
+
+@keyframes pdp-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+#appRoot .pdp-btn__stack {
+  display: grid;
+  gap: 2px;
+}
+
+#appRoot .pdp-btn__stack strong {
+  font-size: 15px;
+}
+
+#appRoot .pdp-btn__stack small {
+  color: rgb(255 240 210 / 70%);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+#appRoot .pdp-buy__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ---------- Jaminan ---------- */
+
+#appRoot .pdp-assure {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--pdp-line);
+  border-radius: var(--pdp-radius);
+}
+
+#appRoot .pdp-assure__item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  color: var(--pdp-text);
+}
+
+#appRoot .pdp-assure__item + .pdp-assure__item {
+  border-top: 1px solid var(--pdp-line);
+}
+
+#appRoot .pdp-assure__item > div {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+}
+
+#appRoot .pdp-assure__item span {
+  color: var(--pdp-muted);
+  line-height: 1.45;
+}
+
+/* ---------- Bawah: tab & rel ---------- */
+
+#appRoot .pdp-below {
+  display: grid;
+  gap: 28px;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 28px 14px 0;
+}
+
+#appRoot .pdp-tabs__nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--pdp-line);
+}
+
+#appRoot .pdp-tabs__btn {
+  position: relative;
+  padding: 12px 14px;
+  color: var(--pdp-muted);
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#appRoot .pdp-tabs__btn.is-active {
+  color: var(--pdp-text);
+}
+
+#appRoot .pdp-tabs__btn.is-active::after {
+  content: "";
+  position: absolute;
+  inset: auto 10px -1px;
+  height: 2px;
+  background: var(--pdp-text);
+  border-radius: 2px;
+}
+
+#appRoot .pdp-tabs__panel {
+  padding-top: 16px;
+}
+
+#appRoot .pdp-about p {
+  margin: 0;
+  max-width: 70ch;
+  color: var(--pdp-text);
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+#appRoot .pdp-spec {
+  display: grid;
+  margin: 0;
+  max-width: 560px;
+}
+
+#appRoot .pdp-spec__row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--pdp-line);
+  font-size: 13px;
+}
+
+#appRoot .pdp-spec dt {
+  color: var(--pdp-muted);
+}
+
+#appRoot .pdp-spec dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+#appRoot .pdp-muted {
+  margin: 0;
+  color: var(--pdp-muted);
+  font-size: 13px;
+}
+
+#appRoot .pdp-reviews__empty {
+  display: grid;
+  gap: 4px;
+  max-width: 520px;
+  padding: 18px;
+  background: var(--pdp-soft);
+  border-radius: var(--pdp-radius);
+  font-size: 13px;
+}
+
+#appRoot .pdp-reviews__empty span {
+  color: var(--pdp-muted);
+  line-height: 1.5;
+}
+
+#appRoot .pdp-reviews__head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: center;
+  max-width: 560px;
+  margin-bottom: 18px;
+}
+
+#appRoot .pdp-reviews__score {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+#appRoot .pdp-reviews__score strong {
+  font-size: 40px;
+  line-height: 1;
+}
+
+#appRoot .pdp-reviews__score small {
+  color: var(--pdp-muted);
+}
+
+#appRoot .pdp-stars {
+  --fill: 100%;
+  color: transparent;
+  background: linear-gradient(90deg, var(--pdp-gold) var(--fill), var(--pdp-line) var(--fill));
+  -webkit-background-clip: text;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+
+#appRoot .pdp-reviews__bars {
+  display: grid;
+  gap: 5px;
+}
+
+#appRoot .pdp-bar {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+#appRoot .pdp-bar__track {
+  height: 6px;
+  overflow: hidden;
+  background: var(--pdp-line);
+  border-radius: 999px;
+}
+
+#appRoot .pdp-bar__fill {
+  display: block;
+  height: 100%;
+  background: var(--pdp-gold);
+  border-radius: inherit;
+}
+
+#appRoot .pdp-bar__n {
+  color: var(--pdp-muted);
+  text-align: right;
+}
+
+#appRoot .pdp-reviews__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#appRoot .pdp-review {
+  display: grid;
+  gap: 6px;
+  padding: 14px 0;
+  border-top: 1px solid var(--pdp-line);
+  font-size: 13px;
+}
+
+#appRoot .pdp-review__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+#appRoot .pdp-review__badge {
+  padding: 2px 8px;
+  color: var(--pdp-ok);
+  background: color-mix(in srgb, var(--pdp-ok) 12%, transparent);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+#appRoot .pdp-review__time {
+  margin-left: auto;
+  color: var(--pdp-muted);
+  font-size: 12px;
+}
+
+#appRoot .pdp-review__stars {
+  color: var(--pdp-gold);
+  letter-spacing: 1px;
+}
+
+#appRoot .pdp-review p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+#appRoot .pdp-rail__title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+#appRoot .pdp-rail__track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(140px, 46%);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+#appRoot .pdp-mini {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 0;
+  color: var(--pdp-text);
+  text-align: left;
+  background: none;
+  border: 0;
+  font: inherit;
+  scroll-snap-align: start;
+  cursor: pointer;
+}
+
+#appRoot .pdp-mini__img {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  margin-bottom: 4px;
+  background: var(--pdp-soft);
+  border-radius: 14px;
+}
+
+#appRoot .pdp-mini__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 400ms ease;
+}
+
+#appRoot .pdp-mini:hover .pdp-mini__img img {
+  transform: scale(1.05);
+}
+
+#appRoot .pdp-mini__off {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 6px;
+  color: #fff;
+  background: var(--pdp-bad);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+#appRoot .pdp-mini__name {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.35;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+#appRoot .pdp-mini__price {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+#appRoot .pdp-mini__meta {
+  color: var(--pdp-muted);
+  font-size: 11px;
+}
+
+/* ---------- Pop-up "Tunggu Kak" ---------- */
+
+#appRoot .pdp-wait,
+#appRoot .pdp-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+#appRoot .pdp-wait.is-open,
+#appRoot .pdp-lightbox.is-open {
+  opacity: 1;
+}
+
+#appRoot .pdp-wait {
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(10 8 5 / 55%);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+#appRoot .pdp-wait__card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(400px, 100%);
+  padding: 28px 22px 20px;
+  color: #f6eedd;
+  text-align: center;
+  background:
+    radial-gradient(100% 80% at 50% 0%, rgb(201 162 74 / 22%), transparent 60%),
+    #16130e;
+  border: 1px solid rgb(201 162 74 / 35%);
+  border-radius: 26px;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 45%);
+  transform: translateY(14px) scale(0.98);
+  transition: transform 260ms cubic-bezier(.2, .8, .2, 1);
+}
+
+#appRoot .pdp-wait.is-open .pdp-wait__card {
+  transform: none;
+}
+
+#appRoot .pdp-wait__orb.product-ask {
+  width: 56px;
+  height: 56px;
+  gap: 7px;
+  border-color: rgb(255 236 190 / 75%);
+  box-shadow: 0 0 0 6px rgb(201 162 74 / 15%), 0 0 30px rgb(201 162 74 / 55%);
+  animation: pdp-breathe 3.2s ease-in-out infinite;
+}
+
+#appRoot .pdp-wait__orb .product-ask__eye {
+  width: 5px;
+  height: 14px;
+  animation: pdp-blink 4s infinite;
+}
+
+#appRoot .pdp-wait__title {
+  margin: 6px 0 0;
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 23.5px;
+  font-weight: 500;
+}
+
+#appRoot .pdp-wait__text {
+  margin: 0;
+  color: rgb(246 238 221 / 75%);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+#appRoot .pdp-wait__actions {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+#appRoot .pdp-wait .pdp-btn--primary {
+  color: #16130e;
+  background: linear-gradient(135deg, #e8cf8f, #c9a24a);
+  border-color: transparent;
+}
+
+#appRoot .pdp-wait .pdp-btn--ghost {
+  color: #f6eedd;
+  border-color: rgb(246 238 221 / 25%);
+}
+
+/* ---------- Lihat foto layar penuh ---------- */
+
+#appRoot .pdp-lightbox {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  background: rgb(8 7 5 / 94%);
+}
+
+#appRoot .pdp-lightbox__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+  padding: 56px 16px 8px;
+  cursor: zoom-in;
+}
+
+#appRoot .pdp-lightbox__stage.is-zoomed {
+  cursor: zoom-out;
+}
+
+#appRoot .pdp-lightbox__stage img,
+#appRoot .pdp-lightbox__stage video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  transition: transform 260ms ease;
+}
+
+#appRoot .pdp-lightbox__stage.is-zoomed img {
+  transform: scale(2.2);
+}
+
+#appRoot .pdp-lightbox__count {
+  position: absolute;
+  top: calc(18px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  margin: 0;
+  color: rgb(255 255 255 / 75%);
+  font-size: 13px;
+  transform: translateX(-50%);
+}
+
+#appRoot .pdp-lightbox__btn {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: #fff;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+#appRoot .pdp-lightbox__btn[hidden] {
+  display: none;
+}
+
+#appRoot .pdp-lightbox__close {
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: 12px;
+}
+
+#appRoot .pdp-lightbox__prev,
+#appRoot .pdp-lightbox__next {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#appRoot .pdp-lightbox__prev {
+  left: 12px;
+}
+
+#appRoot .pdp-lightbox__next {
+  right: 12px;
+}
+
+#appRoot .pdp-lightbox__strip {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+}
+
+#appRoot .pdp-lightbox__strip[hidden] {
+  display: none;
+}
+
+#appRoot .pdp-lightbox__thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  overflow: hidden;
+  color: #fff;
+  background: rgb(255 255 255 / 8%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 10px;
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+#appRoot .pdp-lightbox__thumb.is-active {
+  opacity: 1;
+  border-color: #fff;
+}
+
+#appRoot .pdp-lightbox__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---------- Desktop ---------- */
+
+/* Ikut lebar halaman (bukan layar): saat chat menempel di samping,
+   halaman menyempit dan tata letak otomatis kembali ke versi HP. */
+#appRoot .product-page.pdp {
+  container-type: inline-size;
+}
+
+@container (min-width: 820px) {
+  #appRoot .pdp .pdp-bar,
+  #appRoot .pdp-sticky {
+    padding-inline: max(24px, calc((100% - 1180px) / 2));
+  }
+
+  #appRoot .pdp-main {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+    gap: 48px;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 24px 0;
+  }
+
+  #appRoot .pdp-gallery {
+    grid-template-columns: 76px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  #appRoot .pdp-gallery > .product-page__hero {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  #appRoot .pdp-thumbs {
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: column;
+    max-height: 560px;
+    overflow-y: auto;
+  }
+
+  #appRoot .pdp-thumb {
+    width: 76px;
+    height: 76px;
+  }
+
+  #appRoot .pdp-body {
+    position: sticky;
+    top: 80px;
+  }
+
+  #appRoot .pdp-below {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 24px 0;
+  }
+
+  #appRoot .pdp-rail__track {
+    grid-auto-columns: calc((100% - 48px) / 5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .pdp *,
+  #appRoot .pdp-wait *,
+  #appRoot .pdp-lightbox * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Tombol "Tanyakan foto ini" di layar penuh */
+#appRoot .pdp-lightbox__ask {
+  position: absolute;
+  left: 50%;
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  padding: 11px 20px;
+  color: #16130e;
+  background: linear-gradient(135deg, #e8cf8f, #c9a24a);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 40%);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+#appRoot .pdp-lightbox__ask[hidden] {
+  display: none;
+}

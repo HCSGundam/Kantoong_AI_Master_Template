@@ -167,7 +167,10 @@ export function posProSupabaseMethods() {
         },
 
         async voidSale({ sale_id, reason, note = "", pin }) {
-            return check(await supabase.rpc("erp_pos_void", { p_sale: sale_id, p_reason: reason, p_note: String(note || ""), p_pin: String(pin || "") }));
+            const result = check(await supabase.rpc("erp_pos_void", { p_sale: sale_id, p_reason: reason, p_note: String(note || ""), p_pin: String(pin || "") }));
+            // PIN salah dikembalikan sebagai { error } (supaya catatan percobaan tersimpan di database).
+            if (result?.error) throw new Error(result.error);
+            return result;
         },
 
         async hasMyPin() {
@@ -311,6 +314,7 @@ export function posProSupabaseMethods() {
 
         async posCheckoutPro(payload) {
             const sale = check(await supabase.rpc("erp_pos_checkout_v2", { p: payload }));
+            if (sale?.error) throw new Error(sale.error);
             return { ...sale, created_at: sale.created_at || new Date().toISOString(), outlet_id: payload.outlet_id };
         },
     };

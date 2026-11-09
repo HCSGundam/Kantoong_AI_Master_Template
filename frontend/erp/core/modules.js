@@ -48,6 +48,14 @@ export const MODULES = Object.freeze([
         allow: () => true,
     },
     {
+        key: "storefront",
+        label: "Etalase & Brand",
+        hint: "Nama brand, susunan katalog & saran filter + pratinjau",
+        icon: "M3 9l2-5h14l2 5M3 9h18v11H3zM3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M9 20v-6h6v6",
+        // Katalog: admin, sales, marketing. Nama brand di dalamnya hanya bisa diubah owner.
+        allow: (member) => hasRole(member, "sales", "marketing"),
+    },
+    {
         key: "approvals",
         label: "Persetujuan & Audit",
         hint: "Pengajuan, keputusan atasan, jejak perubahan",
