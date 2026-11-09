@@ -2011,3 +2011,55 @@ body.kc-overlay-open .kc-sheet {
     html[data-kc-free] .kc-dock-tools,
     html[data-kc-free] .kc-dock-edge { display: none !important; }
 }
+
+/* Kolom "Tempel link" di dalam chat (pengganti kotak bawaan browser) */
+.kc-linkbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 12px 8px;
+    padding: 6px 6px 6px 14px;
+    background: var(--surface, #fffdf8);
+    border: 1px solid var(--lux-gold, #b8913f);
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 10%);
+}
+
+.kc-linkbar[hidden] {
+    display: none;
+}
+
+.kc-linkbar__input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 0;
+    color: var(--text-primary, #16130e);
+    background: none;
+    border: 0;
+    outline: 0;
+    font: inherit;
+    font-size: 14px;
+}
+
+.kc-linkbar__add {
+    padding: 8px 14px;
+    color: var(--surface, #fffdf8);
+    background: var(--text-primary, #16130e);
+    border: 0;
+    border-radius: 12px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.kc-linkbar__close {
+    width: 32px;
+    height: 32px;
+    color: var(--text-muted, #7b7365);
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+}

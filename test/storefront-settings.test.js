@@ -65,3 +65,45 @@ describe("ukuran kartu bebas", () => {
         expect(modeFor(2, 2)).toBe("box");
     });
 });
+
+import { drawReward, sampleHome, sanitizeHome, HOME_BLOCKS } from "../frontend/js/storefront-settings.js";
+
+describe("homepage = zona promosi", () => {
+    it("template contoh berisi semua jenis blok, tiap jenis sekali", () => {
+        const home = sanitizeHome(sampleHome());
+        expect(home.blocks.map((b) => b.type).sort()).toEqual(HOME_BLOCKS.map((b) => b.type).sort());
+        expect(home.blocks.every((b) => b.sample)).toBe(true);
+    });
+
+    it("isi berbahaya dibersihkan: link non-https, kode aneh, duplikat", () => {
+        const home = sanitizeHome({ blocks: [
+            { type: "banner", items: [{ title: "A", image: "javascript:alert(1)", action: "hack" }] },
+            { type: "banner", items: [{ title: "dobel" }] },
+            { type: "coupons", items: [{ code: "hemat 10!", title: "Diskon" }, { code: "", title: "tanpa kode" }] },
+            { type: "jackpot", rewards: [{ label: "Hadiah", weight: 999 }] },
+            { type: "aneh" },
+        ] });
+        const banner = home.blocks.find((b) => b.type === "banner");
+        expect(banner.items).toEqual([{ title: "A", text: "", image: "", cta: "", action: "catalog" }]);
+        expect(home.blocks.filter((b) => b.type === "banner")).toHaveLength(1);
+        expect(home.blocks.find((b) => b.type === "coupons").items).toEqual([{ code: "HEMAT10", title: "Diskon", text: "", expires: "" }]);
+        expect(home.blocks.find((b) => b.type === "jackpot").rewards[0].weight).toBe(100);
+        // jenis yang tidak disebut tetap ada tapi mati
+        expect(home.blocks.find((b) => b.type === "posters").enabled).toBe(false);
+    });
+
+    it("kotak misteri mengikuti peluang yang diisi toko", () => {
+        const rewards = [{ label: "A", weight: 70 }, { label: "B", weight: 30 }];
+        expect(drawReward(rewards, 0).label).toBe("A");
+        expect(drawReward(rewards, 0.69).label).toBe("A");
+        expect(drawReward(rewards, 0.71).label).toBe("B");
+        expect(drawReward([], 0.5)).toBeNull();
+    });
+
+    it("logo hanya https atau gambar data kecil", () => {
+        const ok = sanitizeStorefront({ brand: { name: "X", logo: "https://cdn.test/logo.png" } });
+        expect(ok.brand.logo).toBe("https://cdn.test/logo.png");
+        expect(sanitizeStorefront({ brand: { name: "X", logo: "javascript:alert(1)" } }).brand.logo).toBe("");
+        expect(sanitizeStorefront({ brand: { name: "X", logo: "data:image/png;base64,iVBORw0KGgo=" } }).brand.logo).toContain("data:image/png");
+    });
+});

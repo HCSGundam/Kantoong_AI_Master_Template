@@ -5,6 +5,7 @@
  * Satu sumber untuk toko, Dashboard User, dan ERP:
  *   brand   : { name, tagline }                  — hanya OWNER yang boleh ubah
  *   catalog : { categories, chips, chipLimit }   — admin/sales/marketing
+ *   home    : { blocks }  zona promosi homepage    — admin/sales/marketing
  *
  * Disimpan di Supabase (tabel storefront_settings, baca publik, tulis lewat
  * fungsi storefront_save yang memeriksa jabatan). Salinan di perangkat
@@ -35,10 +36,128 @@ export const DEFAULT_CHIPS = Object.freeze(["terlaris", "terbaru", "promo", "ter
 
 const str = (v, max = 80) => String(v ?? "").trim().slice(0, max);
 
+/* ---------- Homepage = zona promosi (diatur di ERP › Etalase & Brand) ---------- */
+
+/** Jenis blok homepage. Semua opsional: admin bebas menyalakan / mematikan / mengurutkan. */
+export const HOME_BLOCKS = Object.freeze([
+    { type: "banner", label: "Banner promo", hint: "Iklan lebar dengan tombol ajakan" },
+    { type: "coupons", label: "Kupon & voucher", hint: "Kode yang bisa diklaim pelanggan" },
+    { type: "jackpot", label: "Kotak hadiah misteri", hint: "Hadiah tak terduga, 1× sehari per pelanggan" },
+    { type: "posters", label: "Poster", hint: "Kartu gambar untuk event / pengumuman" },
+    { type: "pinned", label: "Produk pilihan admin", hint: "Produk yang disematkan admin" },
+]);
+
+/** Contoh isi (template kosong) supaya pemilik bisa melihat hasilnya dulu. */
+export function sampleHome() {
+    return {
+        blocks: [
+            {
+                type: "banner", enabled: true, sample: true, title: "",
+                items: [
+                    { title: "Promo akhir pekan", text: "Diskon spesial untuk menu favoritmu. Berlaku Sabtu–Minggu.", image: "", cta: "Lihat produk", action: "catalog" },
+                    { title: "Bingung pilih?", text: "Ceritakan seleramu, asisten kami carikan yang paling pas.", image: "", cta: "Tanya asisten", action: "chat" },
+                ],
+            },
+            {
+                type: "coupons", enabled: true, sample: true, title: "Kupon untukmu",
+                items: [
+                    { code: "HEMAT10", title: "Diskon 10%", text: "Min. belanja Rp 50.000", expires: "" },
+                    { code: "ONGKIR", title: "Gratis ongkir", text: "Untuk pesanan pertama", expires: "" },
+                ],
+            },
+            {
+                type: "jackpot", enabled: true, sample: true, title: "Kotak hadiah misteri",
+                text: "Buka 1× sehari. Hadiahnya acak dari daftar hadiah toko.",
+                rewards: [
+                    { label: "Diskon 5%", code: "MISTERI5", weight: 40 },
+                    { label: "Gratis topping", code: "TOPPING", weight: 25 },
+                    { label: "Diskon 15%", code: "JACKPOT15", weight: 5 },
+                    { label: "Belum beruntung — coba lagi besok", code: "", weight: 30 },
+                ],
+            },
+            {
+                type: "posters", enabled: true, sample: true, title: "Info & event",
+                items: [
+                    { title: "Menu baru setiap bulan", text: "Ikuti terus kejutannya.", image: "" },
+                    { title: "Kemitraan reseller", text: "Hubungi kami lewat asisten.", image: "" },
+                ],
+            },
+            { type: "pinned", enabled: false, sample: true, title: "Pilihan kami", productIds: [] },
+        ],
+    };
+}
+
+const cleanUrl = (v) => {
+    const url = str(v, 500);
+    return /^https:\/\//i.test(url) ? url : "";
+};
+const cleanCode = (v) => str(v, 20).toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+
+function cleanBlock(raw) {
+    const meta = HOME_BLOCKS.find((b) => b.type === raw?.type);
+    if (!meta) return null;
+    const block = { type: meta.type, enabled: raw.enabled !== false, sample: raw.sample === true, title: str(raw.title, 60) };
+    const items = Array.isArray(raw.items) ? raw.items.slice(0, 8) : [];
+    if (meta.type === "banner") {
+        block.items = items.map((it) => ({
+            title: str(it?.title, 60), text: str(it?.text, 160), image: cleanUrl(it?.image),
+            cta: str(it?.cta, 30), action: ["catalog", "chat", "none"].includes(it?.action) ? it.action : "catalog",
+        })).filter((it) => it.title);
+    } else if (meta.type === "coupons") {
+        block.items = items.map((it) => ({
+            code: cleanCode(it?.code), title: str(it?.title, 40), text: str(it?.text, 100), expires: str(it?.expires, 10),
+        })).filter((it) => it.code && it.title);
+    } else if (meta.type === "posters") {
+        block.items = items.map((it) => ({ title: str(it?.title, 60), text: str(it?.text, 120), image: cleanUrl(it?.image) }))
+            .filter((it) => it.title);
+    } else if (meta.type === "jackpot") {
+        block.text = str(raw.text, 160);
+        block.rewards = (Array.isArray(raw.rewards) ? raw.rewards.slice(0, 10) : [])
+            .map((r) => ({ label: str(r?.label, 50), code: cleanCode(r?.code), weight: Math.min(100, Math.max(1, Math.round(Number(r?.weight) || 1))) }))
+            .filter((r) => r.label);
+    } else if (meta.type === "pinned") {
+        block.productIds = (Array.isArray(raw.productIds) ? raw.productIds : []).map((id) => str(id, 60)).filter(Boolean).slice(0, 20);
+    }
+    return block;
+}
+
+export function sanitizeHome(raw) {
+    const source = Array.isArray(raw?.blocks) ? raw : sampleHome();
+    const seen = new Set();
+    const blocks = source.blocks.map(cleanBlock).filter((b) => b && !seen.has(b.type) && seen.add(b.type));
+    // Jenis blok yang belum ada ditambahkan (mati) agar admin bisa menyalakannya.
+    HOME_BLOCKS.forEach((meta) => {
+        if (!seen.has(meta.type)) blocks.push({ ...cleanBlock({ type: meta.type, enabled: false }), enabled: false });
+    });
+    return { blocks };
+}
+
+/** Undian kotak misteri berbobot (rand 0..1 bisa disuntik saat tes). */
+export function drawReward(rewards, rand = Math.random()) {
+    const list = (rewards ?? []).filter((r) => r.weight > 0);
+    const total = list.reduce((s, r) => s + r.weight, 0);
+    if (!total) return null;
+    let pick = rand * total;
+    for (const r of list) {
+        pick -= r.weight;
+        if (pick < 0) return r;
+    }
+    return list[list.length - 1];
+}
+
+/** Logo: URL https (Supabase Storage) atau data:image kecil (mode demo). */
+function cleanLogo(v) {
+    const value = String(v ?? "").trim();
+    if (/^https:\/\//i.test(value) && value.length <= 600) return value;
+    if (/^data:image\/(png|webp|jpeg);base64,[a-z0-9+/=]+$/i.test(value) && value.length <= 350000) return value;
+    return "";
+}
+
 export function defaultStorefront() {
     return {
-        brand: { name: str(CFG?.app_name) || "Toko", tagline: "" },
+        brand: { name: str(CFG?.app_name) || "Toko", tagline: "", logo: "" },
         catalog: { categories: {}, chips: {}, chipLimit: 6 },
+        home: sampleHome(),
     };
 }
 
@@ -80,12 +199,13 @@ export function sanitizeStorefront(raw) {
         chips[str(key, 60)] = list.map(cleanChip).filter(Boolean).slice(0, 20);
     });
     return {
-        brand: { name: str(brand.name, 60) || base.brand.name, tagline: str(brand.tagline, 120) },
+        brand: { name: str(brand.name, 60) || base.brand.name, tagline: str(brand.tagline, 120), logo: cleanLogo(brand.logo) },
         catalog: {
             categories,
             chips,
             chipLimit: Math.min(20, Math.max(1, Math.round(Number(catalog.chipLimit) || base.catalog.chipLimit))),
         },
+        home: sanitizeHome(raw?.home),
     };
 }
 
@@ -227,7 +347,7 @@ export async function loadStorefront() {
  * demo = true: hanya di perangkat (mode demo ERP).
  */
 export async function saveStorefront(section, value, { demo = false } = {}) {
-    if (section !== "brand" && section !== "catalog") throw new Error("Bagian tidak dikenal.");
+    if (!["brand", "catalog", "home"].includes(section)) throw new Error("Bagian tidak dikenal.");
     const next = sanitizeStorefront({ ...current, [section]: value });
     if (!demo) {
         const supabase = await client();

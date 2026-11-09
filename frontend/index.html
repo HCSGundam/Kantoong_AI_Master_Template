@@ -37,6 +37,7 @@
     <link rel="stylesheet" href="./css/product-page.css">
     <!-- Lapisan mewah bersama + tema gelap/terang (paling akhir) -->
     <link rel="stylesheet" href="./css/luxe.css">
+    <link rel="stylesheet" href="./css/promo.css">
 
     <!-- GOOGLE IDENTITY SERVICES -->
     <script
@@ -256,11 +257,21 @@
                  otomatis disembunyikan. -->
             <div id="extraRails"></div>
 
-            <!-- KATALOG PUSAT: semua produk brand, tampil ke bawah -->
+            <!-- ZONA PROMOSI: banner, kupon, kotak misteri, poster, produk pilihan.
+                 Diatur di ERP › Etalase & Brand › Homepage (js/home-promos.js). -->
+            <section
+                class="page-section kc-promo"
+                id="homePromos"
+                aria-label="Promo & penawaran"
+            ></section>
+
+            <!-- Katalog lengkap pindah ke Dashboard User › Katalog Produk.
+                 Bagian lama disembunyikan (dipertahankan agar kode lama tetap aman). -->
             <section
                 class="page-section"
                 id="categorySection"
                 aria-label="Katalog semua produk"
+                hidden
             >
                 <div class="section-head">
                     <h2 id="catalogTitle">Semua Produk</h2>

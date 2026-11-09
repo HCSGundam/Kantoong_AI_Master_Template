@@ -3726,3 +3726,24 @@ body {
     .erp-sf__toggle { grid-column: 2; padding: 0; }
 }
 body.erp-sf-lock { overflow: hidden; }
+
+/* Etalase & Brand: homepage, logo, tab pratinjau */
+.erp-sf__tabs { display: inline-flex; padding: 3px; background: var(--e-soft); border: 1px solid var(--e-border); border-radius: 999px; }
+.erp-sf__tab { padding: 6px 12px; color: var(--e-muted); background: none; border: 0; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.erp-sf__tab.is-on { color: var(--e-accent-text); background: var(--e-accent); }
+.erp-sf__phone[hidden] { display: none; }
+.erp-sf__phone--home { background: var(--e-bg); }
+.erp-sf__fake-header { display: flex; justify-content: center; padding: 6px 0 14px; margin-bottom: 14px; border-bottom: 1px solid var(--e-border); font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+.erp-sf__fake-brand img { display: block; height: 30px; max-width: 150px; object-fit: contain; }
+.erp-sf__promos { gap: 22px; }
+.erp-sf__promos .kc-promo__banners { grid-auto-columns: 88%; }
+.erp-sf__promos .kc-jackpot { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+.erp-sf__promos .kc-jackpot__side { justify-items: center; }
+.erp-sf__blocks { display: grid; gap: 10px; }
+.erp-sf__items { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.erp-sf__item { display: inline-flex; align-items: center; gap: 2px; background: var(--e-surface); border: 1px solid var(--e-border); border-radius: 999px; }
+.erp-sf__item-edit { padding: 6px 4px 6px 12px; color: var(--e-text); background: none; border: 0; font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.erp-sf__sample { margin-left: 8px; padding: 2px 8px; color: var(--e-warn); border: 1px dashed currentColor; border-radius: 999px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; }
+.erp-sf__logo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.erp-sf__logo { display: grid; place-items: center; width: 140px; height: 72px; padding: 8px; background: repeating-conic-gradient(var(--e-soft) 0 25%, var(--e-surface) 0 50%) 0 0 / 14px 14px; border: 1px solid var(--e-border); border-radius: 14px; color: var(--e-muted); font-size: 11px; font-weight: 500; text-align: center; }
+.erp-sf__logo img { max-width: 100%; max-height: 100%; object-fit: contain; }

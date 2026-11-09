@@ -1474,6 +1474,24 @@ function applyStorefrontBrand(settings = getStorefront()) {
     }
 
     document.title = `${name} · Ruang Pribadi`;
+
+    // Logo brand (bila ada) menggantikan tanda bintang di kotak brand.
+    const mark = state.root?.querySelector(".dashboard-brand__mark");
+    if (mark) {
+        if (!mark.dataset.original) mark.dataset.original = mark.innerHTML;
+        const logo = settings?.brand?.logo;
+        if (logo) {
+            const img = document.createElement("img");
+            img.src = logo;
+            img.alt = name;
+            img.className = "dashboard-brand__logo";
+            mark.replaceChildren(img);
+            mark.classList.add("has-logo");
+        } else if (mark.classList.contains("has-logo")) {
+            mark.innerHTML = mark.dataset.original;
+            mark.classList.remove("has-logo");
+        }
+    }
 }
 
 let brandSyncStarted = false;

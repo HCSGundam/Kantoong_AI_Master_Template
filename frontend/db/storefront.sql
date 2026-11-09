@@ -3,14 +3,18 @@
 -- File: frontend/db/storefront.sql
 --
 -- Aman dijalankan ulang. Jalankan SETELAH erp-foundation.sql.
--- Setelah file ini, jalankan ulang security-hardening.sql (paling akhir).
+-- Tidak perlu menjalankan ulang security-hardening.sql setelah file ini.
 --
 -- Isi:
+-- PEMBARUAN 9 Nov: tambah bagian "home" & logo -> jalankan ULANG file ini.
+--
 --   1. Tabel storefront_settings (1 baris per brand, kolom settings jsonb)
 --   2. Baca: semua orang (nama brand & susunan katalog memang tampil publik)
 --   3. Tulis: HANYA lewat fungsi storefront_save
 --        - bagian "brand"   -> hanya OWNER (level 5)
---        - bagian "catalog" -> admin (level 4+) atau peran sales/marketing
+--        - bagian "catalog" & "home" (zona promosi homepage)
+--                             -> admin (level 4+) atau peran sales/marketing
+--        - bagian "brand" juga menyimpan logo (URL foto di Storage)
 --   4. Realtime: perubahan langsung terkirim ke toko & dashboard
 -- ============================================================
 
@@ -50,9 +54,9 @@ begin
         if v_level < 5 then
             return jsonb_build_object('error', 'Nama brand hanya bisa diubah oleh owner.');
         end if;
-    elsif p_section = 'catalog' then
+    elsif p_section in ('catalog', 'home') then
         if v_level < 4 and v_role not in ('sales', 'marketing') then
-            return jsonb_build_object('error', 'Kamu tidak punya izin mengatur katalog.');
+            return jsonb_build_object('error', 'Kamu tidak punya izin mengatur katalog & homepage.');
         end if;
     else
         return jsonb_build_object('error', 'Bagian tidak dikenal.');

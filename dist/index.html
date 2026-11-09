@@ -21,7 +21,7 @@
 
     <!-- Ukuran ringkas ala marketplace (dimuat paling akhir) -->
     <!-- Halaman detail produk ala e-commerce kelas atas -->
-    <!-- Lapisan mewah bersama + tema gelap/terang (paling akhir) -->
+    <!-- Lapisan mewah bersama + tema gelap/terang (paling akhir) -->
 
     <!-- GOOGLE IDENTITY SERVICES -->
     <script
@@ -32,12 +32,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
-  <script type="module" crossorigin src="/assets/homepage-rUYSwMeH.js"></script>
+  <script type="module" crossorigin src="/assets/homepage-PMcN1uh4.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/supabase-client-DvLz8SWw.js">
-  <link rel="modulepreload" crossorigin href="/assets/kantoong-assistant-RjkUf6mQ.js">
-  <link rel="modulepreload" crossorigin href="/assets/marketing-Cuh1jtoB.js">
+  <link rel="modulepreload" crossorigin href="/assets/kantoong-assistant-DNRSYTYg.js">
+  <link rel="modulepreload" crossorigin href="/assets/promo-DIoVE9O8.js">
+  <link rel="stylesheet" crossorigin href="/assets/promo-D6kVGYID.css">
   <link rel="stylesheet" crossorigin href="/assets/homepage-CrEYzRu-.css">
-  <link rel="stylesheet" crossorigin href="/assets/chat-sheet-BHTS7snY.css">
+  <link rel="stylesheet" crossorigin href="/assets/chat-sheet-CB1GVGtP.css">
 </head>
 
 <body>
@@ -247,11 +248,21 @@
                  otomatis disembunyikan. -->
             <div id="extraRails"></div>
 
-            <!-- KATALOG PUSAT: semua produk brand, tampil ke bawah -->
+            <!-- ZONA PROMOSI: banner, kupon, kotak misteri, poster, produk pilihan.
+                 Diatur di ERP › Etalase & Brand › Homepage (js/home-promos.js). -->
+            <section
+                class="page-section kc-promo"
+                id="homePromos"
+                aria-label="Promo & penawaran"
+            ></section>
+
+            <!-- Katalog lengkap pindah ke Dashboard User › Katalog Produk.
+                 Bagian lama disembunyikan (dipertahankan agar kode lama tetap aman). -->
             <section
                 class="page-section"
                 id="categorySection"
                 aria-label="Katalog semua produk"
+                hidden
             >
                 <div class="section-head">
                     <h2 id="catalogTitle">Semua Produk</h2>

@@ -2870,3 +2870,53 @@
 #kantoongAssistantHost {
     z-index: 1050;
 }
+
+/* Latar halaman dashboard selalu penuh (tidak ada bagian abu-abu di bawah) */
+html:has(> body .dashboard-user),
+html:has(> body .dashboard-user) > body {
+    min-height: 100%;
+    background: #f5f1e8;
+}
+
+html[data-theme="dark"]:has(> body .dashboard-user),
+html[data-theme="dark"]:has(> body .dashboard-user) > body {
+    background: #0e0d0b;
+}
+
+.dashboard-user {
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* Logo brand di kotak brand dashboard */
+.dashboard-brand__mark.has-logo {
+    padding: 4px;
+    background: var(--bx-card);
+    border: 1px solid var(--bx-line);
+}
+
+.dashboard-brand__logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Chat asisten di dashboard memakai warna yang sama dengan toko (css/luxe.css) */
+html:has(> body .dashboard-user) {
+    --container-bg: #fbf8f1;
+    --surface: #fffdf8;
+    --text-primary: #16130e;
+    --text-secondary: #7b7365;
+    --text-muted: #7b7365;
+    --line: rgb(22 19 14 / 10%);
+    --lux-gold: #b8913f;
+}
+
+html[data-theme="dark"]:has(> body .dashboard-user) {
+    --container-bg: #13120f;
+    --surface: #191713;
+    --text-primary: #f1ead9;
+    --text-secondary: #a59c8a;
+    --text-muted: #a59c8a;
+    --line: rgb(255 240 205 / 9%);
+}

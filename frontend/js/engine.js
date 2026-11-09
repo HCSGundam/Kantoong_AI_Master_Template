@@ -23,7 +23,8 @@
 import { supabase } from "./supabase-client.js";
 import { PRODUCT_PUBLIC_COLUMNS } from "./product-columns.js";
 import { applyTheme } from "./theme.js";
-import { onStorefrontChange, startStorefrontSync } from "./storefront-settings.js";
+import { getStorefront, onStorefrontChange, startStorefrontSync } from "./storefront-settings.js";
+import { renderHomePromos } from "./home-promos.js";
 import {
   clampQty,
   priceSaving,
@@ -552,6 +553,7 @@ window.addEventListener("message", (event) => {
       if (state.dashboardOpen) {
         sendDashboardOpenMessage();
       }
+      setTimeout(flushDashboardFeature, 60);
       break;
 
     case "kantoong:dashboard-close-request":
@@ -641,7 +643,17 @@ function applyConfig() {
   const brandTitle = $("#brandTitle");
 
   if (brandTitle && CFG?.app_name) {
-    brandTitle.textContent = String(CFG.app_name);
+    // Logo dari ERP › Etalase & Brand menggantikan tulisan nama brand.
+    const logo = getStorefront().brand?.logo;
+    if (logo) {
+      const img = document.createElement("img");
+      img.className = "brand-logo";
+      img.src = logo;
+      img.alt = String(CFG.app_name);
+      brandTitle.replaceChildren(img);
+    } else {
+      brandTitle.textContent = String(CFG.app_name);
+    }
   }
 
   // Judul "Produk Unggulan" (dipakai juga oleh panel teks di dalam rail).
@@ -879,10 +891,9 @@ function normalizeHeroSlide(raw) {
   };
 }
 
+/** Katalog lengkap kini ada di Dashboard User › Katalog Produk (homepage = zona promosi). */
 function scrollToCatalog() {
-  document
-    .getElementById("categorySection")
-    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  openDashboardFeature("product-catalog");
 }
 
 /**
@@ -2038,18 +2049,33 @@ function openProductPage(product) {
   }
 }
 
+/** Buka Dashboard User langsung di fitur tertentu (mis. Katalog Produk). */
+function openDashboardFeature(featureId) {
+  if (!featureId) return;
+  state.pendingDashboardFeature = featureId;
+  openDashboard();
+  // Iframe yang sudah siap langsung menerima; yang baru dimuat menerima saat "dashboard-ready".
+  setTimeout(flushDashboardFeature, 150);
+}
+
+function flushDashboardFeature() {
+  const featureId = state.pendingDashboardFeature;
+  const target = state.dashboardFrame?.contentWindow;
+  if (!featureId || !target) return;
+  try {
+    if (target.document?.readyState !== "complete") return;
+  } catch {
+    /* beda origin: kirim saja */
+  }
+  state.pendingDashboardFeature = "";
+  target.postMessage({ type: "kantoong:dashboard-open-feature", id: featureId }, window.location.origin);
+}
+
 /** Kembali ke fitur dashboard asal (mis. Katalog Produk) bila produk dibuka dari sana. */
 function returnToDashboardFeature() {
   const featureId = productPage.returnTo;
   productPage.returnTo = "";
-  if (!featureId) return;
-  openDashboard();
-  setTimeout(() => {
-    state.dashboardFrame?.contentWindow?.postMessage(
-      { type: "kantoong:dashboard-open-feature", id: featureId },
-      window.location.origin
-    );
-  }, 120);
+  openDashboardFeature(featureId);
 }
 
 function closeProductPage() {
@@ -3725,6 +3751,24 @@ function renderStorefront() {
   renderCategories();
   renderRails();
   renderCatalog();
+  renderPromos();
+}
+
+/** Zona promosi homepage (banner, kupon, kotak misteri, poster, produk pilihan). */
+function renderPromos() {
+  const root = $("#homePromos");
+  if (!root) return;
+  renderHomePromos(root, {
+    home: getStorefront().home,
+    products: state.products,
+    onAction(action) {
+      if (action.type === "catalog") openDashboardFeature("product-catalog");
+      else if (action.type === "chat") askConsultation(action.hint);
+      else if (action.type === "product") openProductPage(action.product);
+      else if (action.type === "coupon") showToast(`Kode ${action.code} diklaim & disalin. Pakai saat checkout.`);
+      else if (action.type === "jackpot" && action.result?.code) showToast(`Selamat! ${action.result.label} · kode ${action.result.code}`);
+    },
+  });
 }
 
 /* ============================================================
@@ -3983,6 +4027,8 @@ function initSearch() {
   if (!searchInput) {
     if (searchButton) {
       searchButton.addEventListener("click", () => {
+        // Cari = buka Katalog Produk lengkap (kotak cari, filter, saran per kategori).
+        openDashboardFeature("product-catalog");
         emit("search-open-requested", {});
         document.dispatchEvent(
           new CustomEvent("kantoong:search-open-requested")
@@ -4451,7 +4497,10 @@ async function initKantoongEngine() {
   applyTheme("store");
 
   // Nama brand diatur owner di ERP › Etalase & Brand; berubah realtime.
-  onStorefrontChange(() => applyConfig());
+  onStorefrontChange(() => {
+    applyConfig();
+    renderPromos();
+  });
   startStorefrontSync();
 
   try {

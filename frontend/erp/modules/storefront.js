@@ -21,7 +21,10 @@ import {
     sanitizeStorefront,
 } from "../../js/storefront-settings.js";
 import { renderCatalog } from "../../dashboard-user/home/catalog-view.js";
+import { renderHomePromos } from "../../js/home-promos.js";
+import { homeEditor, logoField } from "./storefront-home.js";
 import "../../dashboard-user/home/home.css";
+import "../../css/promo.css";
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
 
@@ -52,19 +55,50 @@ export async function render(ctx) {
         sheetHost: previewWrap,
         onOpenProduct: () => toast("Di toko, ketukan ini membuka halaman produk."),
     });
+    // Pratinjau homepage (zona promosi) memakai tampilan yang sama dengan toko.
+    const promoRoot = el("div", { class: "kc-promo erp-sf__promos" });
+    const promoWrap = el("div", { class: "erp-sf__phone erp-sf__phone--home" },
+        el("div", { class: "erp-sf__fake-header" }, el("span", { class: "erp-sf__fake-brand" })),
+        promoRoot);
+    const renderPromos = () => {
+        promoRoot.dataset.theme = document.documentElement.dataset.theme || "light";
+        promoWrap.dataset.theme = promoRoot.dataset.theme;
+        const clean = sanitizeStorefront(draft);
+        const count = renderHomePromos(promoRoot, { home: clean.home, products, preview: true });
+        promoRoot.hidden = false;
+        if (!count) promoRoot.replaceChildren(el("p", { class: "kc-promo__empty" }, "Semua blok dimatikan · homepage hanya menampilkan banner atas & produk unggulan."));
+        const fake = promoWrap.querySelector(".erp-sf__fake-brand");
+        fake.replaceChildren(clean.brand.logo ? el("img", { src: clean.brand.logo, alt: "" }) : clean.brand.name);
+    };
+
     const refresh = () => {
         syncTheme();
         view.update(sanitizeStorefront(draft));
+        renderPromos();
         brandPreview.textContent = draft.brand.name || "Nama brand";
         dirty();
     };
 
     const brandPreview = el("strong", { class: "erp-sf__brand" }, draft.brand.name);
-    const preview = el("aside", { class: "erp-sf__preview", "aria-label": "Pratinjau katalog" },
+    let previewTab = "home";
+    const tabHome = el("button", { class: "erp-sf__tab is-on", type: "button" }, "Homepage");
+    const tabCat = el("button", { class: "erp-sf__tab", type: "button" }, "Katalog");
+    const setTab = (tab) => {
+        previewTab = tab;
+        tabHome.classList.toggle("is-on", tab === "home");
+        tabCat.classList.toggle("is-on", tab === "catalog");
+        promoWrap.hidden = tab !== "home";
+        previewWrap.hidden = tab !== "catalog";
+    };
+    tabHome.addEventListener("click", () => setTab("home"));
+    tabCat.addEventListener("click", () => setTab("catalog"));
+    const preview = el("aside", { class: "erp-sf__preview", "aria-label": "Pratinjau" },
         el("div", { class: "erp-sf__preview-head" },
             el("span", { class: "erp-sf__live" }, "● Pratinjau langsung"),
-            brandPreview),
+            el("div", { class: "erp-sf__tabs" }, tabHome, tabCat)),
+        promoWrap,
         previewWrap);
+    setTab(previewTab);
 
     /* ---------- Brand ---------- */
 
@@ -101,6 +135,7 @@ export async function render(ctx) {
             : "🔒 Hanya owner yang bisa mengubah nama brand."),
         el("label", { class: "erp-field" }, el("span", {}, "Nama brand"), nameInput),
         el("label", { class: "erp-field" }, el("span", {}, "Slogan (opsional)"), taglineInput),
+        logoField({ draft, isOwner, demo, onChange: () => refresh() }),
         el("div", { class: "erp-sf__actions" }, saveBrand));
 
     /* ---------- Katalog ---------- */
@@ -249,6 +284,7 @@ export async function render(ctx) {
         taglineInput.value = draft.brand.tagline;
         limitInput.value = String(draft.catalog.chipLimit);
         drawCats();
+        home.redraw();
         refresh();
     });
 
@@ -267,6 +303,29 @@ export async function render(ctx) {
         el("div", { class: "erp-sf__actions erp-sf__actions--sticky" }, status, reset, saveCatalog));
 
     drawCats();
+
+    /* ---------- Homepage: zona promosi ---------- */
+
+    const home = homeEditor({ draft, products, onChange: () => refresh() });
+    const saveHome = el("button", { class: "erp-btn erp-btn--primary", type: "button" }, "Simpan homepage");
+    saveHome.addEventListener("click", async () => {
+        saveHome.disabled = true;
+        try {
+            await saveStorefront("home", sanitizeStorefront(draft).home, { demo });
+            Object.assign(saved, clone(getStorefront()));
+            toast("Homepage tersimpan · toko langsung berubah.");
+            dirty();
+        } catch (error) {
+            toast(friendlyError(error), "bad");
+        } finally {
+            saveHome.disabled = false;
+        }
+    });
+    const homeCard = el("section", { class: "erp-card erp-sf__card" },
+        el("div", { class: "erp-card__head" }, el("h2", {}, "Homepage · zona promosi")),
+        el("p", { class: "erp-muted" }, "Homepage adalah etalase pemancing minat: banner, kupon, kotak hadiah misteri, poster, dan produk pilihanmu. Semua blok opsional — nyalakan yang perlu saja, atur urutannya. Katalog lengkap ada di Dashboard pelanggan."),
+        home.element,
+        el("div", { class: "erp-sf__actions" }, saveHome));
 
     /* ---------- Pratinjau di HP: pop-up ---------- */
 
@@ -292,7 +351,7 @@ export async function render(ctx) {
     page.append(
         pageHeader("Etalase & Brand", demo ? "Mode demo: perubahan hanya tersimpan di perangkat ini." : "Perubahan tampil realtime di toko & dashboard pelanggan.", previewBtn),
         el("div", { class: "erp-sf__layout" },
-            el("div", { class: "erp-sf__editor" }, brandCard, catalogCard),
+            el("div", { class: "erp-sf__editor" }, brandCard, homeCard, catalogCard),
             preview));
 
     refresh();

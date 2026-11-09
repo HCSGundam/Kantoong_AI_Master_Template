@@ -756,30 +756,90 @@ function initChatSheet() {
         fileInput.click();
     }
 
-    /** Menyisipkan link (http/https) ke kolom ketik. */
-    function insertLink() {
-        const raw = window.prompt("Tempel link produk atau referensi:", "https://");
-        const value = String(raw ?? "").trim();
+    /**
+     * Menyisipkan link (http/https) ke kolom ketik lewat kolom isian DI DALAM chat
+     * (bukan kotak bawaan browser yang muncul di atas layar).
+     */
+    let linkBar = null;
 
-        if (!value || value === "https://") return;
+    function closeLinkBar({ focus = true } = {}) {
+        if (!linkBar || linkBar.hidden) return;
+        linkBar.hidden = true;
+        if (focus) textarea?.focus({ preventScroll: true });
+    }
+
+    function submitLink(input) {
+        const value = String(input.value ?? "").trim();
+        if (!value) return;
 
         let url;
         try {
-            url = new URL(value);
+            url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
         } catch {
-            notify("Link tidak valid.");
+            input.setCustomValidity("Link tidak valid.");
+            input.reportValidity();
             return;
         }
 
         if (url.protocol !== "https:" && url.protocol !== "http:") {
-            notify("Hanya link http/https yang bisa disisipkan.");
+            input.setCustomValidity("Hanya link http/https.");
+            input.reportValidity();
             return;
         }
 
         const current = textarea.value.trim();
         textarea.value = current ? `${current} ${url.href}` : url.href;
         textarea.dispatchEvent(new Event("input", { bubbles: true }));
-        textarea.focus({ preventScroll: true });
+        input.value = "";
+        closeLinkBar();
+    }
+
+    function insertLink() {
+        if (!linkBar) {
+            linkBar = document.createElement("form");
+            linkBar.className = "kc-linkbar";
+            linkBar.setAttribute("aria-label", "Sisipkan link");
+
+            const input = document.createElement("input");
+            // type "text" (bukan "url") agar "tokopedia.com/..." tanpa https:// tetap diterima.
+            input.type = "text";
+            input.inputMode = "url";
+            input.spellcheck = false;
+            input.className = "kc-linkbar__input";
+            input.placeholder = "Tempel link produk atau referensi…";
+            input.autocomplete = "off";
+            input.addEventListener("input", () => input.setCustomValidity(""));
+            input.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") {
+                    event.preventDefault();
+                    closeLinkBar();
+                }
+            });
+
+            const add = document.createElement("button");
+            add.type = "submit";
+            add.className = "kc-linkbar__add";
+            add.textContent = "Sisipkan";
+
+            const close = document.createElement("button");
+            close.type = "button";
+            close.className = "kc-linkbar__close";
+            close.setAttribute("aria-label", "Batal");
+            close.textContent = "×";
+            close.addEventListener("click", () => closeLinkBar());
+
+            linkBar.append(input, add, close);
+            linkBar.addEventListener("submit", (event) => {
+                event.preventDefault();
+                submitLink(input);
+            });
+            attachBar.after(linkBar);
+        }
+
+        if (minimized) restoreFromOrb();
+        if (state === "peek") snapTo(window.innerWidth < 900 ? "full" : "mid");
+        linkBar.hidden = false;
+        linkBar.querySelector("input").focus({ preventScroll: true });
     }
 
     $("btnLink")?.addEventListener("click", insertLink);
