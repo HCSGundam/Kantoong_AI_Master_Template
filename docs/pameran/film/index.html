@@ -2,129 +2,162 @@
 <title>Kantoong AI — Film Pameran</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root { --bg:#08080a; --ink:#f6f1e4; --muted:#a9a295; --gold:#e3c46a; --gold2:#c9a227; --deep:#9e7b1a; --cyan:#7fe3ff; }
+:root { --bg:#08080a; --ink:#f6f1e4; --muted:#a9a295; --gold:#e3c46a; --cyan:#7fe3ff; }
 * { box-sizing:border-box; margin:0; padding:0; }
 html,body { width:100%; height:100%; background:#000; overflow:hidden; cursor:none; }
 body { font-family:"Poppins","Segoe UI",sans-serif; color:var(--ink); }
 #stage { position:absolute; left:50%; top:50%; width:1920px; height:1080px; overflow:hidden; background:var(--bg); transform-origin:center; }
 .bgglow { position:absolute; inset:-20%; background:radial-gradient(40% 35% at 50% 110%, rgba(227,196,106,.42), transparent 70%), radial-gradient(30% 30% at 85% 10%, rgba(80,120,255,.16), transparent 70%); animation: drift 18s ease-in-out infinite alternate; }
 @keyframes drift { to { transform: translate(-3%, -2%) scale(1.06); } }
-.grid { position:absolute; left:-20%; right:-20%; bottom:-10%; height:55%; background-image:linear-gradient(rgba(227,196,106,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(227,196,106,.14) 1px, transparent 1px); background-size:90px 90px; transform: perspective(700px) rotateX(62deg); transform-origin: top; mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent); opacity:.55; }
-.scene { position:absolute; inset:0; display:grid; place-items:center; opacity:0; visibility:hidden; transition: opacity .9s ease, visibility 0s linear .9s; }
+.grid { position:absolute; left:-20%; right:-20%; bottom:-10%; height:55%; background-image:linear-gradient(rgba(227,196,106,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(227,196,106,.14) 1px, transparent 1px); background-size:90px 90px; transform: perspective(700px) rotateX(62deg); transform-origin: top; mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent); opacity:.5; }
+/* lapisan Anachronos hidup */
+#ax { position:absolute; inset:0; width:1920px; height:1080px; border:0; opacity:0; transition: opacity 1.1s ease; z-index:1; pointer-events:none; background:#02040a; }
+#ax.on { opacity:1; }
+.scene { position:absolute; inset:0; display:grid; place-items:center; opacity:0; visibility:hidden; transition: opacity .9s ease, visibility 0s linear .9s; z-index:2; }
 .scene.on { opacity:1; visibility:visible; transition: opacity .9s ease; }
+.scene[data-dark] { background: radial-gradient(60% 60% at 50% 50%, rgba(20,40,90,.55), #02040a 75%); }
 .scene * { animation-play-state: paused; }
 .scene.on * { animation-play-state: running; }
 .in { opacity:0; animation: fadeUp 1s cubic-bezier(.2,.8,.2,1) forwards; }
 @keyframes fadeUp { from { opacity:0; transform: translateY(40px) scale(.98); filter:blur(8px); } to { opacity:1; transform:none; filter:none; } }
-@keyframes pop { 0% { opacity:0; transform: scale(.6) rotate(-6deg); } 70% { opacity:1; transform: scale(1.05); } 100% { opacity:1; transform:none; } }
+@keyframes pop { 0% { opacity:0; transform: scale(.6); } 70% { opacity:1; transform: scale(1.05); } 100% { opacity:1; transform:none; } }
+em { font-family:"Playfair Display",serif; font-style:italic; font-weight:500; color:var(--gold); }
+.gold { color:var(--gold); }
 .logo { width:64px; height:64px; }
 .brandline { display:flex; align-items:center; gap:18px; font-size:30px; font-weight:600; letter-spacing:.22em; }
 .mega { font-size:200px; font-weight:700; letter-spacing:-.04em; line-height:1; background:linear-gradient(100deg,#fff3cc 0%, #e3c46a 45%, #fff 60%, #c9a227 100%); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation: fadeUp 1.2s .6s cubic-bezier(.2,.8,.2,1) forwards, sheen 4s 1.8s linear infinite; opacity:0; }
 @keyframes sheen { to { background-position:-200% 0; } }
 .arc { position:absolute; width:2200px; height:1400px; left:50%; margin-left:-1100px; top:62%; border-radius:50%; border-top:3px solid rgba(227,196,106,.65); box-shadow: 0 -60px 160px -40px rgba(227,196,106,.55) inset, 0 -40px 120px -30px rgba(227,196,106,.4); opacity:0; animation: fadeUp 1.6s forwards; }
 .sub { font-size:38px; font-weight:300; color:var(--muted); }
-.gold { color:var(--gold); }
-em { font-family:"Playfair Display",serif; font-style:italic; font-weight:500; color:var(--gold); }
-.title { position:absolute; top:46px; z-index:5; left:0; right:0; text-align:center; font-size:64px; font-weight:600; letter-spacing:-.02em; }
-/* tanya */
+.title { position:absolute; top:60px; z-index:5; left:0; right:0; text-align:center; font-size:64px; font-weight:600; letter-spacing:-.02em; }
+/* teks kinetik */
+.kin { text-align:center; font-size:150px; font-weight:700; letter-spacing:-.045em; line-height:1.1; }
+.kin .w { display:inline-block; margin:0 .14em; opacity:0; animation: word .8s cubic-bezier(.2,.9,.2,1.2) forwards; }
+.kin .hot em { font-size:1.05em; }
+@keyframes word { from { opacity:0; transform: translateY(70px) rotate(4deg); filter: blur(10px); } to { opacity:1; transform:none; filter:none; } }
+/* keterangan */
+.cap { position:absolute; z-index:6; width:640px; }
+.cap--left { left:120px; top:50%; transform: translateY(-50%); }
+.cap--right { right:110px; top:50%; transform: translateY(-50%); }
+.cap--tr { right:110px; top:120px; width:600px; }
+.cap--br { right:100px; bottom:110px; width:560px; text-align:right; }
+.cap--top { left:0; right:0; top:70px; width:auto; text-align:center; }
+.cap--bottom { left:0; right:0; bottom:110px; width:auto; text-align:center; }
+.cap__k { font-size:21px; font-weight:600; letter-spacing:.32em; color:var(--gold); }
+.cap__t { margin-top:22px; font-size:78px; line-height:1.04; font-weight:600; letter-spacing:-.035em; }
+.cap--top .cap__t, .cap--bottom .cap__t { font-size:70px; }
+.cap__s { margin-top:24px; font-size:30px; line-height:1.4; font-weight:300; color:var(--muted); }
+.cap--br .cap__t { font-size:66px; }
+/* HP */
+.ph { position:absolute; width:400px; height:850px; border-radius:62px; padding:14px; background:linear-gradient(145deg,#2c2924,#0d0c0a); border:2px solid rgba(227,196,106,.6);
+  box-shadow: 0 80px 160px -50px rgba(0,0,0,.95), 0 0 110px -30px rgba(227,196,106,.55); opacity:0; animation: phIn 1.3s .2s cubic-bezier(.2,.8,.2,1) forwards; }
+.ph::before { content:""; position:absolute; top:26px; left:50%; width:110px; height:30px; margin-left:-55px; border-radius:20px; background:#000; z-index:3; }
+.ph__scr { position:relative; width:100%; height:100%; border-radius:49px; overflow:hidden; background:#f6f1e7; }
+.ph--hero { left:50%; top:115px; margin-left:-60px; }
+.ph--left { left:200px; top:115px; }
+.ph--center { left:50%; top:115px; margin-left:20px; }
+.ph.spin { animation: phIn 1.3s .2s cubic-bezier(.2,.8,.2,1) forwards, sway 9s 1.5s ease-in-out infinite alternate; }
+@keyframes phIn { from { opacity:0; transform: perspective(1800px) translateY(160px) rotateX(24deg) rotateY(-30deg) scale(.85); } to { opacity:1; transform: perspective(1800px) rotateY(-12deg) rotateX(4deg); } }
+@keyframes sway { from { transform: perspective(1800px) rotateY(-12deg) rotateX(4deg); } to { transform: perspective(1800px) rotateY(8deg) rotateX(-2deg) translateY(-14px); } }
+.reel { position:absolute; inset:0; }
+.reel img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top; transform: translateY(100%); transition: transform 1.1s cubic-bezier(.7,0,.2,1); }
+.reel img:first-child, .reel img.cur { transform:none; }
+.reel img.past { transform: translateY(-100%); }
+/* browser */
+.bw { position:absolute; width:1240px; border-radius:22px; overflow:hidden; background:#121110; border:1.5px solid rgba(227,196,106,.5);
+  box-shadow: 0 90px 160px -50px rgba(0,0,0,.95), 0 0 120px -40px rgba(227,196,106,.5); opacity:0; animation: bwIn 1.4s .2s cubic-bezier(.2,.8,.2,1) forwards; }
+.bw__bar { height:46px; display:flex; align-items:center; gap:10px; padding:0 20px; background:#1b1a17; border-bottom:1px solid rgba(255,255,255,.06); }
+.bw__bar i { width:13px; height:13px; border-radius:50%; background:#3a3833; } .bw__bar i:first-child { background:#c9a227; }
+.bw__bar span { margin-left:22px; padding:6px 22px; border-radius:99px; background:#0d0c0b; font-size:16px; color:#a9a295; }
+.bw__scr { position:relative; width:1240px; height:775px; overflow:hidden; background:#f6f1e7; }
+.bw__cam { position:absolute; inset:0; transition: transform 2.2s cubic-bezier(.65,0,.25,1); transform-origin:0 0; }
+.bw--hero { left:50%; top:110px; margin-left:-760px; }
+.bw--l2 { left:90px; top:130px; width:1150px; } .bw--l2 .bw__scr { width:1150px; height:719px; }
+.bw--right { right:80px; top:150px; width:1100px; } .bw--right .bw__scr { width:1100px; height:688px; }
+.bw--left { left:80px; top:150px; width:1100px; } .bw--left .bw__scr { width:1100px; height:688px; }
+@keyframes bwIn { from { opacity:0; transform: perspective(2200px) translateY(140px) rotateX(28deg) scale(.86); } to { opacity:1; transform: perspective(2200px) rotateX(6deg) rotateY(-4deg); } }
+.bw--left { animation-name: bwInL; } @keyframes bwInL { from { opacity:0; transform: perspective(2200px) translateY(140px) rotateX(28deg) scale(.86); } to { opacity:1; transform: perspective(2200px) rotateX(5deg) rotateY(5deg); } }
+/* potongan UI */
+.cropw { position:relative; }
+.crop { position:absolute; inset:0; overflow:hidden; border-radius:30px; background:#f6f1e7; }
+.crop > img { position:absolute; max-width:none; }
+.crop.tiny { border-radius:16px; }
+.stagecard { position:absolute; z-index:4; opacity:0; animation: cardIn 1.2s .2s cubic-bezier(.2,.8,.2,1) forwards; }
+.stagecard .crop { box-shadow: 0 80px 140px -40px rgba(0,0,0,.95), 0 0 0 1.5px rgba(227,196,106,.55), 0 0 110px -30px rgba(227,196,106,.55); }
+@keyframes cardIn { from { opacity:0; transform: perspective(1800px) translateY(120px) rotateX(30deg) scale(.8); } to { opacity:1; transform: perspective(1800px) var(--rest, none); } }
+.stagecard.tiltR { right:240px; top:110px; --rest: rotateY(-10deg) rotateX(4deg); }
+.stagecard.tiltL { left:240px; top:120px; --rest: rotateY(10deg) rotateX(4deg); }
+.stagecard.center { left:50%; margin-left:-430px; top:210px; --rest: rotateX(8deg); }
+.stagecard.side { left:720px; top:300px; --rest: rotateY(-8deg); }
+.stagecard.wide { left:50%; margin-left:-650px; top:300px; --rest: rotateX(10deg); }
+.float { position:absolute; opacity:0; z-index:3; animation: cardIn 1.2s cubic-bezier(.2,.8,.2,1) forwards, bob 6s 1.4s ease-in-out infinite alternate; }
+.float .crop { box-shadow: 0 60px 120px -40px rgba(0,0,0,.95), 0 0 0 1.5px rgba(227,196,106,.5); border-radius:24px; }
+.float.f1 { right:520px; top:110px; animation-delay:.3s, 1.5s; --rest: rotateY(-8deg) rotateZ(-2deg); }
+.float.f2 { right:90px; top:430px; animation-delay:1s, 2.2s; --rest: rotateY(-10deg) rotateZ(1.5deg); z-index:4; }
+.float.f3 { right:600px; top:820px; animation-delay:1.7s, 2.9s; --rest: rotateX(8deg); z-index:5; }
+@keyframes bob { from { translate: 0 0; } to { translate: 0 -16px; } }
+/* elemen muncul berjadwal */
+.at { position:absolute; opacity:0; pointer-events:none; z-index:7; }
+.at.show.pop { animation: pop .7s cubic-bezier(.2,.9,.3,1.3) forwards; }
+.chip { display:flex; align-items:center; gap:16px; padding:20px 30px; border-radius:24px; background:rgba(20,19,16,.92); border:1.5px solid rgba(227,196,106,.55); font-size:28px; font-weight:500; box-shadow:0 30px 80px -30px rgba(0,0,0,.9), 0 0 50px -20px rgba(227,196,106,.5); white-space:nowrap; }
+.chip svg { width:40px; height:40px; color:var(--gold); }
+.chipA { left:1350px; top:240px; } .chipB { left:1420px; top:470px; } .chipC { left:1330px; top:700px; }
+.toast { display:flex; align-items:center; gap:14px; padding:18px 30px; border-radius:99px; background:#1d7a4b; color:#eafff2; font-size:26px; font-weight:600; white-space:nowrap; box-shadow:0 20px 60px -20px rgba(0,0,0,.8); }
+.toast svg { width:30px; height:30px; } .toast.big { font-size:30px; padding:22px 36px; } .toast.sm { font-size:22px; padding:12px 24px; }
+.toastPos { left:50%; bottom:-30px; transform:translateX(-50%); } .toastPos.show { animation-name: popc !important; }
+@keyframes popc { from { opacity:0; transform: translate(-50%, 20px) scale(.7); } to { opacity:1; transform: translate(-50%, 0); } }
+.toastPos2 { left:50%; bottom:-30px; } .toastPos2.show { animation-name: popc !important; }
+.toastSide { left:740px; top:190px; } .toastKomando { left:60%; top:41%; }
+.note { width:640px; padding:28px 36px; border-radius:26px; background:#fffaf0; color:#14120f; box-shadow:0 40px 90px -30px rgba(0,0,0,.9), 0 0 0 2px var(--gold); }
+.note small { display:block; font-size:20px; color:#8a7a50; font-weight:500; letter-spacing:.06em; } .note b { display:block; margin-top:8px; font-size:34px; font-weight:600; }
+.notePos { left:50%; margin-left:-60px; top:560px; }
+.ticket-wrap .crop { box-shadow: 0 50px 110px -30px rgba(0,0,0,.95), 0 0 0 2px var(--gold); border-radius:24px; }
+.tlabel { margin-bottom:14px; font-size:24px; font-weight:600; color:var(--gold); letter-spacing:.08em; }
+.ticketPos { right:110px; top:620px; }
+.doccard { position:relative; } .doccard .crop { box-shadow: 0 60px 120px -40px rgba(0,0,0,.95), 0 0 0 2px var(--gold); border-radius:24px; }
+.stamp { position:absolute; right:-30px; top:-30px; padding:16px 26px; border-radius:16px; background:var(--gold); color:#14120f; font-weight:700; font-size:22px; letter-spacing:.1em; transform: rotate(6deg); box-shadow:0 20px 50px -10px rgba(0,0,0,.8); }
+.docPos { left:50%; margin-left:-20px; top:570px; }
+.typed { position:absolute; left:8.4%; top:32%; transform:translateY(-50%); width:70%; padding:4px 0 4px 6px; background:#fff; font-size:27px; color:#14120f; white-space:nowrap; overflow:hidden; }
+.typed::after { content:"|"; color:var(--gold); animation: blinkc 1s steps(1) infinite; } @keyframes blinkc { 50% { opacity:0; } }
+/* kursor */
+.fcur { position:absolute; left:0; top:0; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%; border:3px solid #ffe7b0; background:rgba(227,196,106,.2); box-shadow:0 0 30px rgba(227,196,106,.8); z-index:20; opacity:0; transition: left 1.2s cubic-bezier(.6,0,.2,1), top 1.2s cubic-bezier(.6,0,.2,1), opacity .4s, transform .18s; pointer-events:none; }
+.fcur::after { content:""; position:absolute; left:50%; top:50%; width:10px; height:10px; margin:-5px; border-radius:50%; background:#fff3cf; }
+.fcur.press { transform: scale(.72); }
+.rip { position:absolute; width:30px; height:30px; margin:-15px; border-radius:50%; border:3px solid #ffe7b0; z-index:19; pointer-events:none; animation: rip .9s ease-out forwards; }
+@keyframes rip { to { transform: scale(6); opacity:0; } }
+/* tanya + chat (dari versi sebelumnya) */
 .ask { position:relative; width:1180px; height:150px; border-radius:99px; background:rgba(14,14,16,.9); border:2px solid rgba(227,196,106,.45); display:flex; align-items:center; padding:0 26px 0 56px; gap:28px; box-shadow:0 0 0 14px rgba(227,196,106,.06), 0 30px 120px -20px rgba(227,196,106,.35); }
 .ask .q { flex:1; font-size:46px; font-weight:300; color:#cfc7b6; white-space:nowrap; overflow:hidden; }
-.ask .btn { display:flex; align-items:center; gap:16px; padding:24px 44px; border-radius:99px; border:2px solid var(--gold); font-size:42px; font-weight:600; color:var(--ink); transition: background .3s, color .3s; }
-.ask .btn svg { width:44px; height:44px; animation:none; filter:none; }
+.ask .btn { display:flex; align-items:center; gap:16px; padding:24px 44px; border-radius:99px; border:2px solid var(--gold); font-size:42px; font-weight:600; transition: background .3s, color .3s; }
 .ask .btn.press { background:var(--gold); color:#14120f; box-shadow:0 0 60px rgba(227,196,106,.7); }
 .cursor { position:absolute; width:90px; height:90px; border-radius:50%; border:3px solid rgba(255,244,207,.85); background:rgba(227,196,106,.12); left:1300px; top:700px; transition: left 1.4s cubic-bezier(.6,0,.2,1), top 1.4s cubic-bezier(.6,0,.2,1), transform .2s; }
-/* chat */
 .chat { width:1240px; display:grid; gap:44px; }
 .row { display:grid; grid-template-columns:110px 1fr; gap:36px; align-items:start; }
 .av { width:110px; height:110px; border-radius:50%; border:2px solid rgba(227,196,106,.55); display:grid; place-items:center; background:rgba(227,196,106,.08); color:var(--gold); box-shadow:0 0 40px rgba(227,196,106,.25); }
 .av svg { width:54px; height:54px; }
-.bub { min-height:110px; padding:30px 44px; border-radius:30px; border:2px solid rgba(227,196,106,.5); background:rgba(16,15,13,.85); font-size:46px; line-height:1.35; box-shadow: 0 0 80px -20px rgba(227,196,106,.4); }
+.bub { min-height:110px; padding:30px 44px; border-radius:30px; border:2px solid rgba(227,196,106,.5); background:rgba(16,15,13,.85); font-size:46px; line-height:1.35; }
 .bub.ai { border-color: rgba(227,196,106,.85); }
 .dots span { display:inline-block; width:16px; height:16px; border-radius:50%; background:var(--gold); margin-right:12px; animation: blink 1s infinite; }
 .dots span:nth-child(2) { animation-delay:.2s } .dots span:nth-child(3) { animation-delay:.4s }
 @keyframes blink { 50% { opacity:.25; transform: translateY(-6px); } }
 .prodcard { margin-top:22px; display:flex; gap:22px; align-items:center; padding:16px; border-radius:22px; background:rgba(255,255,255,.05); border:1.5px solid rgba(227,196,106,.3); width:max-content; opacity:0; }
-.prodcard img { width:150px; height:150px; object-fit:cover; object-position: 50% 30%; border-radius:16px; }
 .prodcard b { font-size:36px; } .prodcard small { display:block; font-size:30px; color:var(--gold); }
-/* BAB FITUR */
-.ch { position:relative; width:1920px; height:1080px; }
-.ch__text { position:absolute; left:110px; top:190px; width:600px; }
-.ch.flip .ch__text { left:auto; right:100px; }
-.ch__no { display:flex; align-items:center; gap:18px; font-size:22px; font-weight:600; letter-spacing:.28em; color:var(--gold); }
-.ch__no span { display:grid; place-items:center; width:62px; height:62px; border-radius:50%; border:2px solid var(--gold); font-size:24px; letter-spacing:0; }
-.ch__title { margin-top:34px; font-size:72px; line-height:1.06; font-weight:600; letter-spacing:-.03em; }
-.ch__sub { margin-top:22px; font-size:30px; font-weight:300; color:var(--muted); }
-.ch ul { list-style:none; margin-top:44px; display:grid; gap:22px; }
-.ch li { display:grid; grid-template-columns:48px 1fr; gap:18px; align-items:center; font-size:28px; line-height:1.3; }
-.ch li i { width:48px; height:48px; border-radius:50%; display:grid; place-items:center; background:rgba(227,196,106,.14); color:var(--gold); }
-.ch li i svg { width:26px; height:26px; }
-.ch__dev { position:absolute; left:760px; top:120px; width:1100px; height:880px; }
-.ch.flip .ch__dev { left:70px; }
-.laptop { position:absolute; left:0; top:60px; width:1000px; }
-.laptop__lid { padding:18px 18px 22px; border-radius:26px 26px 8px 8px; background:linear-gradient(160deg,#2c2924,#0e0d0b); border:2px solid rgba(227,196,106,.45); box-shadow:0 50px 120px -40px rgba(0,0,0,.9), 0 0 90px -30px rgba(227,196,106,.5); }
-.laptop__screen { position:relative; width:962px; height:601px; border-radius:8px; overflow:hidden; background:#f6f1e7; }
-.laptop__base { margin:0 -60px; height:26px; border-radius:0 0 30px 30px; background:linear-gradient(#3a362f,#14120f); border:1.5px solid rgba(227,196,106,.35); border-top:none; }
-.mphone { position:absolute; right:0; top:200px; width:316px; height:672px; border-radius:48px; padding:12px; background:linear-gradient(145deg,#2a2722,#0d0c0a); border:2px solid rgba(227,196,106,.6); box-shadow:-30px 50px 110px -30px rgba(0,0,0,.95), 0 0 70px -20px rgba(227,196,106,.5); z-index:2; }
-.ch.flip .mphone { right:auto; left:780px; }
-.ch.flip .mphone .tag { right:auto; left:0; }
-.mphone__screen { position:relative; width:100%; height:100%; border-radius:37px; overflow:hidden; background:#f6f1e7; }
-.tag { position:absolute; top:-46px; left:0; font-size:20px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
-.mphone .tag { left:auto; right:0; }
-.reel { position:absolute; inset:0; }
-.reel img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top; transform: translateY(100%); transition: transform 1.1s cubic-bezier(.7,0,.2,1), opacity 1.1s ease; }
-.reel img.cur { transform:none; }
-.reel img.past { transform: translateY(-30%); opacity:0; }
-.reel img:first-child { transform:none; }
-.reel img:first-child.past { transform: translateY(-30%); }
-.laptop .reel img.cur { animation: kb 6s ease-out forwards; }
-@keyframes kb { from { transform: scale(1); } to { transform: scale(1.045); } }
 .divider { display:grid; justify-items:center; gap:30px; text-align:center; font-size:64px; font-weight:300; }
 .divider .big { font-size:120px; font-weight:600; letter-spacing:-.035em; }
-/* kartu tumpuk */
 .stack { display:grid; gap:26px; width:1100px; margin-top:120px; }
-.task { display:grid; grid-template-columns:96px 1fr auto; gap:30px; align-items:center; padding:28px 36px; border-radius:30px; background:rgba(20,19,16,.9); border:2px solid rgba(227,196,106,.4); opacity:0; box-shadow:0 30px 80px -40px rgba(0,0,0,.9); }
+.task { display:grid; grid-template-columns:96px 1fr auto; gap:30px; align-items:center; padding:28px 36px; border-radius:30px; background:rgba(20,19,16,.9); border:2px solid rgba(227,196,106,.4); opacity:0; }
 .task .ti { width:96px; height:96px; border-radius:26px; display:grid; place-items:center; background:rgba(227,196,106,.14); color:var(--gold); }
 .task .ti svg { width:48px; height:48px; }
 .task b { font-size:42px; font-weight:600; } .task small { display:block; font-size:30px; color:var(--muted); margin-top:4px; }
 .task .ok { width:72px; height:72px; border-radius:50%; background:#1d7a4b; color:#eafff2; display:grid; place-items:center; } .task .ok svg { width:40px; height:40px; }
-.task.hl { background: linear-gradient(90deg, rgba(227,196,106,.95), rgba(240,214,140,.95)); color:#14120f; border-color:#fff1c4; }
+.task.hl { background: linear-gradient(90deg, rgba(227,196,106,.95), rgba(240,214,140,.95)); color:#14120f; }
 .task.hl small { color:#4a3d16; } .task.hl .ti { background:rgba(20,18,15,.12); color:#14120f; }
-/* kisi ikon */
 .panel { position:relative; width:1300px; padding:60px 70px 80px; border-radius:44px; border:2.5px solid rgba(227,196,106,.7); background:rgba(12,12,13,.8); box-shadow:0 0 120px -40px rgba(227,196,106,.55); transform: perspective(1600px) rotateX(18deg); margin-top:150px; }
 .panel h3 { text-align:center; font-size:44px; font-weight:500; margin-bottom:46px; color:#f3e6bf; }
 .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:34px; }
 .tile { display:grid; justify-items:center; gap:16px; padding:34px 10px; border-radius:30px; border:2px solid rgba(255,244,207,.6); background:#111; font-size:28px; font-weight:500; opacity:0; animation: pop .8s forwards; }
 .tile svg { width:74px; height:74px; color:var(--gold); }
-/* ANACHRONOS HUD */
-.ana { background: radial-gradient(60% 60% at 50% 50%, rgba(20,40,90,.55), #02040a 75%); font-family:"JetBrains Mono",monospace; }
-.ana__title { position:absolute; top:52px; left:0; right:0; text-align:center; font-family:"Poppins",sans-serif; font-size:58px; font-weight:600; letter-spacing:-.02em; z-index:4; }
-.ana__title em { color:var(--cyan); }
-.ana__sub { position:absolute; top:136px; left:0; right:0; text-align:center; font-size:22px; letter-spacing:.3em; color:rgba(127,227,255,.75); z-index:4; }
-.holo { position:absolute; top:220px; width:1240px; height:698px; perspective:1800px; }
-.holo.l { left:90px; } .holo.r { right:90px; }
-.holo__img { position:relative; width:100%; height:100%; border:1.5px solid rgba(127,227,255,.6); box-shadow:0 0 80px rgba(127,227,255,.35), inset 0 0 60px rgba(127,227,255,.2); overflow:hidden; transform-origin:center; opacity:0; }
-.holo.l .holo__img { animation: holoInL 1.6s .3s cubic-bezier(.2,.8,.2,1) forwards, flick 7s 2s infinite; }
-.holo.r .holo__img { animation: holoInR 1.6s .3s cubic-bezier(.2,.8,.2,1) forwards, flick 7s 2s infinite; }
-@keyframes holoInL { from { opacity:0; transform: rotateY(35deg) scale(.7); filter: blur(10px) hue-rotate(40deg); } to { opacity:1; transform: rotateY(9deg); filter:none; } }
-@keyframes holoInR { from { opacity:0; transform: rotateY(-35deg) scale(.7); filter: blur(10px) hue-rotate(40deg); } to { opacity:1; transform: rotateY(-9deg); filter:none; } }
-@keyframes flick { 0%,96%,100% { opacity:1; } 97% { opacity:.6; } 98% { opacity:1; } 99% { opacity:.75; } }
-.holo__img img { width:100%; height:100%; object-fit:cover; display:block; animation: kb2 11s ease-out forwards; }
-@keyframes kb2 { from { transform: scale(1.02); } to { transform: scale(1.12) translate(-2%, 1%); } }
-.scan { position:absolute; inset:0; background: repeating-linear-gradient(0deg, rgba(127,227,255,.07) 0 2px, transparent 2px 5px); mix-blend-mode:screen; }
-.scan::after { content:""; position:absolute; left:0; right:0; height:140px; background:linear-gradient(transparent, rgba(127,227,255,.22), transparent); animation: sweep 3.2s linear infinite; }
-@keyframes sweep { from { top:-140px; } to { top:100%; } }
-.br { position:absolute; width:60px; height:60px; border:3px solid var(--cyan); filter: drop-shadow(0 0 8px var(--cyan)); }
-.br.tl { left:-16px; top:-16px; border-right:none; border-bottom:none; } .br.tr { right:-16px; top:-16px; border-left:none; border-bottom:none; }
-.br.bl { left:-16px; bottom:-16px; border-right:none; border-top:none; } .br.br2 { right:-16px; bottom:-16px; border-left:none; border-top:none; }
-.readout { position:absolute; top:260px; width:420px; display:grid; gap:20px; }
-.readout.r { right:100px; } .readout.l { left:100px; }
-.ro { padding:18px 22px; border-left:3px solid var(--cyan); background:linear-gradient(90deg, rgba(127,227,255,.12), transparent); }
-.ro small { display:block; font-size:16px; letter-spacing:.24em; color:rgba(127,227,255,.75); }
-.ro b { display:block; margin-top:6px; font-size:34px; font-weight:600; color:#e8fbff; text-shadow:0 0 18px rgba(127,227,255,.6); }
-.ring { position:absolute; border-radius:50%; border:1.5px dashed rgba(127,227,255,.25); pointer-events:none; }
-.ring.r1 { width:1500px; height:1500px; left:50%; top:50%; margin:-750px 0 0 -750px; animation: rot 60s linear infinite; }
-.ring.r2 { width:1900px; height:1900px; left:50%; top:50%; margin:-950px 0 0 -950px; border-style:dotted; animation: rot 90s linear infinite reverse; }
-@keyframes rot { to { transform: rotate(360deg); } }
+/* HUD pembuka Anachronos */
 .hud { position:relative; width:1920px; height:1080px; display:grid; place-items:center; }
 .hud canvas { position:absolute; inset:0; }
 .hud__rings { position:absolute; left:50%; top:50%; width:0; height:0; }
@@ -132,17 +165,24 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:500; c
 .hud__rings i:nth-child(1) { width:820px; height:820px; left:-410px; top:-410px; border-style:dashed; animation: rot 24s linear infinite; }
 .hud__rings i:nth-child(2) { width:940px; height:940px; left:-470px; top:-470px; border-width:6px; border-color: rgba(255,179,71,.7) transparent rgba(255,179,71,.7) transparent; animation: rot 9s linear infinite reverse; }
 .hud__rings i:nth-child(3) { width:1060px; height:1060px; left:-530px; top:-530px; border-style:dotted; border-width:4px; animation: rot 40s linear infinite; }
-.hud__txt { position:relative; z-index:3; text-align:center; font-family:"Poppins",sans-serif; }
+@keyframes rot { to { transform: rotate(360deg); } }
+.hud__txt { position:relative; z-index:3; text-align:center; }
 .hud__txt small { display:block; font-family:"JetBrains Mono",monospace; font-size:22px; letter-spacing:.4em; color:#ffc27a; }
 .hud__txt b { display:block; margin-top:16px; font-size:110px; font-weight:700; letter-spacing:.06em; background:linear-gradient(180deg,#fff6e0,#ffb347 60%,#c46a10); -webkit-background-clip:text; background-clip:text; color:transparent; filter: drop-shadow(0 0 30px rgba(255,150,40,.55)); }
 .hud__txt span { display:block; margin-top:10px; font-size:34px; font-weight:300; color:#ffe2b8; letter-spacing:.08em; }
 .hud__corner { position:absolute; font-family:"JetBrains Mono",monospace; font-size:20px; color:rgba(255,194,122,.85); line-height:1.6; z-index:3; }
 .hud__corner.a { left:70px; top:60px; } .hud__corner.b { right:70px; bottom:60px; text-align:right; }
-/* bintang & penutup */
+/* keterangan di atas Anachronos hidup */
+.scene[data-ax] { place-items:start center; }
+.axcap { margin-top:96px; padding:22px 44px 26px; border-radius:22px; text-align:center; background:linear-gradient(180deg, rgba(2,6,18,.82), rgba(2,6,18,.55)); border:1px solid rgba(127,227,255,.35); box-shadow:0 0 60px rgba(60,140,255,.25); backdrop-filter: blur(6px); }
+.axcap small { display:block; font-family:"JetBrains Mono",monospace; font-size:18px; letter-spacing:.32em; color:var(--cyan); }
+.axcap b { display:block; margin-top:8px; font-size:54px; font-weight:600; letter-spacing:-.02em; }
+.axcap b em { color:var(--cyan); }
+.axcap span { display:block; margin-top:6px; font-size:24px; font-weight:300; color:#c6d6ff; }
+/* penutup */
 .star { width:260px; height:260px; filter: drop-shadow(0 0 40px rgba(227,196,106,.7)); animation: spin 5s cubic-bezier(.6,0,.3,1) infinite; }
 @keyframes spin { 0% { transform: rotate(0) scale(.6); } 50% { transform: rotate(180deg) scale(1); } 100% { transform: rotate(360deg) scale(.6); } }
-.star.sm { width:120px; height:120px; } .star.xs { width:48px; height:48px; animation:none; filter:none; }
-.headline { font-size:112px; font-weight:700; line-height:1.05; letter-spacing:-.035em; text-align:center; }
+.star.sm { width:120px; height:120px; } .star.xs { width:46px; height:46px; animation:none; filter:none; }
 .future { display:grid; justify-items:center; gap:10px; font-size:120px; font-weight:600; letter-spacing:-.035em; line-height:1.1; }
 .future .fl { display:flex; align-items:center; gap:34px; } .future .fl span { font-family:"Playfair Display",serif; font-style:italic; font-weight:500; color:var(--gold); }
 .withk { position:relative; display:flex; align-items:center; gap:40px; font-size:96px; font-weight:300; }
@@ -163,334 +203,208 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:500; c
 <div id="stage">
   <div class="bgglow"></div>
   <div class="grid"></div>
-
-  <section class="scene" data-d="7000">
-    <div class="arc"></div>
-    <div style="display:grid;justify-items:center;gap:40px;position:relative">
-      <div class="brandline in" style="animation-delay:.2s"><svg viewBox="0 0 100 100" class="logo"><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg>KANTOONG AI</div>
-      <div class="mega">Karyawan AI</div>
-      <div class="sub in" style="animation-delay:1.6s">untuk bisnis yang <span class="gold">jualannya enak</span>.</div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="6500" data-js="ask">
-    <div class="title in">Cukup <em>bilang</em> saja.</div>
-    <div class="ask in" style="animation-delay:.4s"><div class="q" id="askq"></div><div class="btn" id="askbtn"><svg viewBox="0 0 100 100" class="star "><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg><span>Tanya AI</span></div></div>
-    <div class="cursor" id="cursor"></div>
-  </section>
-
-  <section class="scene" data-d="10000" data-js="chat">
-    <div class="chat">
-      <div class="row in"><div class="av"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="16" r="8"/><path d="M8 42c2-9 8-13 16-13s14 4 16 13"/></g></svg></div><div class="bub" id="cq"></div></div>
-      <div class="row in" style="animation-delay:.3s"><div class="av" style="color:#14120f;background:var(--gold)"><svg viewBox="0 0 100 100" class="star xs"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg></div>
-        <div class="bub ai"><div id="ca"><span class="dots"><span></span><span></span><span></span></span></div>
-          <div class="prodcard" id="cp"><img src="ui/m-produk.jpg" alt=""><div><b>Oatcookies</b><small>Masuk keranjang? Tinggal geser ke bawah.</small></div></div></div></div>
-    </div>
-  </section>
-
+  <iframe id="ax" src="anachronos/index.html" title="Anachronos" tabindex="-1"></iframe>
+  <section class="scene" data-d="7000" >
+  <div class="arc"></div>
+  <div style="display:grid;justify-items:center;gap:40px;position:relative">
+    <div class="brandline in" style="animation-delay:.2s"><svg viewBox="0 0 100 100" class="logo"><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg>KANTOONG AI</div>
+    <div class="mega">Karyawan AI</div>
+    <div class="sub in" style="animation-delay:1.6s">untuk bisnis yang <span class="gold">jualannya enak</span>.</div>
+  </div></section>
+<section class="scene" data-d="6500" >
+  <div class="kin">
+    <span class="w" style="animation-delay:.2s">Jualannya</span><span class="w" style="animation-delay:.55s">enak.</span><br>
+    <span class="w" style="animation-delay:1.6s">Ngurusnya</span><span class="w" style="animation-delay:2s">yang</span><span class="w hot" style="animation-delay:2.5s"><em>capek.</em></span>
+  </div></section>
+<section class="scene" data-d="6500" data-js="ask">
+  <div class="title in">Cukup <em>bilang</em> saja.</div>
+  <div class="ask in" style="animation-delay:.4s"><div class="q" id="askq"></div><div class="btn" id="askbtn"><svg viewBox="0 0 100 100" class="star xs"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg><span>Tanya AI</span></div></div>
+  <div class="cursor" id="cursor"></div></section>
+<section class="scene" data-d="9500" data-js="chat">
+  <div class="chat">
+    <div class="row in"><div class="av"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="16" r="8"/><path d="M8 42c2-9 8-13 16-13s14 4 16 13"/></g></svg></div><div class="bub" id="cq"></div></div>
+    <div class="row in" style="animation-delay:.3s"><div class="av" style="color:#14120f;background:var(--gold)"><svg viewBox="0 0 100 100" class="star xs"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg></div>
+      <div class="bub ai"><div id="ca"><span class="dots"><span></span><span></span><span></span></span></div>
+        <div class="prodcard" id="cp"><div class="cropw" style="width:170px;height:147px;"><div class="crop tiny"><img src="ui/m-produk.jpg" style="width:189px;left:-13px;top:-45px" alt=""></div></div><div><b>Oatcookies</b><small>Masuk keranjang? Tinggal geser ke bawah.</small></div></div></div></div>
+  </div></section>
+<section class="scene" data-d="10500" >
   
-  <section class="scene" data-d="13000">
-    <div class="ch ">
-      <div class="ch__text">
-        <div class="ch__no in"><span>01</span>TOKO ONLINE</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Toko online <em>brand-mu</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Dari depan terlihat seperti marketplace biasa.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Homepage promosi diatur sendiri dari ERP</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Rel terlaris, kupon & kotak hadiah misteri</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Tampil rapi di laptop maupun HP</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="4"><img src="ui/d-toko-1.jpg" alt=""><img src="ui/d-toko-2.jpg" alt=""><img src="ui/d-toko-3.jpg" alt=""><img src="ui/d-toko-4.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="4"><img src="ui/m-toko-1.jpg" alt=""><img src="ui/m-toko-2.jpg" alt=""><img src="ui/m-toko-3.jpg" alt=""><img src="ui/m-toko-4.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="10500">
-    <div class="ch flip">
-      <div class="ch__text">
-        <div class="ch__no in"><span>02</span>HALAMAN PRODUK</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Produk yang <em>jujur</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Pembeli yakin, bukan dibujuk.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Harga coret hanya kalau benar pernah berlaku</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Ruang Ragu & bandingkan produk</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Cocok / kurang cocok untuk siapa</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="2"><img src="ui/d-produk.jpg" alt=""><img src="ui/d-produk-2.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="2"><img src="ui/m-produk.jpg" alt=""><img src="ui/m-produk-2.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="9000">
-    <div class="ch ">
-      <div class="ch__text">
-        <div class="ch__no in"><span>03</span>KERANJANG</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Keranjang yang <em>ingat alasanmu</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Kenapa barang ini masuk keranjang?</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Catat alasan per barang, hanya di HP pembeli</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Pengingat halus, bukan spam</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Bayar selalu oleh pembeli sendiri</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="1"><img src="ui/d-keranjang.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="1"><img src="ui/m-keranjang.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="11000">
-    <div class="ch flip">
-      <div class="ch__text">
-        <div class="ch__no in"><span>04</span>KONSULTASI AI</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Asisten AI yang <em>menemani belanja</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Netral, ramah, menjawab 24 jam.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Teks, foto & suara</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Ikut ke semua halaman sebagai orb</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Ingat selera lintas toko — hanya dengan izin</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="2"><img src="ui/d-chat.jpg" alt=""><img src="ui/d-chat-2.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="2"><img src="ui/m-chat.jpg" alt=""><img src="ui/m-chat-2.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="15000">
-    <div class="ch ">
-      <div class="ch__text">
-        <div class="ch__no in"><span>05</span>DASHBOARD PEMBELI</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Ruang <em>Pribadi</em> pembeli</h2>
-        <p class="ch__sub in" style="animation-delay:.5s">26 fitur dalam satu ruang yang bisa diatur sendiri.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Pesanan, lacak paket, voucher, poin, wishlist</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Katalog pintar: cari pakai kalimat</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Kartu Diriku: lihat & hapus data kapan saja (UU PDP)</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="5"><img src="ui/d-dash.jpg" alt=""><img src="ui/d-dash-2.jpg" alt=""><img src="ui/d-katalog.jpg" alt=""><img src="ui/d-pesanan.jpg" alt=""><img src="ui/d-kartu-diriku.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="5"><img src="ui/m-dash.jpg" alt=""><img src="ui/m-dash-2.jpg" alt=""><img src="ui/m-katalog.jpg" alt=""><img src="ui/m-pesanan.jpg" alt=""><img src="ui/m-kartu-diriku.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="6500">
-    <div class="divider">
-      <div class="in" style="animation-delay:.2s">Itu yang dilihat <span class="gold">pembeli</span>.</div>
-      <div class="in big" style="animation-delay:1.6s">Sekarang… <em>dapur bisnisnya.</em></div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="10000">
-    <div class="ch flip">
-      <div class="ch__text">
-        <div class="ch__no in"><span>06</span>RUANG KOMANDO</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Ruang <em>Komando</em> owner</h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Buka pagi, langsung tahu harus apa.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>3 keputusan paling penting hari ini</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Skor kesehatan bisnis</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Proyeksi kas 30 hari ke depan</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="1"><img src="ui/d-erp-komando.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="1"><img src="ui/m-erp-komando.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="11000">
-    <div class="ch ">
-      <div class="ch__text">
-        <div class="ch__no in"><span>07</span>DASHBOARD ADMIN</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Atur toko <em>tanpa coding</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Dashboard admin bergaya ERP.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Etalase & Brand dengan pratinjau langsung</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Katalog Master: produk, harga, stok</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Akses per email, divisi & jabatan</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="2"><img src="ui/d-erp-etalase.jpg" alt=""><img src="ui/d-erp-katalog.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="2"><img src="ui/m-erp-etalase.jpg" alt=""><img src="ui/m-erp-katalog.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="11000">
-    <div class="ch flip">
-      <div class="ch__text">
-        <div class="ch__no in"><span>08</span>KEUANGAN & GUDANG</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Uang & stok <em>tersambung</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Setiap transaksi langsung masuk pembukuan.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Jurnal otomatis, piutang & hutang</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Anggaran & laporan laba rugi</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Stok per gudang + saran belanja</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="2"><img src="ui/d-erp-keuangan.jpg" alt=""><img src="ui/d-erp-gudang.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="2"><img src="ui/m-erp-keuangan.jpg" alt=""><img src="ui/m-erp-gudang.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="11000">
-    <div class="ch ">
-      <div class="ch__text">
-        <div class="ch__no in"><span>09</span>TIM & PELANGGAN</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Tim & pelanggan <em>terurus</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">HR dan CRM dalam satu sistem.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Absensi jam server, cuti, kinerja</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Pipeline penjualan & alasan kalah</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Persetujuan berjenjang otomatis</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="2"><img src="ui/d-erp-hr.jpg" alt=""><img src="ui/d-erp-crm.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="2"><img src="ui/m-erp-hr.jpg" alt=""><img src="ui/m-erp-crm.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="11000">
-    <div class="ch flip">
-      <div class="ch__text">
-        <div class="ch__no in"><span>10</span>DOKUMEN & AGEN AI</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Dokumen jadi, <em>agen yang siapkan</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Invoice, slip gaji, PO — sekali klik.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>7 templat PDF / Word / Excel</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>QR keaslian di setiap dokumen</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Agen menyiapkan, kamu yang tanda tangan</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="2"><img src="ui/d-erp-dokumen.jpg" alt=""><img src="ui/d-erp-agen.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="2"><img src="ui/m-erp-dokumen.jpg" alt=""><img src="ui/m-erp-agen.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="12500">
-    <div class="ch ">
-      <div class="ch__text">
-        <div class="ch__no in"><span>11</span>KASIR POS</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Kasir untuk toko & <em>F&B</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Transaksi offline masuk ke memori yang sama.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Varian, topping, split bill, bayar campuran</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Tiket dapur & nomor antrean otomatis</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Tetap jalan saat sinyal hilang</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="3"><img src="ui/d-kasir.jpg" alt=""><img src="ui/d-kasir-2.jpg" alt=""><img src="ui/d-dapur.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="3"><img src="ui/m-kasir.jpg" alt=""><img src="ui/m-kasir-2.jpg" alt=""><img src="ui/m-dapur.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="11000">
-    <div class="ch flip">
-      <div class="ch__text">
-        <div class="ch__no in"><span>12</span>LAPORAN & HPP</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Laporan yang <em>bercerita</em></h2>
-        <p class="ch__sub in" style="animation-delay:.5s">Bukan sekadar angka.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Dibanding minggu lalu, jam yang sama</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Resep & HPP per menu + saran harga</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Bahan hilang langsung ketahuan</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="2"><img src="ui/d-erp-laporan.jpg" alt=""><img src="ui/d-erp-resep.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="2"><img src="ui/m-erp-laporan.jpg" alt=""><img src="ui/m-erp-resep.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="11000">
-    <div class="ch ">
-      <div class="ch__text">
-        <div class="ch__no in"><span>13</span>RISET PELANGGAN</div>
-        <h2 class="ch__title in" style="animation-delay:.25s">Tahu <em>kenapa</em> pembeli tidak jadi beli</h2>
-        <p class="ch__sub in" style="animation-delay:.5s">AI membaca kebutuhan, keinginan & perilaku.</p>
-        <ul><li class="in" style="animation-delay:1s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Corong: lihat → keranjang → beli</li><li class="in" style="animation-delay:1.6s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Alasan tidak beli dari chat & kasir</li><li class="in" style="animation-delay:2.2s"><i><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></i>Second Brain: 1 brand = 1 neuron hidup</li></ul>
-      </div>
-      <div class="ch__dev">
-        <div class="laptop in" style="animation-delay:.2s"><div class="laptop__lid"><div class="laptop__screen"><div class="reel " data-n="2"><img src="ui/d-erp-analisis.jpg" alt=""><img src="ui/d-erp-brain.jpg" alt=""></div></div></div><div class="laptop__base"></div><span class="tag">Mode Desktop</span></div>
-        <div class="mphone in" style="animation-delay:.7s"><div class="mphone__screen"><div class="reel late" data-n="2"><img src="ui/m-erp-analisis.jpg" alt=""><img src="ui/m-erp-brain.jpg" alt=""></div></div><span class="tag">Mode HP</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="9000">
-    <div class="title in">Saat kamu tidur, <em>dia</em> tetap kerja.</div>
-    <div class="stack">
-      <div class="task" style="animation: fadeUp .9s .5s forwards"><div class="ti"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5h17l9 9v29H12z"/><path d="M29 5v9h9M18 26h14M18 33h10"/></g></svg></div><div><b>Invoice INV/014 terbit</b><small>Lengkap dengan QR keaslian</small></div><div class="ok"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></div></div>
-      <div class="task" style="animation: fadeUp .9s 1.6s forwards"><div class="ti"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5l17 9v20L24 43 7 34V14z"/><path d="M7 14l17 9 17-9M24 23v20"/></g></svg></div><div><b>Kopi habis 3 hari lagi</b><small>PO restok sudah diajukan ke atasan</small></div><div class="ok"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></div></div>
-      <div class="task hl" style="animation: fadeUp .9s 2.7s forwards"><div class="ti"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="12" width="38" height="24" rx="4"/><circle cx="24" cy="24" r="6"/></g></svg></div><div><b>Rp18,1 jt piutang ditagih</b><small>Pesan pengingat siap kamu kirim</small></div><div class="ok"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></div></div>
-      <div class="task" style="animation: fadeUp .9s 3.8s forwards"><div class="ti"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10h26a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H20l-8 7v-7H8a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4z"/></g></svg></div><div><b>Pembeli: “Ada ukuran M?”</b><small>Dijawab pukul 02.14</small></div><div class="ok"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></div></div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="8000">
-    <div class="title in">Semua jadi <em>satu sistem.</em></div>
-    <div class="panel in" style="animation-delay:.3s">
-      <h3>Toko, kasir, gudang, keuangan — saling terhubung</h3>
-      <div class="tiles">
-        <div class="tile" style="animation-delay:0.70s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h6l5 22h22l5-16H13"/><circle cx="19" cy="38" r="3"/><circle cx="35" cy="38" r="3"/></g></svg><span>Toko online</span></div><div class="tile" style="animation-delay:0.88s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10h26a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H20l-8 7v-7H8a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4z"/></g></svg><span>Asisten AI</span></div><div class="tile" style="animation-delay:1.06s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="6" width="32" height="24" rx="3"/><path d="M16 38h16M24 30v8M14 14h10"/></g></svg><span>Kasir POS</span></div><div class="tile" style="animation-delay:1.24s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 40h36M10 40V28M18 40V22M26 40V26M34 40V16"/></g></svg><span>ERP & laporan</span></div><div class="tile" style="animation-delay:1.42s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5h17l9 9v29H12z"/><path d="M29 5v9h9M18 26h14M18 33h10"/></g></svg><span>Dokumen & PDF</span></div><div class="tile" style="animation-delay:1.60s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5l17 9v20L24 43 7 34V14z"/><path d="M7 14l17 9 17-9M24 23v20"/></g></svg><span>Gudang & stok</span></div><div class="tile" style="animation-delay:1.78s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="12" width="38" height="24" rx="4"/><circle cx="24" cy="24" r="6"/></g></svg><span>Keuangan</span></div><div class="tile" style="animation-delay:1.96s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="18" r="9"/><path d="M8 42c2-9 9-13 16-13s14 4 16 13M20 17h.01M28 17h.01"/></g></svg><span>Agen AI</span></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="scene ana" data-d="9500" data-js="globe">
-    <div class="hud">
-      <canvas id="globe" width="1920" height="1080"></canvas>
-      <div class="hud__rings"><i></i><i></i><i></i></div>
-      <div class="hud__corner a">SYS // ANACHRONOS<br>LINK ............ OK<br>NEURON SYNC ..... 360</div>
-      <div class="hud__corner b">KANTOONG NETWORK<br>BRAND AKTIF 12<br>AGENTS ONLINE 10</div>
-      <div class="hud__txt"><small class="in" style="animation-delay:.6s">SATU LAGI…</small><b class="in" style="animation-delay:1.4s">ANACHRONOS</b><span class="in" style="animation-delay:2.2s">Digital Mall · Second Brain</span></div>
-    </div>
-  </section>
-
+  <div class="cap cap--left">
+    <div class="cap__k in" style="animation-delay:0.1s">01 · TOKO ONLINE</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Toko online<br><em>brand-mu.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">Dari depan seperti marketplace.<br>Di belakangnya ada AI.</p>
+  </div>
+  <div class="ph ph--hero spin"><div class="ph__scr"><div class="reel" ><img src="ui/m-toko-1.jpg" alt=""><img src="ui/m-toko-2.jpg" alt=""><img src="ui/m-toko-3.jpg" alt=""></div></div></div>
+  <div class="at pop chipA" data-at="2200"><div class="chip"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h6l5 22h22l5-16H13"/><circle cx="19" cy="38" r="3"/><circle cx="35" cy="38" r="3"/></g></svg><span>Rel terlaris otomatis</span></div></div>
+  <div class="at pop chipB" data-at="3600"><div class="chip"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5l17 9v20L24 43 7 34V14z"/><path d="M7 14l17 9 17-9M24 23v20"/></g></svg><span>Kotak hadiah misteri</span></div></div>
+  <div class="at pop chipC" data-at="5000"><div class="chip"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="12" width="38" height="24" rx="4"/><circle cx="24" cy="24" r="6"/></g></svg><span>Kupon sekali klik</span></div></div></section>
+<section class="scene" data-d="9000" >
   
-  <section class="scene ana" data-d="11500">
-    <div class="ana__title in">Seluruh brand jadi <em>satu otak</em></div>
-    <div class="ana__sub in" style="animation-delay:.4s">SECOND BRAIN · 3D · REALTIME</div>
-    <div class="holo l">
-      <div class="holo__img"><img src="ui/a-mall.jpg" alt=""><div class="scan"></div></div>
-      <i class="br tl"></i><i class="br tr"></i><i class="br bl"></i><i class="br br2"></i>
-    </div>
-    <div class="readout r"><div class="ro in" style="animation-delay:1.2s"><small>BRAND AKTIF</small><b>12</b></div><div class="ro in" style="animation-delay:1.7s"><small>NEURON</small><b>360</b></div><div class="ro in" style="animation-delay:2.2s"><small>KUNJUNGAN 7 HARI</small><b>51.648</b></div><div class="ro in" style="animation-delay:2.7s"><small>PESANAN</small><b>1.514</b></div></div>
-    <div class="ring r1"></div><div class="ring r2"></div>
-  </section>
+  <div class="bw bw--l2">
+    <div class="bw__bar"><i></i><i></i><i></i><span>kantoong-kenzo-ai.pages.dev</span></div>
+    <div class="bw__scr"><div class="bw__cam" data-zoom='{"at":4200,"x":0.5,"y":0.5,"s":1.3}'><div class="reel"><img src="ui/d-toko-1.jpg" alt=""><img src="ui/d-toko-3.jpg" alt=""></div></div></div>
+  </div>
   
-  <section class="scene ana" data-d="11500">
-    <div class="ana__title in">1 brand = 1 <em>neuron hidup</em></div>
-    <div class="ana__sub in" style="animation-delay:.4s">KLIK BRAND → MASUK KE ORGANNYA</div>
-    <div class="holo r">
-      <div class="holo__img"><img src="ui/a-brand-2.jpg" alt=""><div class="scan"></div></div>
-      <i class="br tl"></i><i class="br tr"></i><i class="br bl"></i><i class="br br2"></i>
-    </div>
-    <div class="readout l"><div class="ro in" style="animation-delay:1.2s"><small>NODE AKTIF</small><b>AURUM JEWELRY</b></div><div class="ro in" style="animation-delay:1.7s"><small>OBROLAN AI</small><b>881</b></div><div class="ro in" style="animation-delay:2.2s"><small>MASUK KERANJANG</small><b>240</b></div><div class="ro in" style="animation-delay:2.7s"><small>INSIGHT AI</small><b>3 SARAN BARU</b></div></div>
-    <div class="ring r1"></div><div class="ring r2"></div>
-  </section>
+  <div class="cap cap--br">
+    <div class="cap__k in" style="animation-delay:0.1s">MODE DESKTOP</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Sama mewahnya<br>di <em>laptop.</em></h2>
+    
+  </div></section>
+<section class="scene" data-d="9000" >
   
-  <section class="scene ana" data-d="11500">
-    <div class="ana__title in">Dikendalikan dengan <em>gerakan tangan</em></div>
-    <div class="ana__sub in" style="animation-delay:.4s">CHRONOS · TANPA MOUSE · TANPA KEYBOARD</div>
-    <div class="holo l">
-      <div class="holo__img"><img src="ui/a-mall-2.jpg" alt=""><div class="scan"></div></div>
-      <i class="br tl"></i><i class="br tr"></i><i class="br bl"></i><i class="br br2"></i>
+  <div class="cap cap--left">
+    <div class="cap__k in" style="animation-delay:0.1s">02 · HALAMAN PRODUK</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Lihat, yakin,<br><em>masukkan.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">Harga coret hanya kalau benar.<br>Ragu? Bandingkan dulu.</p>
+  </div>
+  <div class="stagecard tiltR"><div class="cropw" style="width:420px;height:838px;"><div class="crop "><img src="ui/m-produk.jpg" style="width:467px;left:-33px;top:-111px" alt=""></div><div class="fcur" data-path='[[0.85,1.1,0],[0.7,0.855,2600,1]]'></div><div class="at pop toastPos" data-at="3100"><div class="toast"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg><span>Masuk keranjang</span></div></div></div></div></section>
+<section class="scene" data-d="9000" >
+  <div class="stagecard center up"><div class="cropw" style="width:860px;height:416px;"><div class="crop "><img src="ui/m-keranjang.jpg" style="width:915px;left:-27px;top:-257px" alt=""></div><div class="fcur" data-path='[[0.9,1.4,0],[0.48,0.67,2300,1]]'></div></div></div>
+  <div class="at pop notePos" data-at="2900"><div class="note"><small>Alasanmu (hanya di HP-mu)</small><b>“Buat hadiah ulang tahun Mama 🎁”</b></div></div>
+  
+  <div class="cap cap--bottom">
+    <div class="cap__k in" style="animation-delay:0.1s">03 · KERANJANG</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Keranjang yang <em>ingat alasanmu.</em></h2>
+    
+  </div></section>
+<section class="scene" data-d="10500" >
+  <div class="ph ph--left"><div class="ph__scr"><div class="reel" ><img src="ui/m-chat-2.jpg" alt=""></div></div></div>
+  <div class="stagecard side"><div class="cropw" style="width:640px;height:446px;"><div class="crop "><img src="ui/m-chat-2.jpg" style="width:711px;left:-36px;top:-816px" alt=""></div><div class="fcur" data-path='[[0.95,1.3,0],[0.32,0.71,3200,1]]'></div></div></div>
+  <div class="at pop toastSide" data-at="3800"><div class="toast big"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg><span>Ingat di semua toko — dengan izinmu</span></div></div>
+  
+  <div class="cap cap--br">
+    <div class="cap__k in" style="animation-delay:0.1s">04 · ASISTEN AI</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Teman belanja yang <em>sopan.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">Ingat selera lintas toko — hanya kalau kamu izinkan.</p>
+  </div></section>
+<section class="scene" data-d="9500" >
+  
+  <div class="cap cap--left">
+    <div class="cap__k in" style="animation-delay:0.1s">05 · RUANG PRIBADI</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">26 fitur untuk<br><em>pembeli.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">Pesanan, poin, voucher, wishlist —<br>atur kartunya sesukamu.</p>
+  </div>
+  
+  <div class="bw bw--right">
+    <div class="bw__bar"><i></i><i></i><i></i><span>kantoong-kenzo-ai.pages.dev</span></div>
+    <div class="bw__scr"><div class="bw__cam" data-zoom='{"at":3600,"x":0.5,"y":0.3,"s":1.45}'><div class="reel"><img src="ui/d-dash.jpg" alt=""></div></div></div>
+  </div></section>
+<section class="scene" data-d="8500" >
+  <div class="stagecard tiltL"><div class="cropw" style="width:430px;height:829px;"><div class="crop "><img src="ui/m-kartu-diriku.jpg" style="width:467px;left:-19px;top:-91px" alt=""></div><div class="fcur" data-path='[[1.1,0.7,0],[0.5,0.9,2400,1]]'></div><div class="at pop toastPos2" data-at="2900"><div class="toast"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg><span>Data dihapus</span></div></div></div></div>
+  
+  <div class="cap cap--right">
+    <div class="cap__k in" style="animation-delay:0.1s">UU PDP</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Datamu, <em>milikmu.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">Lihat apa yang AI tahu.<br>Hapus kapan saja, satu ketukan.</p>
+  </div></section>
+<section class="scene" data-d="6000" >
+  <div class="divider">
+    <div class="in" style="animation-delay:.2s">Itu yang dilihat <span class="gold">pembeli</span>.</div>
+    <div class="in big" style="animation-delay:1.5s">Sekarang… <em>dapur bisnisnya.</em></div>
+  </div></section>
+<section class="scene" data-d="11000" >
+  
+  <div class="bw bw--l2">
+    <div class="bw__bar"><i></i><i></i><i></i><span>kantoong-kenzo-ai.pages.dev</span></div>
+    <div class="bw__scr"><div class="bw__cam" data-zoom='{"at":2600,"x":0.58,"y":0.41,"s":1.75}'><div class="reel"><img src="ui/d-erp-komando.jpg" alt=""></div><div class="fcur" data-path='[[0.9,0.95,0],[0.9,0.95,3800],[0.795,0.333,6200,1]]'></div><div class="at pop toastKomando" data-at="6800"><div class="toast sm"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg><span>Pesan tagihan disiapkan</span></div></div></div></div>
+  </div>
+  
+  <div class="cap cap--br">
+    <div class="cap__k in" style="animation-delay:0.1s">06 · RUANG KOMANDO</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Buka pagi,<br><em>langsung tahu.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">3 keputusan terpenting hari ini.</p>
+  </div></section>
+<section class="scene" data-d="10000" >
+  
+  <div class="cap cap--left">
+    <div class="cap__k in" style="animation-delay:0.1s">07 · KEUANGAN & LAPORAN</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Angka yang<br><em>bercerita.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">Setiap transaksi langsung<br>masuk pembukuan.</p>
+  </div>
+  <div class="float f1"><div class="cropw" style="width:620px;height:510px;"><div class="crop "><img src="ui/d-erp-keuangan.jpg" style="width:1632px;left:-669px;top:-306px" alt=""></div></div></div>
+  <div class="float f2"><div class="cropw" style="width:760px;height:234px;"><div class="crop "><img src="ui/d-erp-laporan.jpg" style="width:987px;left:-207px;top:-123px" alt=""></div></div></div>
+  <div class="float f3"><div class="cropw" style="width:700px;height:101px;"><div class="crop "><img src="ui/d-erp-resep.jpg" style="width:897px;left:-179px;top:-112px" alt=""></div></div></div></section>
+<section class="scene" data-d="12000" >
+  <div class="ph ph--center"><div class="ph__scr"><div class="reel" data-steps="2800"><img src="ui/m-kasir.jpg" alt=""><img src="ui/m-kasir-2.jpg" alt=""></div><div class="fcur" data-path='[[0.8,1.05,0],[0.8,1.05,3600],[0.48,0.21,4800,1],[0.53,0.3,5900,1],[0.66,0.885,7100,1]]'></div></div></div>
+  
+  <div class="cap cap--left">
+    <div class="cap__k in" style="animation-delay:0.1s">08 · KASIR POS</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Kasir untuk<br>toko & <em>F&B.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">Varian, topping, split bill.<br>Tetap jalan saat sinyal hilang.</p>
+  </div>
+  <div class="at pop ticketPos" data-at="7800"><div class="ticket-wrap"><div class="tlabel">Langsung ke dapur →</div><div class="cropw" style="width:520px;height:269px;"><div class="crop "><img src="ui/m-dapur.jpg" style="width:565px;left:-23px;top:-844px" alt=""></div></div></div></div></section>
+<section class="scene" data-d="12000" >
+  
+  <div class="cap cap--top">
+    <div class="cap__k in" style="animation-delay:0.1s">09 · AGEN AI & DOKUMEN</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Tinggal <em>perintah.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">Agen menyiapkan. Kamu yang tanda tangan.</p>
+  </div>
+  <div class="stagecard wide"><div class="cropw" style="width:1300px;height:229px;"><div class="crop "><img src="ui/d-erp-agen.jpg" style="width:1667px;left:-333px;top:-208px" alt=""></div><div class="typed" data-type="Buatkan invoice untuk Kafe Senja" data-at="1200"></div><div class="fcur" data-path='[[0.6,1.4,0],[0.6,1.4,3400],[0.918,0.32,4600,1]]'></div></div></div>
+  <div class="at pop docPos" data-at="5400"><div class="doccard"><div class="cropw" style="width:560px;height:433px;"><div class="crop "><img src="ui/d-erp-dokumen.jpg" style="width:1018px;left:-204px;top:-191px" alt=""></div></div><div class="stamp">QR KEASLIAN ✓</div></div></div></section>
+<section class="scene" data-d="9500" >
+  
+  <div class="bw bw--left">
+    <div class="bw__bar"><i></i><i></i><i></i><span>kantoong-kenzo-ai.pages.dev</span></div>
+    <div class="bw__scr"><div class="bw__cam" data-zoom='{"at":3400,"x":0.82,"y":0.55,"s":1.8}'><div class="reel"><img src="ui/d-erp-etalase.jpg" alt=""></div></div></div>
+  </div>
+  
+  <div class="cap cap--right">
+    <div class="cap__k in" style="animation-delay:0.1s">10 · DASHBOARD ADMIN</div>
+    <h2 class="cap__t in" style="animation-delay:0.3s">Atur toko<br><em>tanpa coding.</em></h2>
+    <p class="cap__s in" style="animation-delay:0.7s">Akses per email, divisi, jabatan.<br>Pratinjau langsung.</p>
+  </div></section>
+<section class="scene" data-d="9000" >
+  <div class="title in">Saat kamu tidur, <em>dia</em> tetap kerja.</div>
+  <div class="stack">
+    <div class="task" style="animation: fadeUp .9s .5s forwards"><div class="ti"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5h17l9 9v29H12z"/><path d="M29 5v9h9M18 26h14M18 33h10"/></g></svg></div><div><b>Invoice INV/014 terbit</b><small>Lengkap dengan QR keaslian</small></div><div class="ok"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></div></div>
+    <div class="task" style="animation: fadeUp .9s 1.6s forwards"><div class="ti"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5l17 9v20L24 43 7 34V14z"/><path d="M7 14l17 9 17-9M24 23v20"/></g></svg></div><div><b>Kopi habis 3 hari lagi</b><small>PO restok sudah diajukan ke atasan</small></div><div class="ok"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></div></div>
+    <div class="task hl" style="animation: fadeUp .9s 2.7s forwards"><div class="ti"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="12" width="38" height="24" rx="4"/><circle cx="24" cy="24" r="6"/></g></svg></div><div><b>Rp18,1 jt piutang ditagih</b><small>Pesan pengingat siap kamu kirim</small></div><div class="ok"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></div></div>
+    <div class="task" style="animation: fadeUp .9s 3.8s forwards"><div class="ti"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10h26a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H20l-8 7v-7H8a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4z"/></g></svg></div><div><b>Pembeli: “Ada ukuran M?”</b><small>Dijawab pukul 02.14</small></div><div class="ok"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></g></svg></div></div>
+  </div></section>
+<section class="scene" data-d="8000" >
+  <div class="title in">Semua jadi <em>satu sistem.</em></div>
+  <div class="panel in" style="animation-delay:.3s">
+    <h3>Toko, kasir, gudang, keuangan — saling terhubung</h3>
+    <div class="tiles">
+      <div class="tile" style="animation-delay:0.70s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h6l5 22h22l5-16H13"/><circle cx="19" cy="38" r="3"/><circle cx="35" cy="38" r="3"/></g></svg><span>Toko online</span></div><div class="tile" style="animation-delay:0.88s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10h26a4 4 0 0 1 4 4v14a4 4 0 0 1-4 4H20l-8 7v-7H8a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4z"/></g></svg><span>Asisten AI</span></div><div class="tile" style="animation-delay:1.06s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="6" width="32" height="24" rx="3"/><path d="M16 38h16M24 30v8M14 14h10"/></g></svg><span>Kasir POS</span></div><div class="tile" style="animation-delay:1.24s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 40h36M10 40V28M18 40V22M26 40V26M34 40V16"/></g></svg><span>ERP & laporan</span></div><div class="tile" style="animation-delay:1.42s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5h17l9 9v29H12z"/><path d="M29 5v9h9M18 26h14M18 33h10"/></g></svg><span>Dokumen & PDF</span></div><div class="tile" style="animation-delay:1.60s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5l17 9v20L24 43 7 34V14z"/><path d="M7 14l17 9 17-9M24 23v20"/></g></svg><span>Gudang & stok</span></div><div class="tile" style="animation-delay:1.78s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="12" width="38" height="24" rx="4"/><circle cx="24" cy="24" r="6"/></g></svg><span>Keuangan</span></div><div class="tile" style="animation-delay:1.96s"><svg viewBox="0 0 48 48"><g fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="18" r="9"/><path d="M8 42c2-9 9-13 16-13s14 4 16 13M20 17h.01M28 17h.01"/></g></svg><span>Agen AI</span></div>
     </div>
-    <div class="readout r"><div class="ro in" style="animation-delay:1.2s"><small>CHRONOS</small><b>AKTIF</b></div><div class="ro in" style="animation-delay:1.7s"><small>INPUT</small><b>GERAK TANGAN</b></div><div class="ro in" style="animation-delay:2.2s"><small>KAMERA</small><b>DI PERANGKAT</b></div><div class="ro in" style="animation-delay:2.7s"><small>AGEN</small><b>BEKERJA</b></div></div>
-    <div class="ring r1"></div><div class="ring r2"></div>
-  </section>
-
-  <section class="scene" data-d="7000">
-    <div style="display:grid;justify-items:center;gap:50px">
-      <svg viewBox="0 0 100 100" class="star "><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg>
-      <div class="headline in" style="animation-delay:1s">Jualannya enak.<br>Ngurusnya yang <em>capek.</em></div>
+  </div></section>
+<section class="scene" data-d="8000" data-js="globe" data-dark="1">
+  <div class="hud">
+    <canvas id="globe" width="1920" height="1080"></canvas>
+    <div class="hud__rings"><i></i><i></i><i></i></div>
+    <div class="hud__corner a">SYS // ANACHRONOS<br>LINK ............ OK<br>NEURON SYNC ..... 360</div>
+    <div class="hud__corner b">KANTOONG NETWORK<br>BRAND AKTIF 12<br>AGENTS ONLINE 10</div>
+    <div class="hud__txt"><small class="in" style="animation-delay:.5s">SATU LAGI…</small><b class="in" style="animation-delay:1.2s">ANACHRONOS</b><span class="in" style="animation-delay:2s">Digital Mall · Second Brain</span></div>
+  </div></section>
+<section class="scene" data-d="11000" data-ax="orbit"><div class="axcap"><small class="in" style="animation-delay:.3s">ANACHRONOS DIGITAL MALL · LIVE</small><b class="in" style="animation-delay:.6s">12 brand · 360 neuron · <em>satu otak.</em></b><span class="in" style="animation-delay:1s">Setiap toko Kantoong adalah satu neuron yang hidup.</span></div></section>
+<section class="scene" data-d="13000" data-ax="dive"><div class="axcap"><small class="in" style="animation-delay:.3s">KLIK SATU NEURON</small><b class="in" style="animation-delay:.6s">Masuk ke <em>dalam</em> brand.</b><span class="in" style="animation-delay:1s">Traffic, chat AI, keranjang, penjualan — jadi organ.</span></div></section>
+<section class="scene" data-d="15500" data-ax="organs"><div class="axcap"><small class="in" style="animation-delay:.3s">SETIAP ORGAN BISA DIBUKA</small><b class="in" style="animation-delay:.6s">Dari keranjang… sampai <em>produknya.</em></b><span class="in" style="animation-delay:1s">Data asli toko, terlihat seperti makhluk hidup.</span></div></section>
+<section class="scene" data-d="11000" data-ax="cinema"><div class="axcap"><small class="in" style="animation-delay:.3s">SECOND BRAIN</small><b class="in" style="animation-delay:.6s">Bisnismu, dilihat <em>dari atas.</em></b><span class="in" style="animation-delay:1s">Dikendalikan juga dengan gerakan tangan (CHRONOS).</span></div></section>
+<section class="scene" data-d="6000" >
+  <div class="future">
+    <div class="in" style="animation-delay:.2s">Masa depan bisnismu</div>
+    <div class="in fl" style="animation-delay:.9s"><svg viewBox="0 0 100 100" class="star sm"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg><span>ada di sini.</span></div>
+  </div></section>
+<section class="scene" data-d="5500" >
+  <div class="arc"></div>
+  <div class="withk">
+    <span class="in" style="animation-delay:.2s">bersama</span>
+    <span class="in" style="animation-delay:.7s"><svg viewBox="0 0 100 100" class="star sm"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg></span>
+    <span class="in kname" style="animation-delay:1.2s"><svg viewBox="0 0 100 100" class="logo"><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg>KANTOONG AI</span>
+  </div></section>
+<section class="scene" data-d="11000" >
+  <div class="final">
+    <div>
+      <div class="brandline in" style="margin-bottom:46px"><svg viewBox="0 0 100 100" class="logo"><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg>KANTOONG AI</div>
+      <h2 class="in" style="animation-delay:.4s">Biar karyawan<br><b>KANTOONG AI</b><br>yang ngurus.</h2>
+      <p class="sub in" style="animation-delay:.9s;margin-top:34px">Toko · Asisten AI · Kasir · ERP · Dokumen — satu pintu.</p>
+      <div class="cta in" style="animation-delay:1.6s"><svg viewBox="0 0 100 100" class="star xs"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg><span>Coba sekarang</span></div>
     </div>
-  </section>
-
-  <section class="scene" data-d="6000">
-    <div class="future">
-      <div class="in" style="animation-delay:.2s">Masa depan bisnismu</div>
-      <div class="in fl" style="animation-delay:.9s"><svg viewBox="0 0 100 100" class="star sm"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg><span>ada di sini.</span></div>
-    </div>
-  </section>
-
-  <section class="scene" data-d="5500">
-    <div class="arc"></div>
-    <div class="withk">
-      <span class="in" style="animation-delay:.2s">bersama</span>
-      <span class="in" style="animation-delay:.7s"><svg viewBox="0 0 100 100" class="star sm"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg></span>
-      <span class="in kname" style="animation-delay:1.2s"><svg viewBox="0 0 100 100" class="logo"><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg>KANTOONG AI</span>
-    </div>
-  </section>
-
-  <section class="scene" data-d="11000">
-    <div class="final">
-      <div>
-        <div class="brandline in" style="margin-bottom:46px"><svg viewBox="0 0 100 100" class="logo"><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg>KANTOONG AI</div>
-        <h2 class="in" style="animation-delay:.4s">Biar karyawan<br><b>KANTOONG AI</b><br>yang ngurus.</h2>
-        <p class="sub in" style="animation-delay:.9s;margin-top:34px">Toko · Asisten AI · Kasir · ERP · Dokumen — satu pintu.</p>
-        <div class="cta in" style="animation-delay:1.6s"><svg viewBox="0 0 100 100" class="star xs"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg><span>Coba sekarang</span></div>
-      </div>
-      <div class="in" style="animation-delay:1.2s"><div class="qrbox"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h29v29H0z"/><path stroke="#0b0a08" d="M0 0.5h7m5 0h1m2 0h5m2 0h7M0 1.5h1m5 0h1m4 0h1m8 0h1m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h2m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m1 0h1m6 0h1m1 0h1m2 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h1m3 0h4m2 0h3m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h4m1 0h3m2 0h1m3 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h1m1 0h2m1 0h1m2 0h1m2 0h1M0 8.5h1m1 0h5m2 0h2m1 0h1m1 0h4m1 0h2m1 0h5M0 9.5h5m2 0h1m1 0h3m4 0h9m3 0h1M2 10.5h1m2 0h4m2 0h1m3 0h2m1 0h1m3 0h1m1 0h1M0 11.5h1m1 0h3m2 0h1m1 0h1m4 0h3m2 0h2m1 0h4m1 0h1M3 12.5h1m1 0h4m2 0h1m3 0h1m1 0h3m3 0h1m1 0h2M0 13.5h1m2 0h2m2 0h1m1 0h1m1 0h1m1 0h2m1 0h9m3 0h1M1 14.5h1m1 0h1m1 0h2m1 0h1m1 0h2m1 0h3m1 0h1m2 0h1m1 0h1m2 0h2M0 15.5h2m1 0h1m3 0h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m1 0h2m3 0h1M1 16.5h1m3 0h2m2 0h1m1 0h2m1 0h2m1 0h1m7 0h2M0 17.5h3m2 0h1m2 0h1m2 0h2m3 0h1m2 0h6m1 0h1m1 0h1M0 18.5h1m1 0h1m3 0h1m2 0h1m2 0h1m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M0 19.5h1m2 0h2m2 0h1m2 0h3m1 0h1m1 0h1m1 0h2m1 0h2m1 0h1m2 0h1M0 20.5h1m1 0h2m2 0h2m3 0h2m4 0h1m1 0h6m1 0h3M8 21.5h3m2 0h2m3 0h1m1 0h1m3 0h5M0 22.5h7m3 0h1m1 0h5m1 0h3m1 0h1m1 0h3M0 23.5h1m5 0h1m1 0h6m5 0h2m3 0h1m3 0h1M0 24.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h4m2 0h5m1 0h2M0 25.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h2m5 0h4M0 26.5h1m1 0h3m1 0h1m1 0h3m4 0h3m1 0h9M0 27.5h1m5 0h1m6 0h4m3 0h1m2 0h1m1 0h1m1 0h1M0 28.5h7m1 0h4m1 0h1m1 0h1m1 0h1m4 0h1m3 0h1"/></svg>
+    <div class="in" style="animation-delay:1.2s"><div class="qrbox"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h29v29H0z"/><path stroke="#0b0a08" d="M0 0.5h7m5 0h1m2 0h5m2 0h7M0 1.5h1m5 0h1m4 0h1m8 0h1m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h2m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m1 0h1m6 0h1m1 0h1m2 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h1m3 0h4m2 0h3m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h4m1 0h3m2 0h1m3 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h1m1 0h2m1 0h1m2 0h1m2 0h1M0 8.5h1m1 0h5m2 0h2m1 0h1m1 0h4m1 0h2m1 0h5M0 9.5h5m2 0h1m1 0h3m4 0h9m3 0h1M2 10.5h1m2 0h4m2 0h1m3 0h2m1 0h1m3 0h1m1 0h1M0 11.5h1m1 0h3m2 0h1m1 0h1m4 0h3m2 0h2m1 0h4m1 0h1M3 12.5h1m1 0h4m2 0h1m3 0h1m1 0h3m3 0h1m1 0h2M0 13.5h1m2 0h2m2 0h1m1 0h1m1 0h1m1 0h2m1 0h9m3 0h1M1 14.5h1m1 0h1m1 0h2m1 0h1m1 0h2m1 0h3m1 0h1m2 0h1m1 0h1m2 0h2M0 15.5h2m1 0h1m3 0h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m1 0h2m3 0h1M1 16.5h1m3 0h2m2 0h1m1 0h2m1 0h2m1 0h1m7 0h2M0 17.5h3m2 0h1m2 0h1m2 0h2m3 0h1m2 0h6m1 0h1m1 0h1M0 18.5h1m1 0h1m3 0h1m2 0h1m2 0h1m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M0 19.5h1m2 0h2m2 0h1m2 0h3m1 0h1m1 0h1m1 0h2m1 0h2m1 0h1m2 0h1M0 20.5h1m1 0h2m2 0h2m3 0h2m4 0h1m1 0h6m1 0h3M8 21.5h3m2 0h2m3 0h1m1 0h1m3 0h5M0 22.5h7m3 0h1m1 0h5m1 0h3m1 0h1m1 0h3M0 23.5h1m5 0h1m1 0h6m5 0h2m3 0h1m3 0h1M0 24.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h4m2 0h5m1 0h2M0 25.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h2m5 0h4M0 26.5h1m1 0h3m1 0h1m1 0h3m4 0h3m1 0h9M0 27.5h1m5 0h1m6 0h4m3 0h1m2 0h1m1 0h1m1 0h1M0 28.5h7m1 0h4m1 0h1m1 0h1m1 0h1m4 0h1m3 0h1"/></svg>
 </div><div class="qrcap">Scan, coba 1 menit</div><div class="qrurl">kantoong-kenzo-ai.pages.dev</div></div>
-    </div>
-  </section>
-
+  </div></section>
   <div class="wm"><svg viewBox="0 0 100 100" class="logo"><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg>KANTOONG AI</div>
   <div class="progress" id="prog"></div>
 </div>
@@ -499,6 +413,7 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:500; c
   const stage = document.getElementById("stage");
   const fit = () => { const s = Math.min(innerWidth / 1920, innerHeight / 1080); stage.style.transform = "translate(-50%,-50%) scale(" + s + ")"; };
   addEventListener("resize", fit); fit();
+  const ax = document.getElementById("ax");
   const scenes = [...document.querySelectorAll(".scene")];
   const starts = []; let acc = 0; scenes.forEach((s) => { starts.push(acc); acc += Number(s.dataset.d); });
   const total = acc;
@@ -506,21 +421,44 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:500; c
   const timers = []; let raf = 0;
   const later = (fn, ms) => timers.push(setTimeout(fn, ms));
   const type = (el, text, speed, done) => { let i = 0; el.textContent = ""; const t = setInterval(() => { el.textContent = text.slice(0, ++i); if (i >= text.length) { clearInterval(t); done && done(); } }, speed); timers.push(t); };
-  // Layar di laptop/HP berganti dengan geser (seperti di-scroll), tidak pernah kosong.
-  const runReels = (scene) => {
-    const dur = Number(scene.dataset.d);
-    scene.querySelectorAll(".reel").forEach((r) => {
+
+  // Mesin umum: reel (geser layar), kamera browser (zoom), kursor (jalan + pencet), elemen berjadwal, ketikan.
+  const runGeneric = (sc) => {
+    const dur = Number(sc.dataset.d);
+    sc.querySelectorAll(".reel").forEach((r) => {
       const imgs = [...r.children]; if (imgs.length < 2) return;
-      const step = (dur - 1200) / imgs.length; const offset = r.classList.contains("late") ? step * 0.35 : 0;
-      imgs.forEach((img, k) => { if (k === 0) return; later(() => { imgs[k - 1].classList.add("past"); img.classList.add("cur"); }, step * k + offset); });
+      const step = (dur - 1500) / imgs.length;
+      const plan = r.dataset.steps ? r.dataset.steps.split(",").map(Number) : null;
+      imgs.forEach((im, k) => { if (k) later(() => { imgs[k - 1].classList.add("past"); im.classList.add("cur"); }, plan ? plan[k - 1] : 900 + step * k); });
     });
+    sc.querySelectorAll("[data-zoom]").forEach((cam) => {
+      const z = JSON.parse(cam.dataset.zoom); const W = cam.offsetWidth, H = cam.offsetHeight;
+      later(() => { cam.style.transform = "translate(" + (W / 2 - z.x * W * z.s) + "px," + (H / 2 - z.y * H * z.s) + "px) scale(" + z.s + ")"; }, z.at);
+    });
+    sc.querySelectorAll(".fcur").forEach((c) => {
+      const path = JSON.parse(c.dataset.path); const box = c.parentElement;
+      const place = (p) => { c.style.left = (p[0] * box.offsetWidth) + "px"; c.style.top = (p[1] * box.offsetHeight) + "px"; };
+      c.style.transition = "none"; place(path[0]); void c.offsetWidth; c.style.transition = "";
+      later(() => { c.style.opacity = "1"; }, Math.max(300, path[0][2]));
+      path.slice(1).forEach((p) => {
+        later(() => place(p), p[2] - 1200);
+        if (p[3]) later(() => {
+          c.classList.add("press"); setTimeout(() => c.classList.remove("press"), 220);
+          const r = document.createElement("div"); r.className = "rip"; r.style.left = c.style.left; r.style.top = c.style.top; box.appendChild(r); setTimeout(() => r.remove(), 950);
+        }, p[2]);
+      });
+      later(() => { c.style.opacity = "0"; }, path[path.length - 1][2] + 1300);
+    });
+    sc.querySelectorAll(".at[data-at]").forEach((e) => later(() => e.classList.add("show"), Number(e.dataset.at)));
+    sc.querySelectorAll(".typed").forEach((e) => later(() => type(e, e.dataset.type, 55), Number(e.dataset.at)));
   };
+
   const JS = {
     ask(sc) {
       const q = sc.querySelector("#askq"), b = sc.querySelector("#askbtn"), c = sc.querySelector("#cursor");
       c.style.left = "1500px"; c.style.top = "820px";
       later(() => type(q, "Buatkan invoice untuk Kafe Senja…", 55), 900);
-      later(() => { c.style.left = (b.offsetLeft + b.offsetParent.offsetLeft + b.offsetWidth / 2 - 45) + "px"; c.style.top = (b.offsetParent.offsetTop + b.offsetTop + b.offsetHeight / 2 - 45) + "px"; }, 3300);
+      later(() => { const a = b.offsetParent; c.style.left = (a.offsetLeft + b.offsetLeft + b.offsetWidth / 2 - 45) + "px"; c.style.top = (a.offsetTop + b.offsetTop + b.offsetHeight / 2 - 45) + "px"; }, 3300);
       later(() => { b.classList.add("press"); c.style.transform = "scale(.8)"; }, 4800);
       later(() => { c.style.transform = ""; }, 5100);
     },
@@ -533,45 +471,51 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:500; c
       const cv = sc.querySelector("#globe"), g = cv.getContext("2d");
       const N = 1100, pts = [];
       for (let i = 0; i < N; i++) { const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = i * 2.399963; pts.push([Math.cos(th) * r, y, Math.sin(th) * r, Math.random()]); }
-            const t0 = performance.now();
+      const t0 = performance.now();
       const draw = (now) => {
         const t = (now - t0) / 1000, R = 330 + Math.min(1, t / 1.5) * 40, cx = 960, cy = 540, ry = t * .35, cs = Math.cos(ry), sn = Math.sin(ry);
         g.clearRect(0, 0, 1920, 1080); g.globalCompositeOperation = "lighter";
         for (const [x, y, z, w] of pts) {
-          const X = x * cs - z * sn, Z = x * sn + z * cs; const d = (Z + 1.6) / 2.6;
-          const fl = .55 + .45 * Math.sin(t * 3 + w * 20);
+          const X = x * cs - z * sn, Z = x * sn + z * cs; const d = (Z + 1.6) / 2.6; const fl = .55 + .45 * Math.sin(t * 3 + w * 20);
           g.fillStyle = "rgba(255," + (150 + 70 * w | 0) + ",60," + (d * .85 * fl).toFixed(2) + ")";
           g.beginPath(); g.arc(cx + X * R, cy + y * R * .98, 1.2 + d * 2.2, 0, 6.29); g.fill();
         }
         g.lineWidth = 2;
-        for (let k = 0; k < 3; k++) {
-          g.strokeStyle = "rgba(255,170,60," + (.35 + .15 * k) + ")";
-          g.beginPath(); g.ellipse(cx, cy, R * (1.12 + k * .1), R * (.28 + k * .08), (k - 1) * .5 + t * (.15 + k * .05), 0, 6.29); g.stroke();
-        }
+        for (let k = 0; k < 3; k++) { g.strokeStyle = "rgba(255,170,60," + (.35 + .15 * k) + ")"; g.beginPath(); g.ellipse(cx, cy, R * (1.12 + k * .1), R * (.28 + k * .08), (k - 1) * .5 + t * (.15 + k * .05), 0, 6.29); g.stroke(); }
         g.globalCompositeOperation = "source-over";
         if (sc.classList.contains("on")) raf = requestAnimationFrame(draw);
       };
       raf = requestAnimationFrame(draw);
+      // siapkan Anachronos (putar orbit) di belakang layar
+      ax.contentWindow?.postMessage({ ax: "play", seq: "orbit" }, "*");
     },
   };
+
   let i = Math.max(0, Math.min(scenes.length - 1, Number(new URLSearchParams(location.search).get("adegan") || 1) - 1)), tStart = 0;
   const show = () => {
     timers.splice(0).forEach((t) => { clearTimeout(t); clearInterval(t); }); cancelAnimationFrame(raf);
     scenes.forEach((s, k) => {
       if (k === i) {
-        // Ganti adegan dengan salinan segar: semua animasi pasti mulai dari awal lagi.
         const fresh = s.cloneNode(true); fresh.classList.remove("on"); s.replaceWith(fresh); scenes[k] = fresh;
         void fresh.offsetWidth; fresh.classList.add("on");
       } else s.classList.remove("on");
     });
-    const sc = scenes[i]; const js = sc.dataset.js; if (js) JS[js](sc);
-    runReels(sc);
+    const sc = scenes[i];
+    const seq = sc.dataset.ax;
+    ax.classList.toggle("on", Boolean(seq));
+    if (seq) ax.contentWindow?.postMessage({ ax: "play", seq }, "*");
+    else ax.contentWindow?.postMessage({ ax: "sleep", on: true }, "*");
+    const js = sc.dataset.js; if (js) JS[js](sc);
+    runGeneric(sc);
     tStart = performance.now() - starts[i];
     timers.push(setTimeout(() => { i = (i + 1) % scenes.length; show(); }, Number(sc.dataset.d)));
   };
   const tick = (t) => { prog.style.width = (((t - tStart) % total) / total * 100) + "%"; requestAnimationFrame(tick); };
   requestAnimationFrame(tick);
-  show();
+  // tunggu font & Anachronos siap sebentar agar adegan pertama mulus
+  let started = false; const go = () => { if (!started) { started = true; show(); } };
+  addEventListener("message", (e) => { if (e.data?.ax === "ready") setTimeout(go, 300); });
+  setTimeout(go, 2500);
   addEventListener("keydown", (e) => {
     if (e.key === "f" || e.key === "F") document.documentElement.requestFullscreen?.();
     if (e.key === "ArrowRight") { i = (i + 1) % scenes.length; show(); }
