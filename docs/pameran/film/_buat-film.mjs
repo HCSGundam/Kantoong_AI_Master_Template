@@ -41,14 +41,14 @@ const I = {
 };
 const HAND = `<svg viewBox="0 0 32 32"><path d="M11 3.5c1.2 0 2.2 1 2.2 2.2v8.1l.6-.1c.9-.2 1.9.3 2.3 1.2l.2.5.7-.2c1-.2 2 .3 2.4 1.2l.2.4.6-.1c1.1-.2 2.2.6 2.4 1.7l.9 5.2c.4 2.3-.3 4.6-1.9 6.3l-.8.9H10.7l-5-7.3c-.6-.9-.4-2.1.5-2.7.8-.6 1.9-.5 2.6.2l.9.9V5.7c0-1.2 1-2.2 2.2-2.2z" fill="#fff" stroke="#1a1612" stroke-width="1.5" stroke-linejoin="round"/><path d="M13.2 13.8v4M17 15.4v3.2M20.6 16.9v2.8" stroke="#1a1612" stroke-width="1.2" stroke-linecap="round"/></svg>`;
 // Foto produk (bukan UI) dipotong dari screenshot asli, sebagai latar kotak.
-function photo(name, [x, y, w, h], cls = "") {
+function photo(name, [x, y, w, h], cls = "", slot = "") {
   const [iw, ih] = DIM[name[0]];
-  return `<div class="photo ${cls}" style="background-image:url(${src(name)});background-size:${(100 / w).toFixed(2)}% auto;background-position:${(x / (1 - w) * 100).toFixed(2)}% ${(y / (1 - h) * 100).toFixed(2)}%;aspect-ratio:${(w * iw / (h * ih)).toFixed(3)}"></div>`;
+  return `<div class="photo ${cls}" ${slot !== "" ? `data-slot="${slot}"` : ""} style="background-image:url(${src(name)});background-size:${(100 / w).toFixed(2)}% auto;background-position:${(x / (1 - w) * 100).toFixed(2)}% ${(y / (1 - h) * 100).toFixed(2)}%;aspect-ratio:${(w * iw / (h * ih)).toFixed(3)}"></div>`;
 }
 const P = {
-  cookie: (c) => photo("m-produk", [0.12, 0.43, 0.55, 0.25], c),
-  choco: (c) => photo("m-chat-2", [0.53, 0.13, 0.33, 0.16], c),
-  framb: (c) => photo("d-erp-etalase", [0.712, 0.3, 0.22, 0.07], c),
+  cookie: (c) => photo("m-produk", [0.12, 0.43, 0.55, 0.25], c, 0),
+  choco: (c) => photo("m-chat-2", [0.42, 0.125, 0.48, 0.22], c, 1),
+  framb: (c) => photo("m-chat-2", [0.46, 0.66, 0.4, 0.15], c, 2),
 };
 
 /* ---------- penyusun adegan ---------- */
@@ -83,9 +83,9 @@ scene(3600, "light", `
     ${P.cookie("pcard__img")}
     <div class="pcard__b">
       <div class="tagrow"><span class="tag hot">🔥 Lagi hits</span><span class="tag">Cookies</span></div>
-      <h3>Oatcookies</h3>
+      <h3 data-sname="0">Oatcookies</h3>
       <div class="meta">★ 4,8 (12) · 5rb+ terjual</div>
-      <div class="price">Rp 7.000</div>
+      <div class="price" data-sprice="0">Rp 7.000</div>
       <div class="ship">Tiba 3 hari · Dari Bandung</div>
       <div class="btns"><button class="btn ghost">${I.chat}Tanya AI</button><button class="btn dark tgt">${I.cart}Keranjang</button></div>
     </div>
@@ -104,9 +104,9 @@ scene(3600, "dark", `
     <div class="bub me in">Ada minuman cokelat buat sore?</div>
     <div class="bub ai in" style="animation-delay:.35s"><span class="typed" data-type="Ada, Kak! Ini 3 yang paling cocok buat sore — manisnya pas ✨" data-at="500" data-speed="22"></span></div>
     <div class="minis">
-      ${at(2100, `<div class="mini-p">${P.choco("mp")}<b>Miloat Chocolate</b><span>Rp 15.000</span></div>`, "pop")}
-      ${at(2300, `<div class="mini-p">${P.framb("mp")}<b>Miloat Frambozen</b><span>Rp 15.000</span></div>`, "pop")}
-      ${at(2500, `<div class="mini-p">${P.cookie("mp")}<b>Oatcookies</b><span>Rp 7.000</span></div>`, "pop")}
+      ${at(2100, `<div class="mini-p">${P.choco("mp")}<b data-sname="1">Miloat Chocolate</b><span data-sprice="1">Rp 15.000</span></div>`, "pop")}
+      ${at(2300, `<div class="mini-p">${P.framb("mp")}<b data-sname="2">Miloat Frambozen</b><span data-sprice="2">Rp 15.000</span></div>`, "pop")}
+      ${at(2500, `<div class="mini-p">${P.cookie("mp")}<b data-sname="0">Oatcookies</b><span data-sprice="0">Rp 7.000</span></div>`, "pop")}
     </div>
   </div>`);
 
@@ -121,7 +121,7 @@ scene(3300, "light", `
 scene(3600, "light", `
   <div class="card cartrow in">
     ${P.cookie("cartrow__img")}
-    <div class="cartrow__b"><h4>Oatcookies</h4><div class="price sm">Rp 7.000</div>
+    <div class="cartrow__b"><h4 data-sname="0">Oatcookies</h4><div class="price sm" data-sprice="0">Rp 7.000</div>
       <button class="link tgt">✧ Ingat alasannya</button>
       ${at(1500, `<div class="reason"><span class="typed" data-type="Kado ulang tahun Mama 🎁" data-at="1600" data-speed="40"></span></div>`, "pop")}
     </div>
@@ -292,8 +292,8 @@ button { font:inherit; border:0; cursor:none; }
 #ax { position:absolute; inset:0; width:1920px; height:1080px; border:0; opacity:0; transition: opacity .6s ease; pointer-events:none; background:#02040a; }
 #ax.on { opacity:1; }
 /* adegan */
-.scene { position:absolute; inset:0; display:grid; place-items:center; opacity:0; visibility:hidden; transform: scale(1.03); transition: opacity .35s ease, transform .5s ease, visibility 0s linear .35s; }
-.scene.on { opacity:1; visibility:visible; transform:none; transition: opacity .35s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
+.scene { position:absolute; inset:0; display:grid; place-items:center; opacity:0; visibility:hidden; transform: scale(1.03); transition: opacity .5s ease, transform .6s ease, visibility 0s linear .5s; }
+.scene.on { opacity:1; visibility:visible; transform:none; transition: opacity .5s ease, transform .8s cubic-bezier(.2,.8,.2,1); }
 .scene * { animation-play-state: paused; }
 .scene.on * { animation-play-state: running; }
 .scene[data-bg="dark"], .scene[data-bg="ax"], .scene[data-bg="final"] { color:#f6f1e4; }
@@ -304,7 +304,7 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 .logo { width:64px; height:64px; flex:none; }
 .ic { width:30px; height:30px; flex:none; }
 /* kursor tangan */
-.hand { position:absolute; left:0; top:0; width:70px; height:70px; margin:-8px 0 0 -24px; z-index:50; opacity:0; transition: left .75s cubic-bezier(.55,0,.2,1), top .75s cubic-bezier(.55,0,.2,1), opacity .25s; filter: drop-shadow(0 10px 18px rgba(0,0,0,.35)); pointer-events:none; }
+.hand { position:absolute; left:0; top:0; width:70px; height:70px; margin:-8px 0 0 -24px; z-index:50; opacity:0; transition: left 1s cubic-bezier(.55,0,.2,1), top 1s cubic-bezier(.55,0,.2,1), opacity .25s; filter: drop-shadow(0 10px 18px rgba(0,0,0,.35)); pointer-events:none; }
 .hand svg { width:100%; height:100%; transition: transform .14s; }
 .hand.press svg { transform: scale(.82) rotate(-6deg); }
 .rip { position:absolute; width:26px; height:26px; margin:-13px; border-radius:50%; border:3px solid var(--gold); z-index:49; pointer-events:none; animation: rip .7s ease-out forwards; }
@@ -515,6 +515,7 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 .wm .logo { width:28px; height:28px; }
 .progress { position:absolute; left:0; bottom:0; height:4px; background:var(--gold); width:0; z-index:60; }
 </style></head><body>
+<script src="produk/daftar.js"></script>
 <div id="stage">
   <div class="bg bg--dark on" data-k="dark"></div>
   <div class="bg bg--light" data-k="light"><i></i><i></i><i></i></div>
@@ -529,13 +530,22 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 <script>
 (() => {
   const stage = document.getElementById("stage");
+  // KECEPATAN: 1 = cepat seperti contoh; makin besar makin pelan.
+  const SLOW = 1.5;
   let scale = 1;
   const fit = () => { scale = Math.min(innerWidth / 1920, innerHeight / 1080); stage.style.transform = "translate(-50%,-50%) scale(" + scale + ")"; };
   addEventListener("resize", fit); fit();
   const ax = document.getElementById("ax");
+  // FOTO PRODUK TEMAN: isi produk/daftar.js -> otomatis menggantikan foto & nama & harga contoh.
+  const PROD = (window.PRODUK || []).filter((p) => p && p.foto);
+  PROD.slice(0, 3).forEach((p, k) => {
+    document.querySelectorAll('[data-slot="' + k + '"]').forEach((e) => { e.style.backgroundImage = "url('produk/" + encodeURI(p.foto) + "')"; e.style.backgroundSize = "cover"; e.style.backgroundPosition = "center"; });
+    if (p.nama) document.querySelectorAll('[data-sname="' + k + '"]').forEach((e) => { e.textContent = p.nama; });
+    if (p.harga) document.querySelectorAll('[data-sprice="' + k + '"]').forEach((e) => { e.textContent = p.harga; });
+  });
   const bgs = [...document.querySelectorAll(".bg")];
   const scenes = [...document.querySelectorAll(".scene")];
-  const starts = []; let acc = 0; scenes.forEach((s) => { starts.push(acc); acc += Number(s.dataset.d); });
+  const starts = []; let acc = 0; scenes.forEach((s) => { starts.push(acc); acc += Number(s.dataset.d) * SLOW; });
   const total = acc;
   const prog = document.getElementById("prog");
   const timers = [];
@@ -545,11 +555,11 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
   const spot = (el) => { const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect(); return [(r.left - s.left + r.width / 2) / scale, (r.top - s.top + r.height / 2) / scale]; };
 
   const run = (sc) => {
-    sc.querySelectorAll(".at[data-at]").forEach((e) => later(() => e.classList.add("show"), Number(e.dataset.at)));
-    sc.querySelectorAll(".typed[data-type]").forEach((e) => later(() => type(e, e.dataset.type, Number(e.dataset.speed || 40)), Number(e.dataset.at || 0)));
+    sc.querySelectorAll(".at[data-at]").forEach((e) => later(() => e.classList.add("show"), Number(e.dataset.at) * SLOW));
+    sc.querySelectorAll(".typed[data-type]").forEach((e) => later(() => type(e, e.dataset.type, Number(e.dataset.speed || 40) * SLOW), Number(e.dataset.at || 0) * SLOW));
     sc.querySelectorAll("[data-count]").forEach((e) => {
       const [a, b] = e.dataset.count.split(">").map(Number); e.textContent = a;
-      later(() => { const t0 = performance.now(); const step = () => { const k = Math.min(1, (performance.now() - t0) / 700); e.textContent = Math.round(a + (b - a) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); }; step(); }, Number(e.dataset.at || 0));
+      later(() => { const t0 = performance.now(); const step = () => { const k = Math.min(1, (performance.now() - t0) / 1000); e.textContent = Math.round(a + (b - a) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); }; step(); }, Number(e.dataset.at || 0) * SLOW);
     });
     sc.querySelectorAll(".hand").forEach((h) => {
       const steps = JSON.parse(h.dataset.steps);
@@ -558,13 +568,13 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
       h.style.transition = "none"; place(pos(steps[0][0])); void h.offsetWidth; h.style.transition = "";
       later(() => { h.style.opacity = "1"; }, 150);
       steps.slice(1).forEach(([target, ms, click]) => {
-        later(() => place(pos(target)), Math.max(200, ms - 750));
+        later(() => place(pos(target)), Math.max(250, ms * SLOW - 1000));
         if (click) later(() => {
           h.classList.add("press"); setTimeout(() => h.classList.remove("press"), 180);
           const r = document.createElement("div"); r.className = "rip"; r.style.left = h.style.left; r.style.top = h.style.top; sc.appendChild(r); setTimeout(() => r.remove(), 750);
           const el = sc.querySelector(target);
           if (el) { el.classList.add("hit"); setTimeout(() => el.classList.remove("hit"), 160); onClick(sc, el); }
-        }, ms);
+        }, ms * SLOW);
       });
     });
   };
@@ -593,7 +603,9 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
     if (!seq && scenes[i + 1]?.dataset.ax) ax.contentWindow?.postMessage({ ax: "play", seq: "orbit" }, "*");
     run(sc);
     tStart = performance.now() - starts[i];
-    timers.push(setTimeout(() => { i = (i + 1) % scenes.length; show(); }, Number(sc.dataset.d)));
+    timers.push(setTimeout(() => { i = (i + 1) % scenes.length; show(); }, Number(sc.dataset.d) * SLOW));
+    // animasi CSS ikut diperlambat sedikit
+    requestAnimationFrame(() => sc.getAnimations({ subtree: true }).forEach((a) => { a.playbackRate = 1 / Math.sqrt(SLOW); }));
   };
   const tick = (t) => { prog.style.width = (((t - tStart) % total) / total * 100) + "%"; requestAnimationFrame(tick); };
   requestAnimationFrame(tick);
@@ -609,5 +621,17 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 </script>
 </body></html>`;
 for (const n of used) copyFileSync(`${SHOTS}/${n}.jpg`, `${OUT}/ui/${n}.jpg`);
+// Folder foto produk teman (tidak pernah ditimpa saat film dibangun ulang).
+mkdirSync(`${OUT}/produk`, { recursive: true });
+if (!existsSync(`${OUT}/produk/daftar.js`)) writeFileSync(`${OUT}/produk/daftar.js`, `// DAFTAR PRODUK TEMAN UNTUK FILM PAMERAN
+// 1) Taruh foto produk (JPG/PNG/WEBP, sebaiknya persegi & latar rapi) di folder ini (docs/pameran/film/produk/).
+// 2) Tulis 3 produk di bawah: urutan 1 = kartu produk + keranjang, 2 & 3 = rekomendasi AI di obrolan (bersama produk 1).
+// 3) Simpan, lalu buka ulang index.html. Kosong = film memakai foto contoh Miloat.
+window.PRODUK = [
+  // { foto: "nama-file-foto.jpg", nama: "Nama Produk", harga: "Rp 25.000" },
+  // { foto: "foto-kedua.jpg", nama: "Produk Kedua", harga: "Rp 40.000" },
+  // { foto: "foto-ketiga.jpg", nama: "Produk Ketiga", harga: "Rp 18.000" },
+];
+`);
 writeFileSync(`${OUT}/index.html`, html);
 console.log("ok", S.length, "adegan,", (S.reduce((n, s) => n + Number(s.match(/data-d="(\d+)"/)[1]), 0) / 1000).toFixed(1), "detik,", used.size, "gambar");
