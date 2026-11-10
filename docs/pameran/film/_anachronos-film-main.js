@@ -88,7 +88,7 @@ function onState(state) {
 }
 
 engine = createEngine(stage, brands, { onState, onLabels: renderLabels });
-document.body.dataset.hud = "shown";
+document.body.dataset.hud = "hidden"; // film: panel bawah disembunyikan
 document.getElementById("axHudToggle").hidden = true;
 
 /* ---------- Kursor film ---------- */
@@ -138,46 +138,43 @@ async function ensureMall(t) {
 }
 
 const SEQ = {
+    // Putaran cepat di lapis mall.
     async orbit(t) {
-        document.body.classList.remove("fx-cine"); showCursor(false); hotName = null;
+        showCursor(false); hotName = null;
         await ensureMall(t);
     },
+    // Kursor pencet brand -> masuk neuron -> pencet organ.
     async dive(t) {
-        document.body.classList.remove("fx-cine"); hotName = null;
+        hotName = null;
         await ensureMall(t);
-        await wait(500, t); showCursor(true);
-        await aimAt("brand", "Aurum Jewelry", t, 2000);
-        ripple(); await wait(250, t);
-        engine.openBrand(brandBy("aurum")); hotName = null;
-        await wait(1000, t); showCursor(false);
-        await wait(2600, t); showCursor(true);
-        await aimAt("organ", "Konsultasi AI", t, 1700);
-        ripple(); await wait(250, t);
-        engine.openOrgan("chat"); hotName = null;
-        await wait(900, t); showCursor(false);
-    },
-    async organs(t) {
-        document.body.classList.remove("fx-cine"); hotName = null;
-        if (!engine.state.brand) { await ensureMall(t); engine.openBrand(brandBy("aurum")); await wait(2200, t); }
-        if (engine.state.level !== "brand") { engine.openBrand(engine.state.brand); await wait(2000, t); }
         showCursor(true);
-        await aimAt("organ", "Keranjang", t, 1400); ripple(); await wait(250, t);
-        engine.openOrgan("cart"); hotName = null; await wait(2300, t);
-        engine.openBrand(engine.state.brand); await wait(1900, t);
-        await aimAt("organ", "Produk", t, 1400); ripple(); await wait(250, t);
-        engine.openOrgan("product"); hotName = null; await wait(2300, t);
-        await aimAt("product", null, t, 1300); ripple(); await wait(250, t);
+        await aimAt("brand", "Aurum Jewelry", t, 1100);
+        ripple(); await wait(150, t);
+        engine.openBrand(brandBy("aurum")); hotName = null;
+        await wait(2100, t);
+        await aimAt("organ", "Konsultasi AI", t, 900);
+        ripple(); await wait(150, t);
+        engine.openOrgan("chat"); hotName = null;
+        await wait(700, t); showCursor(false);
+    },
+    // Organ lain -> produk.
+    async organs(t) {
+        hotName = null;
+        if (!engine.state.brand) { await ensureMall(t); engine.openBrand(brandBy("aurum")); await wait(1900, t); }
+        if (engine.state.level !== "brand") { engine.openBrand(engine.state.brand); await wait(1700, t); }
+        showCursor(true);
+        await aimAt("organ", "Produk", t, 900); ripple(); await wait(150, t);
+        engine.openOrgan("product"); hotName = null; await wait(1900, t);
+        await aimAt("product", null, t, 900); ripple(); await wait(150, t);
         const first = lastItems.find((item) => item.kind === "product");
         const product = engine.state.brand.products.find((p) => p.name === first?.name) || engine.state.brand.products[0];
         engine.openProduct(product); hotName = null;
-        await wait(900, t); showCursor(false);
+        await wait(700, t); showCursor(false);
     },
+    // Brand lain, lalu naik melihat seluruh otak.
     async cinema(t) {
         showCursor(false); hotName = null;
-        document.body.classList.add("fx-cine");
-        await ensureMall(t);
-        await wait(3000, t);
-        engine.openBrand(brandBy("noir")); await wait(4300, t);
+        engine.openBrand(brandBy("noir")); await wait(2600, t);
         engine.goMall();
     },
 };
