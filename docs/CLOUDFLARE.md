@@ -1,7 +1,7 @@
 # Web online lewat Cloudflare Pages
 
-Link utama tetap (mis. `https://kantoong.pages.dev`) dan selalu menampilkan versi terbaru.
-Setiap publish juga membuat link arsip per versi (`abc123.kantoong.pages.dev`) — boleh diabaikan.
+Link utama tetap `https://kantoong-dhy.pages.dev` dan selalu menampilkan versi terbaru.
+Setiap publish juga membuat link arsip per versi (`abc123.kantoong-dhy.pages.dev`) — boleh diabaikan.
 
 - Tampilan web = folder `dist/` (hasil `npm run build`).
 - Backend AI (chat + penerjemah) = `functions/api/[[path]].js`, memakai ulang `backend/ai-chat.js`,
@@ -16,7 +16,7 @@ Setiap publish juga membuat link arsip per versi (`abc123.kantoong.pages.dev`) �
 3. `npx wrangler pages secret put GEMINI_API_KEY --project-name kantoong`
    → tempel kunci Gemini dari `backend/.env` sendiri, Enter.
 4. Supabase › Authentication › URL Configuration › Redirect URLs: tambahkan
-   `https://kantoong.pages.dev/**` (agar link lupa password & login Google kembali ke web online).
+   `https://kantoong-dhy.pages.dev/**` (agar link lupa password & login Google kembali ke web online).
 
 ## Setiap mau publish
 - `npm run deploy` (build + unggah langsung dari laptop, TANPA push GitHub).
