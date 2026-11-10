@@ -171,7 +171,7 @@ describe("Tahap 6 — alur demo: offline & rating", async () => {
     it("rating 1 per struk; hanya supervisor/keuangan yang membaca", async () => {
         const { kasir, owner } = setup();
         await kasir.openShift({ outlet_id: "w", opening_cash: 0 });
-        const sale = await kasir.posCheckoutPro({ outlet_id: "w", channel: "take_away", lines: [{ product_id: "p1", qty: 1 }], payments: [{ method: "qris", amount: 20000 }] });
+        const sale = await kasir.posCheckoutPro({ outlet_id: "w", channel: "take_away", lines: [{ product_id: "p1", qty: 1 }], payments: [{ method: "tunai", amount: 50000 }] }); // tunai: aman walau promo jam hemat sedang berlaku
         await expect(kasir.rateSale(sale.id, 5)).rejects.toThrow(/tidak valid/);
         await kasir.rateSale(sale.id, 3);
         await kasir.rateSale(sale.id, 1);

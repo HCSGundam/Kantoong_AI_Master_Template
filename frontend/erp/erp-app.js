@@ -53,11 +53,12 @@ import * as cs from "./modules/cs.js";
 import * as marketing from "./modules/marketing.js";
 import * as crm from "./modules/crm.js";
 import * as brain from "./modules/brain.js";
+import * as analysis from "./modules/analysis.js";
 import * as storefront from "./modules/storefront.js";
 
 const RENDERERS = {
     workspace, cockpit, sales, team, catalog, approvals, org, inventory, pos, kitchen, cashcontrol, posreport, recipes, promos, finance, hr, payroll,
-    purchasing, logistics, cs, marketing, crm, brain, storefront,
+    purchasing, logistics, cs, marketing, crm, brain, analysis, storefront,
 };
 const DEMO_KEY = "kantoong_erp_demo_persona";
 
@@ -265,6 +266,17 @@ function start(adapter, member, userId = null) {
     app.me = member;
     // Paket (Pro/Free): Free hanya katalog, etalase, akun & tim (js/plan.js).
     app.modules = modulesFor(member, getPlan().erpModules);
+    // Add-on (mis. Anachronos Analysis) dibaca dari pusat; menu ikut muncul begitu aktif.
+    Promise.resolve(adapter.listAddons?.()).catch(() => []).then((addons) => {
+        if (app.data !== adapter) return;
+        member.addons = Array.isArray(addons) ? addons : [];
+        const next = modulesFor(member, getPlan().erpModules);
+        if (next.length !== app.modules.length) {
+            app.modules = next;
+            renderTopbar();
+            renderPage();
+        }
+    });
 
     $("loginView").hidden = true;
     $("appView").hidden = false;

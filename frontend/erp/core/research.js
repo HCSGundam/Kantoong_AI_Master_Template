@@ -25,6 +25,28 @@ export const NEEDS = Object.freeze({
     rasa: { label: "Cari rasa / varian", words: ["rasa", "varian", "manis", "pahit", "segar", "creamy", "baru"] },
 });
 
+/**
+ * Keberatan / alasan TIDAK beli yang diucapkan pembeli ke AI (kata umum saja,
+ * tanpa isi chat). Dipakai Anachronos Analysis › "Alasan tidak beli".
+ */
+export const OBJECTIONS = Object.freeze({
+    harga: { label: "Kemahalan", words: ["mahal", "kemahalan", "kemahalan", "overprice", "kurangin", "nego", "potongan"] },
+    ukuran: { label: "Ukuran tidak cocok / tidak ada", words: ["ukuran", "size", "kekecilan", "kebesaran", "sempit", "longgar", "kecil", "besar"] },
+    ongkir: { label: "Ongkir mahal", words: ["ongkir", "ongkos", "pengiriman", "kirim"] },
+    stok: { label: "Stok habis", words: ["habis", "stok", "kosong", "restok", "ready"] },
+    waktu: { label: "Pengiriman lama", words: ["lama", "telat", "lambat", "kapan", "sampai"] },
+    ragu: { label: "Ragu kualitas", words: ["ori", "asli", "kualitas", "bagus", "awet", "garansi", "palsu", "review"] },
+    warna: { label: "Warna / model tidak ada", words: ["warna", "model", "motif", "varian"] },
+});
+
+const OBJECTION_WORDS = new Map(
+    Object.entries(OBJECTIONS).flatMap(([key, o]) => o.words.map((word) => [word, key]))
+);
+
+export function objectionOf(word) {
+    return OBJECTION_WORDS.get(word) || null;
+}
+
 const NEED_WORDS = new Map(
     Object.entries(NEEDS).flatMap(([key, need]) => need.words.map((word) => [word, key]))
 );
@@ -52,7 +74,7 @@ export function extractKeywords(text, vocabulary = new Set()) {
         // Sinonim ejaan umum: "cokelat" = "coklat".
         const word = raw === "cokelat" ? "coklat" : raw;
         if (word.length < 3 || STOP.has(word)) continue;
-        if ((vocabulary.has(word) || NEED_WORDS.has(word)) && !found.includes(word)) found.push(word);
+        if ((vocabulary.has(word) || NEED_WORDS.has(word) || OBJECTION_WORDS.has(word)) && !found.includes(word)) found.push(word);
         if (found.length === 5) break;
     }
     return found;
@@ -115,7 +137,7 @@ export function summarizeResearch(events, products = [], { days = 30, now = new 
 
     const words = asks.flatMap((event) => event.keywords || []);
     const needs = top(countBy(words, needOf), 6).map(([key, count]) => ({ key, label: NEEDS[key].label, count }));
-    const keywords = top(countBy(words.filter((word) => !needOf(word)), (word) => word), 12)
+    const keywords = top(countBy(words.filter((word) => !needOf(word) && !objectionOf(word)), (word) => word), 12)
         .map(([word, count]) => ({ word, count }));
 
     const hours = Array.from({ length: 24 }, () => 0);

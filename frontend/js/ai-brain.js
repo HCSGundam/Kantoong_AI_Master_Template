@@ -1524,7 +1524,8 @@ async function requestRemoteAI(message, requestId) {
             products,
             action: typeof data.action === "string"
                 ? data.action
-                : null
+                : null,
+            target: typeof data.target === "string" ? data.target.slice(0, 60) : ""
         };
     } finally {
         clearTimeout(timeoutId);
@@ -1581,7 +1582,10 @@ function normalizeAIResult(result) {
                 .slice(0, AI_CONFIG.maxProductsInReply)
             : [],
 
-        action: result.action || null
+        action: result.action || null,
+
+        // Sub-fitur dashboard yang diminta AI (diperiksa lagi di performResultAction).
+        target: typeof result.target === "string" ? result.target.slice(0, 60) : ""
     };
 }
 
@@ -1639,6 +1643,15 @@ function performResultAction(action, result) {
                 "ai-recommendation"
             );
             break;
+
+        case "open-feature": {
+            // Hanya target yang memang ada di daftar ruang fitur dashboard.
+            const allowed = window.KantoongAssistantContext?.targets?.() ?? [];
+            if (result.target && allowed.includes(result.target)) {
+                window.dispatchEvent(new CustomEvent("kantoong:ai-open-feature", { detail: { target: result.target } }));
+            }
+            break;
+        }
 
         default:
             /*

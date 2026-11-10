@@ -1,15 +1,17 @@
 /**
  * KANTOONG — FITUR: Riwayat Chat AI
  * File: frontend/dashboard-user/features/ai-chat-history/feature.js
- * Ringkasan kartu: home/home-glance.js · Halaman detail: home/details.js
+ * Ruang fitur (sub-fitur + laporan ke AI): home/rooms/self.js
  */
 
 import { homeFeature } from "../../home/define.js";
-import { mountChats } from "../../home/details.js";
+import { mountRoom } from "../../home/room.js";
+import { aiChatHistory } from "../../home/rooms/self.js";
 
 export default homeFeature({
     id: "ai-chat-history",
     name: "Riwayat Chat AI",
-    order: 80,
-    mount: mountChats,
+    order: 30,
+    defaultActive: true,
+    mount: (root, context) => mountRoom(root, aiChatHistory, context),
 });

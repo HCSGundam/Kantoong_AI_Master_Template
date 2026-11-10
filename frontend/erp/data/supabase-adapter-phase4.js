@@ -28,6 +28,34 @@ export function phase4SupabaseMethods() {
             return data || [];
         },
 
+        /** Add-on aktif untuk brand ini (tabel brand_addons, db/analysis.sql; diisi PUSAT, bukan dari web). */
+        async listAddons() {
+            const today = new Date().toISOString().slice(0, 10);
+            const { data, error } = await supabase.from("brand_addons").select("addon, until").eq("business_id", CFG.business_id).eq("active", true);
+            if (error) return [];
+            return (data || []).filter((row) => !row.until || row.until >= today).map((row) => row.addon);
+        },
+
+        /** Data Anachronos Analysis. RLS (db/analysis.sql) menyaring siapa yang boleh membaca. */
+        async analysisData({ days = 30 } = {}) {
+            const since = new Date(Date.now() - days * 86400000).toISOString();
+            const safe = async (query) => {
+                const { data, error } = await query;
+                return error ? [] : data || [];
+            };
+            const [events, lost] = await Promise.all([
+                safe(supabase.from("ai_events").select("at, business_id, session_key, kind, product_id, product_name, keywords, surface").gte("at", since).order("at", { ascending: false }).limit(5000)),
+                safe(supabase.from("pos_lost_sales").select("reason, qty, value, created_at").gte("created_at", since).limit(5000)),
+            ]);
+            let orders = [];
+            try {
+                orders = (await this.listOrders?.({ since })) ?? [];
+            } catch {
+                orders = [];
+            }
+            return { events, lost, orders };
+        },
+
         async researchBrands() {
             return [{ id: CFG.business_id, name: CFG.app_name || "Toko" }];
         },

@@ -1,15 +1,17 @@
 /**
  * KANTOONG — FITUR: Wishlist
  * File: frontend/dashboard-user/features/wishlist/feature.js
- * Ringkasan kartu: home/home-glance.js · Halaman detail: home/details.js
+ * Ruang fitur (sub-fitur + laporan ke AI): home/rooms/shopping.js
  */
 
 import { homeFeature } from "../../home/define.js";
-import { mountWishlist } from "../../home/details.js";
+import { mountRoom } from "../../home/room.js";
+import { wishlist } from "../../home/rooms/shopping.js";
 
 export default homeFeature({
     id: "wishlist",
     name: "Wishlist",
     order: 40,
-    mount: mountWishlist,
+    defaultActive: true,
+    mount: (root, context) => mountRoom(root, wishlist, context),
 });

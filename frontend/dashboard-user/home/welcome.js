@@ -10,6 +10,7 @@ import { el, icon } from "./home-icons.js";
 import { brandInfo, getCart, getWishlistIds, isActiveOrder, loadMyOrders, shortRupiah } from "./home-data.js";
 import { supabase } from "../../js/supabase-client.js";
 import { getPlan } from "../../js/plan.js";
+import { renderSignals } from "./signals.js";
 
 function greeting(hour) {
     if (hour < 4) return "Selamat malam";
@@ -80,4 +81,15 @@ export async function renderWelcome(section) {
     section.querySelector(".bx-hero__content")?.remove();
     section.querySelector(".bx-hero__glow") ?? section.append(el("span", "bx-hero__glow"));
     section.append(content);
+    // Sinyal "Mungkin kamu butuh ini" (hanya bila pengguna mengizinkan).
+    renderSignals(content);
+}
+
+if (typeof window !== "undefined") {
+    const redraw = () => {
+        const host = document.querySelector(".bx-hero__content");
+        if (host) renderSignals(host);
+    };
+    window.addEventListener("kantoong:ai-consent", redraw);
+    window.addEventListener("kantoong:me-changed", () => setTimeout(redraw, 200));
 }

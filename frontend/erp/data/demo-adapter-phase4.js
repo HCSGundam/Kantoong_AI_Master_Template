@@ -9,6 +9,7 @@
 import CFG from "../../client-config.js";
 import { withinDays } from "../core/research.js";
 import { demoAiSession } from "./demo-seed-phase4.js";
+import { ADDON_ID, viewFor } from "../core/analysis.js";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -19,6 +20,22 @@ export function phase4Methods({ db: getDb, save, me }) {
         async listAiEvents({ days = 30 } = {}) {
             if (!seesResearch()) return [];
             return clone(withinDays(getDb().ai_events || [], days));
+        },
+
+        /** Add-on yang dibeli brand. Demo/template: Anachronos Analysis aktif untuk presentasi. */
+        async listAddons() {
+            return CFG.erp_demo === true || (CFG.addons ?? []).includes(ADDON_ID) ? [ADDON_ID] : [...(CFG.addons ?? [])];
+        },
+
+        /** Data Anachronos Analysis — hanya divisi yang berhadapan dengan pembeli + owner/manajer. */
+        async analysisData({ days = 30 } = {}) {
+            if (!viewFor(me())) return { events: [], lost: [], orders: [] };
+            const db = getDb();
+            return {
+                events: clone(withinDays(db.ai_events || [], days)),
+                lost: clone(db.pos_lost || []),
+                orders: clone(db.orders || []),
+            };
         },
 
         async researchBrands() {

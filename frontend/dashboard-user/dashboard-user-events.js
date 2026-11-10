@@ -1393,6 +1393,7 @@ function handleKeyDown(event) {
 }
 
 function handleGlobalPointerUp(event) {
+    if (!(event.target instanceof Node)) return;
     if (!root?.contains(event.target) && pointerSession) {
         handlePointerUp(event);
     }

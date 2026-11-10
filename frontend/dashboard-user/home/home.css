@@ -2970,3 +2970,182 @@ html[data-theme="dark"]:has(> body .dashboard-user) {
     text-decoration: underline;
 }
 .bx-cat2__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* =========================================================
+   PANEL CARI FITUR & RIWAYAT AKTIVITAS — gaya gading/tinta/emas
+   (menimpa gaya lama di dashboard-user.css)
+   ========================================================= */
+.dashboard-user .dashboard-search-suggestions,
+.dashboard-user .dashboard-history {
+    padding: 10px;
+    color: var(--bx-text);
+    background: color-mix(in srgb, var(--bx-card) 94%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    backdrop-filter: blur(18px) saturate(1.2);
+    border: 1px solid var(--bx-line);
+    border-radius: 26px;
+    box-shadow: var(--bx-shadow-lift);
+    animation: bx-pop-in .26s var(--bx-ease);
+}
+
+@keyframes bx-pop-in {
+    from { opacity: 0; transform: translateY(-6px) scale(.985); }
+}
+
+.dashboard-user .dashboard-search-suggestions__label {
+    padding: 8px 12px 6px;
+    color: var(--bx-gold);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.dashboard-user .dashboard-search-suggestion,
+.dashboard-user .dashboard-history__item {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 12px;
+    color: var(--bx-text);
+    background: none;
+    border: 0;
+    border-radius: 18px;
+    transition: background .18s ease, transform .18s var(--bx-ease);
+}
+
+.dashboard-user .dashboard-history__item + .dashboard-history__item {
+    border-top: 0;
+}
+
+.dashboard-user .dashboard-search-suggestion:hover,
+.dashboard-user .dashboard-search-suggestion[aria-selected="true"],
+.dashboard-user .dashboard-history__item:hover {
+    background: var(--bx-card-2);
+    transform: translateX(2px);
+}
+
+.dashboard-user .dashboard-search-suggestion__icon,
+.dashboard-user .dashboard-history__item-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    color: var(--bx-gold);
+    background: linear-gradient(145deg, var(--bx-card-2), var(--bx-card));
+    border: 1px solid var(--bx-line);
+    border-radius: 15px;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 50%);
+    font-size: 0;
+}
+
+.dashboard-user .dashboard-search-suggestion__icon .bx-icon,
+.dashboard-user .dashboard-history__item-icon .bx-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.dashboard-user .dashboard-search-suggestion__title,
+.dashboard-user .dashboard-history__item-title {
+    font-size: 14.5px;
+    font-weight: 500;
+}
+
+.dashboard-user .dashboard-search-suggestion__description,
+.dashboard-user .dashboard-history__item-time {
+    overflow: hidden;
+    color: var(--bx-muted);
+    font-size: 12.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dashboard-user .dashboard-search-suggestion__arrow {
+    color: var(--bx-gold);
+    opacity: .6;
+}
+
+.dashboard-user .dashboard-history {
+    width: min(100%, 460px);
+}
+
+.dashboard-user .dashboard-history__header {
+    align-items: center;
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid var(--bx-line);
+}
+
+.dashboard-user .dashboard-history__header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.dashboard-user .dashboard-history__header p {
+    margin: 2px 0 0;
+    color: var(--bx-muted);
+    font-size: 12.5px;
+}
+
+.dashboard-user .dashboard-history__list {
+    display: grid;
+    gap: 2px;
+    padding: 8px 0;
+}
+
+.dashboard-user .dashboard-history__item-remove {
+    width: 32px;
+    height: 32px;
+    color: var(--bx-muted);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity .18s ease;
+}
+
+.dashboard-user .dashboard-history__item:hover .dashboard-history__item-remove,
+.dashboard-user .dashboard-history__item-remove:focus-visible {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .dashboard-user .dashboard-history__item-remove { opacity: .7; }
+}
+
+.dashboard-user .dashboard-history__privacy-note,
+.dashboard-user .dashboard-history__empty {
+    padding: 8px 12px;
+    color: var(--bx-muted);
+    font-size: 11.5px;
+}
+
+.dashboard-user #dashboardClearHistoryButton {
+    color: var(--bx-text);
+    font-size: 12.5px;
+    text-decoration: underline;
+    text-decoration-color: var(--bx-gold);
+    text-underline-offset: 4px;
+}
+
+/* Kartu Pengaturan: 3 ringkasan + tombol cepat */
+.bx-g__settings { display: grid; gap: 10px; margin-top: auto; }
+.bx-g__rows { display: grid; gap: 4px; margin: 0; font-size: 12.5px; }
+.bx-g__rows > div { display: flex; justify-content: space-between; gap: 10px; min-width: 0; }
+.bx-g__rows dt { color: var(--bx-muted); }
+.bx-g__rows dd { margin: 0; overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.bx-quick {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: 6px;
+    padding: 7px 14px;
+    color: var(--bx-card);
+    background: var(--bx-ink);
+    border: 0;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.bx-quick .bx-icon { width: 14px; height: 14px; color: var(--bx-gold-soft); }

@@ -123,8 +123,9 @@ describe("katalog: pencarian pintar", () => {
 });
 
 describe("31 fitur sesuai Blueprint Vol.7", () => {
-    it("tepat 31, ID unik", () => {
-        expect(HUB_FEATURES).toHaveLength(31);
-        expect(new Set(HUB_FEATURES.map((f) => f.id)).size).toBe(31);
+    it("31 fitur Blueprint + Kartu Diriku, ID unik", () => {
+        expect(HUB_FEATURES).toHaveLength(32);
+        expect(new Set(HUB_FEATURES.map((f) => f.id)).size).toBe(32);
+        expect(HUB_FEATURES.some((f) => f.id === "my-card")).toBe(true);
     });
 });

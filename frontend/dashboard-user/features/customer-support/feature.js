@@ -1,15 +1,17 @@
 /**
  * KANTOONG — FITUR: Customer Service
  * File: frontend/dashboard-user/features/customer-support/feature.js
- * Ringkasan kartu: home/home-glance.js · Halaman detail: home/details.js
+ * Ruang fitur (sub-fitur + laporan ke AI): home/rooms/self.js
  */
 
 import { homeFeature } from "../../home/define.js";
-import { mountSupport } from "../../home/details.js";
+import { mountRoom } from "../../home/room.js";
+import { customerSupport } from "../../home/rooms/self.js";
 
 export default homeFeature({
     id: "customer-support",
     name: "Customer Service",
-    order: 110,
-    mount: mountSupport,
+    order: 35,
+    defaultActive: true,
+    mount: (root, context) => mountRoom(root, customerSupport, context),
 });

@@ -181,7 +181,7 @@ function steps(status) {
     return el("ol", "bx-timeline", ORDER_STEPS.map((s, i) => el("li", i < at ? "is-done" : i === at ? "is-now" : "", el("span", "bx-timeline__dot"), el("span", "", ORDER_LABEL[s]))));
 }
 
-function orderCard(o, { detail = false } = {}) {
+export function orderCard(o, { detail = false } = {}) {
     const date = new Date(o.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
     const card = el("article", `bx-order bx-order--${o.status}`,
         el("header", "bx-order__head",

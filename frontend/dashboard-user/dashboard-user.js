@@ -30,8 +30,12 @@ import { getStorefront, onStorefrontChange, startStorefrontSync } from "../js/st
 import { applyTheme, setChoice, themeFor } from "../js/theme.js";
 import { featureAllowed } from "../js/plan.js";
 import { createShelf } from "./home/shelf.js";
+import { icon as featureIcon } from "./home/home-icons.js";
+import { startAiBridge } from "./home/ai-bridge.js";
+import { ROOMS } from "./home/rooms/index.js";
 import { renderWelcome } from "./home/welcome.js";
 import "./home/home.css";
+import "./home/room.css";
 import {
     DASHBOARD_USER_CONFIG,
     getDashboardGridColumns,
@@ -2747,7 +2751,8 @@ function renderSearchSuggestions(features, query) {
         }
 
         if (icon) {
-            icon.textContent = feature.icon || "□";
+            // Ikon garis asli tiap fitur (dulu jatuh ke kotak "□").
+            icon.replaceChildren(featureIcon(feature.id, "bx-icon"));
         }
 
         if (title) {
@@ -2771,6 +2776,9 @@ function renderSearchSuggestions(features, query) {
             query.length >= CONFIG.search.minimumQueryLength;
 
         suggestions.hidden = !shouldShow;
+
+        // Satu panel saja: saran cari terbuka = riwayat ditutup.
+        if (shouldShow) toggleNavigationHistory(false);
 
         if (state.elements.suggestionsLabel) {
             state.elements.suggestionsLabel.hidden =
@@ -2962,7 +2970,7 @@ function createHistoryItem(entry) {
     item.dataset.historyId = entry.id;
 
     if (icon) {
-        icon.textContent = getHistoryIcon(entry.type);
+        icon.replaceChildren(featureIcon(entry.featureId || getHistoryIcon(entry.type), "bx-icon"));
     }
 
     if (title) {
@@ -2993,14 +3001,14 @@ function createHistoryItem(entry) {
 
 function getHistoryIcon(type) {
     const icons = {
-        "feature-open": "↗",
-        search: "⌕",
-        "feature-hub-open": "+",
-        "dashboard-open": "⌂",
-        "layout-edit": "▦",
+        "feature-open": "arrow",
+        search: "search",
+        "feature-hub-open": "plus",
+        "dashboard-open": "grid",
+        "layout-edit": "grid",
     };
 
-    return icons[type] ?? "•";
+    return icons[type] ?? "sparkle";
 }
 
 
@@ -3083,6 +3091,12 @@ export function toggleNavigationHistory(force) {
         : panel.hidden;
 
     panel.hidden = !shouldOpen;
+
+    // Satu panel saja: riwayat terbuka = saran cari ditutup.
+    if (shouldOpen && state.elements.searchSuggestions) {
+        state.elements.searchSuggestions.hidden = true;
+        state.elements.searchInput?.setAttribute("aria-expanded", "false");
+    }
 
     if (state.elements.historyButton) {
         state.elements.historyButton.setAttribute(
@@ -3702,3 +3716,35 @@ export default {
 
     setError: setDashboardError,
 };
+
+/* ============================================================
+   PANEL MENGAMBANG: tutup saat klik di luar (saran cari & riwayat)
+   ============================================================ */
+if (typeof document !== "undefined") {
+    document.addEventListener("pointerdown", (event) => {
+        const target = event.target instanceof Node ? event.target : null;
+        if (!target) return;
+        const suggestions = state.elements.searchSuggestions;
+        const search = state.elements.searchInput?.closest("form");
+        if (suggestions && !suggestions.hidden && !suggestions.contains(target) && !search?.contains(target)) {
+            suggestions.hidden = true;
+            state.elements.searchInput?.setAttribute("aria-expanded", "false");
+        }
+        const history = state.elements.historyPanel;
+        const historyButton = state.elements.historyButton;
+        if (history && !history.hidden && !history.contains(target) && !historyButton?.contains(target)) {
+            toggleNavigationHistory(false);
+        }
+    });
+}
+
+
+/* ============================================================
+   JEMBATAN FITUR ↔ ASISTEN AI (laporan ruang + izin sekali + aksi buka fitur)
+   ============================================================ */
+if (typeof window !== "undefined" && !window.__kcAiBridge) {
+    window.__kcAiBridge = true;
+    const start = () => startAiBridge(ROOMS);
+    if (document.readyState === "complete") setTimeout(start, 400);
+    else window.addEventListener("load", () => setTimeout(start, 400), { once: true });
+}

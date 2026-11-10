@@ -1306,6 +1306,8 @@ function initChatSheet() {
                 : { name: file.name, type: file.type, size: file.size })),
 
         attachProduct: (product) => attachProduct(product),
+        // Lampirkan foto/berkas ke kotak ketik (TIDAK mengirim pesan; pengguna yang menekan kirim).
+        attachFiles: (files) => addFiles([...(files ?? [])]),
 
         takeAttachments() {
             const meta = this.peekAttachments();

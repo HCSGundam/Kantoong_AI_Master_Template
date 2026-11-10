@@ -97,5 +97,9 @@ export function assistantContext() {
         page_title: String(document.title || "").slice(0, 80),
         // Halaman/fitur yang sedang dibuka saat pesan dikirim (bukan saat asisten dipasang).
         page: currentPage(),
+        // Dashboard user: ringkasan fitur pribadi — HANYA bila pengguna mengizinkan (js/ai-consent.js).
+        dashboard_state: typeof ctx.state === "function" ? String(ctx.state() || "").slice(0, 2500) : "",
+        // Sub-fitur yang boleh dibuka AI (daftar tetap dari ruang fitur).
+        targets: typeof ctx.targets === "function" ? ctx.targets().slice(0, 120).map((t) => String(t).slice(0, 60)) : [],
     };
 }

@@ -176,6 +176,15 @@ export const MODULES = Object.freeze([
         allow: (member) => member.level >= 5,
     },
     {
+        key: "analysis",
+        label: "Anachronos Analysis",
+        hint: "Add-on: corong belanja, kebutuhan & alasan tidak beli",
+        icon: "M4 19V5M4 19h16M8 15l3-4 3 2 5-6",
+        // Add-on berbayar (diaktifkan pusat). Owner/manajer + divisi yang berhadapan dengan pembeli.
+        allow: (member) => (member.addons ?? []).includes("analysis")
+            && (member.level >= 4 || hasRole(member, "sales", "marketing", "cs")),
+    },
+    {
         key: "org",
         label: "Organisasi & Akses",
         hint: "Divisi, tim, jabatan & hak akses",

@@ -27,6 +27,9 @@ import {
     shortRupiah,
 } from "./home-data.js";
 import { supabase } from "../../js/supabase-client.js";
+import { CHOICES, readPrefs, savePrefs } from "../../js/theme.js";
+import { LANGUAGES, activeLang } from "../../js/i18n.js";
+import { consentLabel } from "../../js/ai-consent.js";
 
 /** Tone kartu: light (gading), ink (tinta gelap), gold. */
 export const TONES = {
@@ -238,13 +241,31 @@ const RENDER = {
         }));
     },
 
-    settings(slot, { dashboardApi } = {}) {
-        const dark = dashboardApi?.getTheme?.() === "dark";
-        fill(slot, frame({
-            visual: el("span", `bx-toggle${dark ? " is-on" : ""}`, el("span")),
-            value: dark ? "Tema gelap" : "Tema terang",
-            note: "Tampilan & privasi",
-        }));
+    settings(slot) {
+        // Ringkasan 3 hal penting + tombol cepat yang benar-benar berfungsi.
+        const draw = () => {
+            const prefs = readPrefs();
+            const themeId = prefs.mode === "all" ? prefs.all : "per-area";
+            const themeLabel = themeId === "per-area" ? "Per halaman" : (CHOICES.find((c) => c.id === themeId)?.label ?? "");
+            const lang = LANGUAGES.find((l) => l.id === activeLang())?.label ?? "Bahasa Indonesia";
+            const quick = el("button", "bx-quick", icon("sparkle"), "Ganti tema");
+            quick.type = "button";
+            quick.setAttribute("aria-label", "Ganti tema terang / gelap / ikuti perangkat");
+            quick.addEventListener("click", (event) => {
+                event.stopPropagation();
+                const order = ["light", "dark", "system"];
+                const next = order[(order.indexOf(prefs.all) + 1) % order.length];
+                savePrefs({ ...prefs, mode: "all", all: next });
+                draw();
+            });
+            quick.addEventListener("pointerdown", (event) => event.stopPropagation());
+            const rows = el("dl", "bx-g__rows",
+                el("div", "", el("dt", "", "Bahasa"), el("dd", "", lang)),
+                el("div", "", el("dt", "", "Tema"), el("dd", "", themeLabel)),
+                el("div", "", el("dt", "", "Izin AI"), el("dd", "", consentLabel())));
+            fill(slot, frame({ value: "Pengaturan kamu", note: "Tampilan, bahasa & privasi", extra: el("div", "bx-g__settings", rows, quick) }));
+        };
+        draw();
     },
 
     "transaction-history"(slot) {

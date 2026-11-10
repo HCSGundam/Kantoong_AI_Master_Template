@@ -31,6 +31,9 @@ const QUESTIONS = [
     ["promo"], ["oleh"], ["rasa", "baru"], ["acara", "banyak"], ["milktea"], ["segar"], ["cepat"],
 ];
 
+// Keberatan umum yang diucapkan pembeli (lihat OBJECTIONS di erp/core/research.js).
+const OBJECTION_SAMPLES = ["mahal", "mahal", "ongkir", "habis", "ukuran", "lama", "ori", "kemahalan", "varian"];
+
 const pick = (random, list) => list[Math.floor(random() * list.length)];
 
 function weightedHour(random) {
@@ -71,6 +74,8 @@ export function demoAiSession(random, products, { at, sessionKey, businessId = C
 
     const buyChance = chosen.id === favourite.id ? 0.08 : 0.38;
     if (random() < buyChance) add("cart", chosen, 6);
+    // Yang tidak jadi beli kadang menyebut keberatannya ke AI (contoh untuk Anachronos Analysis).
+    else if (random() < 0.45) add("ask", null, 7, [pick(random, OBJECTION_SAMPLES)]);
 
     return events;
 }

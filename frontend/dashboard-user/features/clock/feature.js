@@ -1,15 +1,17 @@
 /**
- * KANTOONG — FITUR: Jam
+ * KANTOONG — FITUR: Hitung Mundur
  * File: frontend/dashboard-user/features/clock/feature.js
- * Ringkasan kartu: home/home-glance.js · Halaman detail: home/details.js
+ * Ruang fitur (sub-fitur + laporan ke AI): home/rooms/time.js
  */
 
 import { homeFeature } from "../../home/define.js";
-import { mountClock } from "../../home/details.js";
+import { mountRoom } from "../../home/room.js";
+import { clock } from "../../home/rooms/time.js";
 
 export default homeFeature({
     id: "clock",
-    name: "Jam",
-    order: 90,
-    mount: mountClock,
+    name: "Hitung Mundur",
+    order: 52,
+    defaultActive: true,
+    mount: (root, context) => mountRoom(root, clock, context),
 });

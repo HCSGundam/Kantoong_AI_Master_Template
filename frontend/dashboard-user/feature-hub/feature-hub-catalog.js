@@ -2,7 +2,7 @@
  * KANTOONG CORE — FEATURE HUB: KATALOG
  * File: frontend/dashboard-user/feature-hub/feature-hub-catalog.js
  *
- * Daftar 31 fitur KANTOONG Core (Blueprint Vol.7 hal. 185-187) beserta
+ * Daftar fitur KANTOONG Core (31 Blueprint + Kartu Diriku) (Blueprint Vol.7 hal. 185-187) beserta
  * kontrak klien.
  *
  * ATURAN MAIN:
@@ -52,6 +52,9 @@ export const HUB_CATEGORIES = Object.freeze([
  *       "addon"   = di luar paket (biaya tambahan sesuai kontrak).
  */
 export const HUB_FEATURES = Object.freeze([
+    { id: "my-card", title: "Kartu Diriku", category: "account", tier: "package",
+      description: "Yang AI pahami tentangmu, paspor ukuran & hapus data.",
+      keywords: ["kartu diriku", "selera", "ukuran", "privasi", "hapus data", "izin", "memori", "profil"] },
     { id: "profile", title: "Profil", category: "account", tier: "package",
       description: "Avatar, nama, dan sapaan personal.",
       keywords: ["profil", "akun", "identitas", "nama", "email", "login", "masuk"] },
@@ -130,9 +133,9 @@ export const HUB_FEATURES = Object.freeze([
     { id: "queue-management", title: "Antrean", category: "venue", tier: "addon",
       description: "Nomor antreanmu dan perkiraan giliran.",
       keywords: ["antrean", "antri", "nomor", "giliran"] },
-    { id: "clock", title: "Jam", category: "media", tier: "package",
-      description: "Jam dan tanggal hari ini.",
-      keywords: ["jam", "waktu", "tanggal", "clock"] },
+    { id: "clock", title: "Hitung Mundur", category: "insights", tier: "package",
+      description: "Paket, acara, voucher & takeaway yang sedang berdetak.",
+      keywords: ["jam", "waktu", "hitung mundur", "countdown", "timer", "clock"] },
     { id: "music-player", title: "Musik", category: "media", tier: "addon",
       description: "Lagu yang sedang diputar toko.",
       keywords: ["musik", "lagu", "playlist", "music"] },
