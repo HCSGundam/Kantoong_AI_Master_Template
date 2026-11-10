@@ -3948,10 +3948,17 @@ function renderFooter() {
 
   const grid = makeElement("div", "kc-footer__grid");
   grid.append(brandCol, contactCol, placeCol, infoCol);
-  // Kredit pembuat platform (logo menyusul — teks dulu).
+  // Kredit pembuat platform: logo resmi Kantoong (simbol kecil) + nama.
   const credit = makeElement("div", "kc-footer__credit");
   credit.setAttribute("translate", "no");
-  credit.append(makeElement("span", "kc-footer__credit-by", "Dibuat oleh"), makeElement("strong", "kc-footer__credit-name", "KANTOONG KENZO AI"));
+  const creditLogo = makeElement("img", "kc-footer__credit-logo");
+  creditLogo.src = "/brand/kantoong-simbol-128.webp";
+  creditLogo.alt = "Logo Kantoong";
+  creditLogo.width = 22;
+  creditLogo.height = 19;
+  creditLogo.decoding = "async";
+  creditLogo.addEventListener("error", () => creditLogo.remove(), { once: true });
+  credit.append(makeElement("span", "kc-footer__credit-by", "Dibuat oleh"), creditLogo, makeElement("strong", "kc-footer__credit-name", "KANTOONG KENZO AI"));
   root.replaceChildren(grid, bottom, credit);
 
   // Data terstruktur toko untuk Google & mesin AI (GEO).
