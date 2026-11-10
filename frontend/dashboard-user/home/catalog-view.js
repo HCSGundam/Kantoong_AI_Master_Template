@@ -44,6 +44,9 @@ export function isFilterActive(f) {
 
 /* ---------- Kartu produk (selalu ada bintang) ---------- */
 
+// Teks aman: null/undefined/"null" tidak pernah tampil sebagai tulisan "null".
+const txt = (v) => (v == null || String(v).trim().toLowerCase() === "null" ? "" : String(v));
+
 export function productTile(p, { onOpen } = {}) {
     const tile = el("article", "bx-tile");
     const open = el("button", "bx-tile__open");
@@ -71,8 +74,8 @@ export function productTile(p, { onOpen } = {}) {
 
     open.append(
         img,
-        el("span", "bx-tile__name", p.name),
-        p.spec_line ? el("span", "bx-tile__spec", p.spec_line) : null,
+        el("span", "bx-tile__name", txt(p.name) || "Produk"),
+        txt(p.spec_line) ? el("span", "bx-tile__spec", txt(p.spec_line)) : null,
         el("span", "bx-tile__price", getPlan().industry === "properti" ? bigPrice(now) : rupiah(now), was > now ? el("s", "", rupiah(was)) : null),
         el("span", "bx-tile__meta", stars, el("span", "bx-tile__dot", "·"), `${Number(p.sales_count) || 0} terjual`),
     );
@@ -187,7 +190,7 @@ export function renderCatalog(root, options) {
     const input = document.createElement("input");
     input.type = "search";
     input.className = "bx-cat__input";
-    input.placeholder = "Cari produk, atau tulis: “sepatu hitam di bawah 500rb”";
+    input.placeholder = "Cari apa aja, misal: “sepatu hitam di bawah 500rb”";
     input.value = st.query;
     input.setAttribute("aria-label", "Cari produk");
     const suggestBox = el("ul", "bx-suggest");

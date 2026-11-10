@@ -132,12 +132,40 @@ export function getChatSessions() {
 
 let ordersPromise = null;
 
+// Salinan pesanan TERAKHIR di perangkat pemiliknya (untuk saat sinyal hilang).
+// Dihapus otomatis saat keluar akun & lewat "Hapus data saya".
+const ORDERS_CACHE = `kantoong:me:${BID}:orders-cache`;
+const readCache = () => {
+    try {
+        const v = JSON.parse(localStorage.getItem(ORDERS_CACHE) || "null");
+        return v && Array.isArray(v.orders) ? v : null;
+    } catch {
+        return null;
+    }
+};
+const writeCache = (orders) => {
+    try {
+        if (orders) localStorage.setItem(ORDERS_CACHE, JSON.stringify({ at: Date.now(), orders: orders.slice(0, 60) }));
+        else localStorage.removeItem(ORDERS_CACHE);
+    } catch {
+        /* penyimpanan penuh / diblokir */
+    }
+};
+
 export function loadMyOrders({ refresh = false } = {}) {
     if (!ordersPromise || refresh) {
         ordersPromise = (async () => {
+            // Sinyal hilang: tampilkan data terakhir yang tersimpan, jujur ditandai offline.
+            if (navigator.onLine === false) {
+                const cached = readCache();
+                return cached ? { signedIn: true, orders: cached.orders, offline: true, cachedAt: cached.at } : { signedIn: false, orders: [], offline: true };
+            }
             try {
                 const { data: auth } = await supabase.auth.getUser();
-                if (!auth?.user) return { signedIn: false, orders: [] };
+                if (!auth?.user) {
+                    writeCache(null);
+                    return { signedIn: false, orders: [] };
+                }
                 const { data, error } = await supabase
                     .from("orders")
                     .select("id, order_code, status, total, created_at, courier_name, service_name, shipping_eta, tracking_number, city")
@@ -145,9 +173,12 @@ export function loadMyOrders({ refresh = false } = {}) {
                     .order("created_at", { ascending: false })
                     .limit(60);
                 if (error) throw error;
+                writeCache(data ?? []);
                 return { signedIn: true, orders: data ?? [] };
             } catch (error) {
                 console.warn("[KANTOONG Dashboard] Pesanan gagal dimuat:", error?.message || error);
+                const cached = readCache();
+                if (cached) return { signedIn: true, orders: cached.orders, offline: true, cachedAt: cached.at };
                 return { signedIn: false, orders: [], error: true };
             }
         })();

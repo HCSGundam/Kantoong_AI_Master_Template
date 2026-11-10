@@ -152,10 +152,10 @@ const KantoongConfig = {
 
         // Isi sesuai keunggulan ASLI brand ini.
         items: [
-            { icon: "truck", title: "Pengiriman Cepat", sub: "Aman sampai tujuan" },
-            { icon: "badge", title: "Kualitas Terjamin", sub: "Bahan pilihan terbaik" },
-            { icon: "chat", title: "Konsultasi AI", sub: "Tanya kapan saja" },
-            { icon: "lock", title: "Checkout Aman", sub: "Kamu yang bayar sendiri" }
+            { icon: "truck", title: "Kirim Ngebut", sub: "Aman sampai depan pintu" },
+            { icon: "badge", title: "Kualitas Juara", sub: "Bahan pilihan, no kaleng-kaleng" },
+            { icon: "chat", title: "Ngobrol sama AI", sub: "24/7, anti dicuekin" },
+            { icon: "lock", title: "Checkout Aman", sub: "Kamu yang pegang kendali bayar" }
         ],
 
         text: ""
@@ -168,12 +168,12 @@ const KantoongConfig = {
 
     featured: {
         // Panel teks di kiri baris unggulan (sesuai sketsa)
-        eyebrow: "Produk unggulan",
+        eyebrow: "Pilihan toko",
         title: "Pilihan Terbaik",
-        description: "Produk andalan yang dipilih langsung oleh toko.",
-        matched_title: "Pilihan AI untuk kamu",
+        description: "Dipilih langsung sama tim kami — dijamin worth it.",
+        matched_title: "Dipilihin AI buat kamu ✨",
         limit: 8,
-        ask_label: "Konsultasi AI",
+        ask_label: "Tanya AI",
 
         // Tampilan awal baris unggulan: "3d" (kartu berputar) atau "2d" (geser datar).
         // Pembeli bisa mengganti lewat tombol 2D/3D di bawah baris.
@@ -204,20 +204,20 @@ const KantoongConfig = {
      */
     rails: [
         {
-            eyebrow: "Paling laris",
+            eyebrow: "Lagi rame 🔥",
             title: "Best Seller",
-            description: "Produk yang paling banyak dibeli pelanggan.",
+            description: "Yang paling banyak di-checkout pembeli lain.",
             sort: "sales", limit: 10, min_items: 2
         },
         {
-            eyebrow: "Favorit pembeli",
-            title: "Paling Banyak Di-wishlist",
-            description: "Produk yang paling sering disimpan pembeli.",
+            eyebrow: "Incaran banyak orang",
+            title: "Paling Bikin Ngiler",
+            description: "Yang paling sering disimpan ke wishlist.",
             sort: "wishlist", limit: 10, min_items: 2
         },
         {
-            eyebrow: "Baru datang",
-            title: "Produk Terbaru",
+            eyebrow: "Fresh drop",
+            title: "Baru Mendarat",
             description: "Koleksi terbaru yang baru masuk toko.",
             sort: "newest", limit: 10, min_items: 2
         }
@@ -248,7 +248,7 @@ const KantoongConfig = {
 
     ai_name: "Asisten",
 
-    ai_title: "Halo Kak!",
+    ai_title: "Hai, Kak! 👋",
 
     /*
      * Alamat backend AI (Gemini). Jika backend mati atau API key
@@ -262,8 +262,8 @@ const KantoongConfig = {
     ai_endpoint: "/api/chat",
 
     ai_greetings: [
-        "Mau cari produk yang cocok untuk kebutuhanmu?",
-        "Bingung memilih? Ceritakan kebutuhanmu, aku carikan."
+        "Lagi cari apa hari ini? Ceritain aja, aku bantu carikan.",
+        "Masih galau pilih yang mana? Spill kebutuhanmu, aku carikan yang pas."
     ],
 
     /*
@@ -272,14 +272,14 @@ const KantoongConfig = {
      * harus ditangani oleh modul AI/chat yang menggunakannya.
      */
     ai_suggestions: [
-        "Bantu pilihkan sesuai kebutuhan saya",
-        "Rekomendasi budget di bawah 500 ribu",
-        "Apa produk yang paling banyak dipilih?",
-        "Cari produk yang paling hemat",
-        "Aku bingung mau pilih yang mana",
-        "Ada produk baru apa saja?",
-        "Bandingkan produk unggulan untukku",
-        "Cari hadiah untuk orang tersayang"
+        "Pilihin yang cocok buat aku dong",
+        "Rekomendasi di bawah 500 ribu",
+        "Yang lagi hits apa aja?",
+        "Cariin yang paling hemat",
+        "Aku galau mau pilih yang mana",
+        "Ada yang baru rilis nggak?",
+        "Bandingin produk unggulan buat aku",
+        "Cariin kado buat orang tersayang"
     ],
 
 

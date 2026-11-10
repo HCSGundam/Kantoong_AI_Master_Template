@@ -16,6 +16,7 @@
 
 import "./personalize.js";
 import "./i18n.js";
+import "./net-status.js";
 
 export const THEME_KEY = "kantoong:theme";
 export const AREAS = Object.freeze([

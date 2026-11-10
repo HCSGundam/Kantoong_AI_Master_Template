@@ -88,9 +88,13 @@
     font-size: 11px;
 }
 
-#appRoot .product-card .product-meta.is-new .product-rating {
-    color: var(--lux-gold, #b8913f);
-    font-weight: 500;
+#appRoot .product-card .product-rating__star { color: #f5b301; }
+#appRoot .product-card .product-rating.is-empty { color: var(--lux-gold, #b8913f); font-weight: 500; }
+#appRoot .product-card .product-rating.is-empty .product-rating__star { color: var(--lux-gold, #b8913f); }
+#appRoot .product-card .product-meta > * + * {
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid var(--line, #e5e5e5);
 }
 
 #appRoot .product-card .product-ship {
@@ -142,4 +146,21 @@
 .kc-pin__price {
     font-size: 15px;
     font-weight: 600;
+}
+
+/* Stiker Gen Z di foto kartu (dari data asli: ≥30 terjual) */
+#appRoot .product-card .product-sticker {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    padding: 4px 10px;
+    color: #16130e;
+    background: linear-gradient(135deg, #fff3c4, #e8d6a6);
+    border-radius: 999px;
+    box-shadow: 0 6px 16px -6px rgb(0 0 0 / 35%);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    transform: rotate(-3deg);
 }

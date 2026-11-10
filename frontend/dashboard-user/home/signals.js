@@ -53,7 +53,7 @@ export async function renderSignals(host) {
 
     if (!consentGranted()) {
         // Belum/tidak diizinkan: ajakan halus, tanpa membaca data apa pun.
-        const ask = el("button", "bx-signals__invite", icon("sparkle"), getConsent() ? "Sinyal pribadi mati · nyalakan" : "Nyalakan Sinyal pribadi");
+        const ask = el("button", "bx-signals__invite", icon("sparkle"), getConsent() ? "Sinyal pribadi lagi off · nyalain" : "Nyalain Sinyal pribadi ✨");
         ask.type = "button";
         ask.addEventListener("click", () => askConsent({ onDone: () => renderSignals(host) }));
         box.replaceChildren(ask);
@@ -67,11 +67,11 @@ export async function renderSignals(host) {
     const list = computeSignals(await gather());
     if (ticket !== drawing) return;
     if (!list.length) {
-        box.replaceChildren(el("p", "bx-signals__calm", icon("check"), "Semua beres. Tidak ada yang perlu kamu kejar hari ini."));
+        box.replaceChildren(el("p", "bx-signals__calm", icon("check"), "Semua aman terkendali. Santai dulu ☕"));
         return;
     }
     box.replaceChildren(
-        el("p", "bx-signals__label", "Mungkin kamu butuh ini"),
+        el("p", "bx-signals__label", "Kayaknya kamu butuh ini 👀"),
         el("div", "bx-signals__track", list.map((s, i) => {
             const card = el("button", `bx-signal bx-signal--${s.tone}`, el("strong", "", s.title), el("span", "", s.text), el("span", "bx-signal__go", "›"));
             card.type = "button";

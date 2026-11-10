@@ -137,7 +137,7 @@ export function createFitCard(product) {
             el("ul", "pdp-fit__list", list.map((t) => el("li", "", svgIcon(kind === "yes" ? ICON.check : ICON.cross, 14), t))))
         : null;
     return el("section", "pdp-fit",
-        el("p", "pdp-fit__eyebrow", "Jujur soal kecocokan"),
+        el("p", "pdp-fit__eyebrow", "Jujur-jujuran soal kecocokan"),
         el("div", "pdp-fit__cols",
             col("Cocok untuk", story.fit, "yes"),
             col("Kurang cocok untuk", story.notFit, "no")));
@@ -150,7 +150,7 @@ export function createOriginCard(product) {
         .map((f) => el("div", "pdp-origin__row", el("dt", "", f.label), el("dd", "", origin[f.key])));
     return el("section", "pdp-origin",
         el("div", "pdp-origin__head", el("span", "pdp-origin__icon", svgIcon(ICON.leaf, 18)),
-            el("div", "", el("p", "pdp-origin__eyebrow", "Jejak Asal"), el("h3", "pdp-origin__title", "Dari mana produk ini datang"))),
+            el("div", "", el("p", "pdp-origin__eyebrow", "Jejak Asal"), el("h3", "pdp-origin__title", "Cerita di balik produk ini"))),
         rows.length ? el("dl", "pdp-origin__list", rows) : null,
         origin.note ? el("p", "pdp-origin__note", `“${origin.note}”`) : null);
 }
@@ -283,7 +283,7 @@ export function createDoubtBanner(ctx, product) {
     const dismiss = button("kc-doubt__dismiss", "Tutup tawaran banding", svgIcon(ICON.close, 14));
     const banner = el("aside", "kc-doubt",
         el("span", "kc-doubt__icon", svgIcon(ICON.compare, 18)),
-        el("p", "kc-doubt__text", "Masih menimbang dengan ", el("strong", "", ctx.nameOf(other)), "? Lihat bedanya berdampingan."),
+        el("p", "kc-doubt__text", "Masih galau sama ", el("strong", "", ctx.nameOf(other)), "? Cek bedanya berdampingan 👀"),
         open, dismiss);
     banner.setAttribute("aria-live", "polite");
     open.addEventListener("click", () => openCompare(ctx, product, other));

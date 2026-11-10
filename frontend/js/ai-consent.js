@@ -58,15 +58,15 @@ export function askConsent({ host = document.body, onDone } = {}) {
         <div class="kc-aiperm__panel">
             <span class="kc-aiperm__orb" aria-hidden="true"><i></i><i></i></span>
             <p class="kc-aiperm__eyebrow">Privasi · UU PDP</p>
-            <h2 class="kc-aiperm__title" id="kcAipermTitle">Boleh asisten AI membaca aktivitasmu di sini?</h2>
+            <h2 class="kc-aiperm__title" id="kcAipermTitle">Boleh asisten AI baca aktivitasmu di sini?</h2>
             <ul class="kc-aiperm__list">
                 <li><b>Yang dibaca:</b> ringkasan pesanan, wishlist, keranjang, kalender, voucher & poinmu di toko ini.</li>
-                <li><b>Untuk apa:</b> menjawab "paketku sampai mana?" tanpa kamu jelaskan, dan menampilkan saran "Mungkin kamu butuh ini".</li>
-                <li><b>Tidak pernah:</b> dibagikan ke brand lain tanpa izin terpisah, atau dipakai untuk iklan di luar web ini.</li>
+                <li><b>Buat apa:</b> jawab "paketku sampai mana?" tanpa kamu jelasin ulang, plus kasih saran "Kayaknya kamu butuh ini".</li>
+                <li><b>Nggak akan pernah:</b> dibagikan ke brand lain tanpa izin terpisah, atau dipakai buat iklan di luar web ini.</li>
             </ul>
             <div class="kc-aiperm__actions">
-                <button type="button" class="kc-aiperm__btn kc-aiperm__btn--ghost" data-choice="denied">Jangan dulu</button>
-                <button type="button" class="kc-aiperm__btn" data-choice="granted">Izinkan</button>
+                <button type="button" class="kc-aiperm__btn kc-aiperm__btn--ghost" data-choice="denied">Nanti dulu</button>
+                <button type="button" class="kc-aiperm__btn" data-choice="granted">Boleh, gas ✨</button>
             </div>
             <p class="kc-aiperm__foot">Bisa diubah kapan saja di Pengaturan › Privasi &amp; Izin AI.</p>
         </div>`;

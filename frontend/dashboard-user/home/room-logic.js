@@ -302,25 +302,25 @@ export function computeSignals(state = {}, now = Date.now()) {
     });
 
     (state.orders ?? []).filter((o) => o?.status === "dikirim").slice(0, 1).forEach((o) => {
-        push({ id: `ship:${o.id}`, urgency: 7, tone: "ink", title: "Paketmu sedang di jalan", text: `${o.order_code ?? "Pesanan"}${o.shipping_eta ? ` · perkiraan ${o.shipping_eta}` : ""}`, action: { feature: "package-tracking" } });
+        push({ id: `ship:${o.id}`, urgency: 7, tone: "ink", title: "Paketmu lagi OTW 🛵", text: `${o.order_code ?? "Pesanan"}${o.shipping_eta ? ` · perkiraan ${o.shipping_eta}` : ""}`, action: { feature: "package-tracking" } });
     });
     (state.orders ?? []).filter((o) => o?.status === "menunggu_pembayaran").slice(0, 1).forEach((o) => {
-        push({ id: `pay:${o.id}`, urgency: 8, tone: "gold", title: "Pesanan menunggu pembayaranmu", text: `${o.order_code ?? "Pesanan"} — pembayaran selalu kamu lakukan sendiri.`, action: { feature: "my-orders", tool: "need-action" } });
+        push({ id: `pay:${o.id}`, urgency: 8, tone: "gold", title: "Pesananmu nunggu dibayar", text: `${o.order_code ?? "Pesanan"} — pembayaran selalu kamu lakukan sendiri.`, action: { feature: "my-orders", tool: "need-action" } });
     });
 
     (state.wishlist ?? []).forEach((w) => {
         if (num(w.priceThen) > num(w.price) && num(w.price) > 0) {
             const pct = Math.round((1 - num(w.price) / num(w.priceThen)) * 100);
-            if (pct >= 5) push({ id: `drop:${w.id}`, urgency: 6 + Math.min(3, pct / 10), tone: "light", title: `Harga turun ${pct}%`, text: `${w.name} yang kamu simpan.`, action: { feature: "wishlist", tool: "alerts" } });
+            if (pct >= 5) push({ id: `drop:${w.id}`, urgency: 6 + Math.min(3, pct / 10), tone: "light", title: `Harga turun ${pct}% 📉`, text: `${w.name} yang kamu simpan.`, action: { feature: "wishlist", tool: "alerts" } });
         }
     });
 
     upcomingEvents(state.events ?? [], now, 7).slice(0, 2).forEach((e) => {
-        push({ id: `event:${e.id ?? e.title}`, urgency: 9 - e.days, tone: "light", title: `${e.title} ${e.days === 0 ? "hari ini" : `${e.days} hari lagi`}`, text: e.kind === "ultah" ? "Sudah siap kadonya?" : "Ada di kalendermu.", action: { feature: "calendar" } });
+        push({ id: `event:${e.id ?? e.title}`, urgency: 9 - e.days, tone: "light", title: `${e.title} ${e.days === 0 ? "hari ini" : `${e.days} hari lagi`}`, text: e.kind === "ultah" ? "Kadonya udah siap belum? 🎁" : "Ada di kalendermu.", action: { feature: "calendar" } });
     });
 
     const b = budgetStatus(state.budget?.spent, state.budget?.limit);
-    if (b.level === "warn" || b.level === "over") push({ id: "budget", urgency: b.level === "over" ? 8 : 5, tone: "ink", title: b.level === "over" ? "Batas belanja terlewati" : "Hampir di batas belanja", text: b.message, action: { feature: "total-spending", tool: "budget" } });
+    if (b.level === "warn" || b.level === "over") push({ id: "budget", urgency: b.level === "over" ? 8 : 5, tone: "ink", title: b.level === "over" ? "Batas belanja kelewat" : "Dikit lagi nyentuh batas belanja", text: b.message, action: { feature: "total-spending", tool: "budget" } });
 
     (state.vouchers ?? []).forEach((v) => {
         const f = voucherFit(v, state.cartTotal, now);
@@ -328,7 +328,7 @@ export function computeSignals(state = {}, now = Date.now()) {
     });
 
     if (state.takeaway?.readyAt && state.takeaway.readyAt > now && state.takeaway.readyAt - now < 3 * 3_600_000) {
-        push({ id: "takeaway", urgency: 9, tone: "ink", title: "Pesanan bawa pulang", text: `Siap diambil ${countdownText(state.takeaway.readyAt, now)} lagi.`, action: { feature: "takeaway-ordering" } });
+        push({ id: "takeaway", urgency: 9, tone: "ink", title: "Takeaway-mu hampir jadi 🥤", text: `Siap diambil ${countdownText(state.takeaway.readyAt, now)} lagi.`, action: { feature: "takeaway-ordering" } });
     }
 
     return out.sort((a, b) => b.urgency - a.urgency).slice(0, 4);

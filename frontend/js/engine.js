@@ -39,6 +39,7 @@ import {
 } from "./pdp-extras.js";
 import { POLICY_PAGES, whatsappLink } from "./storefront-settings.js";
 import { CATALOG_PARAM, mergeCatalogParams, stripCatalogParams } from "./catalog-url.js";
+import { initCollections, openCollection, registerCollection } from "./collection-page.js";
 import {
   clampQty,
   priceSaving,
@@ -1450,6 +1451,9 @@ function createProductCard(product, index) {
   const discount = getDiscountPercent(product);
   if (discount > 0) {
     thumb.appendChild(makeElement("span", "product-discount", `-${discount}%`));
+  } else if (toNumber(product?.sales_count, 0) >= 30) {
+    // Stiker Gen Z dari data ASLI (≥30 terjual), bukan karangan.
+    thumb.appendChild(makeElement("span", "product-sticker", "🔥 Lagi hits"));
   }
 
   // Pojok kanan atas: hati (wishlist) lalu orb AI di bawahnya.
@@ -1566,21 +1570,19 @@ function createProductMeta(product) {
 
   const meta = makeElement("div", "product-meta");
 
-  // Tanpa ikon membingungkan: "★ 4,8 (12) · 5rb+ terjual" atau "Produk baru".
+  // Rating SELALU tampil (tolok ukur pembeli): "★ 4,8 (12)" atau "★ Baru" bila belum ada ulasan.
+  const ratingEl = makeElement("span", `product-rating${rating > 0 ? "" : " is-empty"}`);
+  ratingEl.append(makeElement("span", "product-rating__star", "★"));
   if (rating > 0) {
-    const ratingEl = makeElement("span", "product-rating");
     ratingEl.append(
-      makeElement("span", "product-rating__star", "★"),
       makeElement("strong", "", rating.toFixed(1).replace(".", ",")),
       document.createTextNode(reviews > 0 ? ` (${formatSocialCount(reviews)})` : "")
     );
-    meta.appendChild(ratingEl);
+  } else {
+    ratingEl.append(document.createTextNode("Baru"));
   }
-  if (sold > 0) meta.appendChild(makeElement("span", "product-sold", `${formatSocialCount(sold)} terjual`));
-  if (!meta.childElementCount) {
-    meta.classList.add("is-new");
-    meta.appendChild(makeElement("span", "product-rating is-empty", "Produk baru"));
-  }
+  meta.appendChild(ratingEl);
+  meta.appendChild(makeElement("span", "product-sold", sold > 0 ? `${formatSocialCount(sold)} terjual` : "Jadi yang pertama!"));
   return meta;
 }
 
@@ -2599,8 +2601,8 @@ function createPdpBuy(product) {
   orb.append(makeElement("span", "product-ask__eye"), makeElement("span", "product-ask__eye"));
   const askText = makeElement("span", "pdp-btn__stack");
   askText.append(
-    makeElement("strong", "", "Tanyakan seputar produk ini"),
-    makeElement("small", "", "Ukuran, kecocokan & pilihan terbaik untukmu")
+    makeElement("strong", "", "Tanya apa aja soal produk ini"),
+    makeElement("small", "", "Ukuran, cocok nggaknya, sampai pilihan terbaik buat kamu")
   );
   ask.append(orb, askText);
   ask.addEventListener("click", () =>
@@ -3695,7 +3697,20 @@ function initShowcaseControls(section) {
   section.querySelector(".featured-next")?.addEventListener("click", () => stepShowcase(section, 1));
   section.querySelector(".featured-prev")?.addEventListener("click", () => stepShowcase(section, -1));
 
-  section.querySelector(".featured-float-cta")?.addEventListener("click", scrollToCatalog);
+  // "Jelajahi sekarang" = halaman koleksi SENDIRI (isi bagian ini saja), bukan katalog utama.
+  const key = registerShowcaseCollection(section);
+  section.querySelector(".featured-float-cta")?.addEventListener("click", () => openCollection(key));
+}
+
+/** Daftarkan bagian etalase sebagai koleksi (#koleksi/<kunci>). */
+function registerShowcaseCollection(section) {
+  const text = (selector) => section.querySelector(selector)?.textContent?.trim() || "";
+  return registerCollection(section.dataset.viewKey || section.id || "pilihan", {
+    title: text(".featured-float h2") || "Koleksi",
+    eyebrow: text(".featured-float__eyebrow"),
+    description: text(".featured-float__text"),
+    getProducts: () => section.__kcProducts ?? getFeaturedProducts(),
+  });
 }
 
 /** Dipanggil setiap kali kartu baru dirender ke rail etalase. */
@@ -3769,7 +3784,7 @@ function createShowcaseSection({ key, eyebrow, title, description }) {
     float.appendChild(makeElement("p", "featured-float__text", description));
   }
 
-  const cta = makeElement("button", "featured-float-cta", "Jelajahi sekarang →");
+  const cta = makeElement("button", "featured-float-cta", "Cek semuanya →");
   cta.type = "button";
 
   const stage = makeElement("div", "featured-stage");
@@ -3862,6 +3877,7 @@ function renderRails() {
       description: rail.description,
     });
 
+    section.__kcProducts = products;
     host.appendChild(section);
     renderProducts(products, list);
   });
@@ -3972,6 +3988,7 @@ function renderPromos() {
         title: block.title || "Produk",
         description: block.text,
       });
+      section.__kcProducts = products;
       // Komidi putar butuh elemen sudah ada di halaman sebelum diisi.
       setTimeout(() => renderProducts(products, rail), 0);
       return section;
@@ -4749,6 +4766,12 @@ async function initKantoongEngine() {
 
     // Tautan langsung ke halaman produk (#produk/<id>) setelah data siap.
     syncProductRoute();
+
+    // Halaman koleksi tiap bagian homepage (#koleksi/<kunci>).
+    initCollections({
+      makeCard: (product, index) => createProductCard(product, index),
+      onAllProducts: () => openDashboardFeature("product-catalog"),
+    });
 
     // Link katalog (?katalog=1&cari=…): buka Dashboard › Katalog Produk dengan saringan yang sama.
     if (new URLSearchParams(location.search).get(CATALOG_PARAM) === "1") {

@@ -529,3 +529,14 @@
 @media (prefers-reduced-motion: reduce) {
     .bx-room__tool, .bx-room__panel, .bx-signal, .kc-aiperm__panel { animation: none; transition: none; }
 }
+
+.bx-room__offline {
+    justify-self: start;
+    margin: 6px 0 0;
+    padding: 4px 10px;
+    color: #16130e;
+    background: #e8d6a6;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 500;
+}

@@ -527,7 +527,7 @@ export const DASHBOARD_USER_CONFIG = deepFreeze({
 
         enabled: true,
 
-        placeholder: "Cari fitur atau kebutuhanmu...",
+        placeholder: "Lagi butuh apa? Ketik aja…",
 
         minimumQueryLength: 1,
 

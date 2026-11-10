@@ -56,7 +56,7 @@ export function renderCartView(ctx) {
         const r = it.reason || {};
         return `
             <div class="cart-reason-form" data-id="${id}">
-                <p class="cart-reason-form__title">Untuk apa barang ini? <small>Hanya kamu yang melihat, tidak dikirim ke penjual.</small></p>
+                <p class="cart-reason-form__title">Buat apa nih? <small>Cuma kamu yang lihat — nggak dikirim ke penjual.</small></p>
                 <div class="cart-reason-chips">${REASON_PRESETS.map(t =>
                     `<button type="button" class="cart-reason-chip" data-act="reason-preset" data-id="${id}" data-text="${esc(t)}">${esc(t)}</button>`).join('')}</div>
                 <input class="cart-reason-text" maxlength="80" value="${esc(r.text)}" placeholder="Contoh: kado ultah Mama" aria-label="Alasan">
@@ -108,8 +108,8 @@ export function renderCartView(ctx) {
             body.innerHTML = `
                 <section class="cart-section"><div class="cart-empty">
                     ${ICON.bag}
-                    <h3>Keranjangmu masih kosong</h3>
-                    <p>Tanyakan ke asisten AI untuk dicarikan produk yang cocok.</p>
+                    <h3>Keranjangmu masih sepi nih</h3>
+                    <p>Ngobrol sama asisten AI, biar dicarikan yang paling pas.</p>
                     <button class="cart-btn" data-act="consult" style="margin-top:14px">Mulai konsultasi</button>
                     ${last ? '<button class="cart-btn ghost" data-act="last-order" style="margin-top:8px">Lihat pesanan terakhir</button>' : ''}
                 </div></section>`;

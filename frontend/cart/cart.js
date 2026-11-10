@@ -179,9 +179,9 @@ window.addEventListener('kantoong:cart-add', (e) => {
     if (!item) return;
     // Barang baru tanpa alasan: tawarkan "Ingat alasannya" (opsional, tidak memaksa).
     if (item.qty === qty && !item.reason) {
-        actionToast(`${item.name} masuk keranjang`, 'Ingat alasannya', () => { ctx.reasonFor = item.id; open('cart'); });
+        actionToast(`${item.name} udah di keranjang ✓`, 'Ingat alasannya', () => { ctx.reasonFor = item.id; open('cart'); });
     } else {
-        toast(`${item.name} masuk keranjang`);
+        toast(`${item.name} udah di keranjang ✓`);
     }
 });
 

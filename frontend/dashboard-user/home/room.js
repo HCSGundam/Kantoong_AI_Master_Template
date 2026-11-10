@@ -100,6 +100,7 @@ export async function mountRoom(root, def, context = null) {
                 el("p", "bx-room__eyebrow", def.title),
                 el("h2", "bx-room__value", h.value ?? def.title),
                 h.note ? el("p", "bx-room__note", h.note) : null,
+                data?.offline ? el("p", "bx-room__offline", "📡 Sinyal lagi hilang — ini data terakhir yang tersimpan di perangkatmu.") : null,
                 def.tagline ? el("p", "bx-room__tagline", def.tagline) : null),
             ask);
     }

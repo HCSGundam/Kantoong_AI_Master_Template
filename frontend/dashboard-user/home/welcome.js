@@ -13,11 +13,11 @@ import { getPlan } from "../../js/plan.js";
 import { renderSignals } from "./signals.js";
 
 function greeting(hour) {
-    if (hour < 4) return "Selamat malam";
-    if (hour < 11) return "Selamat pagi";
-    if (hour < 15) return "Selamat siang";
-    if (hour < 19) return "Selamat sore";
-    return "Selamat malam";
+    if (hour < 4) return ["Belum tidur", "🌙"];
+    if (hour < 11) return ["Pagi", "☀️"];
+    if (hour < 15) return ["Siang", "🌤️"];
+    if (hour < 19) return ["Sore", "🌇"];
+    return ["Malam", "🌙"];
 }
 
 function stat(iconName, value, label, onClick) {
@@ -62,8 +62,11 @@ export async function renderWelcome(section) {
 
     const content = el("div", "bx-hero__content",
         el("p", "bx-hero__date", now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })),
-        el("h1", "bx-hero__title", `${greeting(now.getHours())}, ${first || "Kak"}`),
-        el("p", "bx-hero__lead", user ? `Ruang pribadimu di ${brand}.` : `Ruang pribadimu di ${brand}. Masuk agar pesanan & poinmu tersimpan.`),
+        el("h1", "bx-hero__title", (() => {
+            const [hi, emoji] = greeting(now.getHours());
+            return `${hi}, ${first || "Kak"} ${emoji}`;
+        })()),
+        el("p", "bx-hero__lead", user ? `Ini ruang pribadimu di ${brand}. Semua yang kamu butuh, ada di sini.` : `Ini ruang pribadimu di ${brand}. Login dulu biar pesanan & poinmu aman tersimpan.`),
         el("div", "bx-hero__stats",
             getPlan().commerce
                 ? stat("product-catalog", cart.count ? `${cart.count} barang` : "Kosong", cart.count ? `Keranjang · ${shortRupiah(cart.total)}` : "Keranjang", openCart)

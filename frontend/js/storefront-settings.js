@@ -92,31 +92,31 @@ export function sampleHome() {
     const s = (block) => ({ ...block, sample: true });
     return {
         blocks: [
-            s({ id: "rail-terlaris", type: "rail", enabled: true, title: "Best Seller", eyebrow: "Paling laris", text: "Produk yang paling banyak dibeli pelanggan.", source: "terlaris", category: "", productIds: [], limit: 10 }),
+            s({ id: "rail-terlaris", type: "rail", enabled: true, title: "Best Seller", eyebrow: "Lagi rame 🔥", text: "Yang paling banyak di-checkout pembeli lain.", source: "terlaris", category: "", productIds: [], limit: 10 }),
             s({ id: "banner-1", type: "banner", enabled: true, title: "", items: [
-                { title: "Promo akhir pekan", text: "Diskon spesial untuk menu favoritmu. Berlaku Sabtu–Minggu.", image: "", cta: "Lihat produk", action: "catalog" },
-                { title: "Bingung pilih?", text: "Ceritakan seleramu, asisten kami carikan yang paling pas.", image: "", cta: "Tanya asisten", action: "chat" },
+                { title: "Weekend mode: ON", text: "Diskon spesial buat menu favoritmu, khusus Sabtu–Minggu.", image: "", cta: "Cek produknya", action: "catalog" },
+                { title: "Masih galau?", text: "Spill seleramu, asisten kami carikan yang paling pas.", image: "", cta: "Tanya asisten", action: "chat" },
             ] }),
-            s({ id: "rail-wishlist", type: "rail", enabled: true, title: "Paling Banyak Di-wishlist", eyebrow: "Favorit pembeli", text: "Produk yang paling sering disimpan pembeli.", source: "wishlist", category: "", productIds: [], limit: 10 }),
-            s({ id: "coupons-1", type: "coupons", enabled: true, title: "Kupon untukmu", items: [
+            s({ id: "rail-wishlist", type: "rail", enabled: true, title: "Paling Bikin Ngiler", eyebrow: "Incaran banyak orang", text: "Yang paling sering disimpan ke wishlist.", source: "wishlist", category: "", productIds: [], limit: 10 }),
+            s({ id: "coupons-1", type: "coupons", enabled: true, title: "Kupon buat kamu", items: [
                 { code: "HEMAT10", title: "Diskon 10%", text: "Min. belanja Rp 50.000", expires: "" },
                 { code: "ONGKIR", title: "Gratis ongkir", text: "Untuk pesanan pertama", expires: "" },
             ] }),
-            s({ id: "jackpot-1", type: "jackpot", enabled: true, title: "Kotak hadiah misteri", text: "Buka 1× sehari. Hadiahnya acak dari daftar hadiah toko.", rewards: [
+            s({ id: "jackpot-1", type: "jackpot", enabled: true, title: "Kotak hadiah misteri", text: "Buka 1× sehari. Hoki-hokian, hadiahnya acak!", rewards: [
                 { label: "Diskon 5%", code: "MISTERI5", weight: 40 },
                 { label: "Gratis topping", code: "TOPPING", weight: 25 },
                 { label: "Diskon 15%", code: "JACKPOT15", weight: 5 },
                 { label: "Belum beruntung — coba lagi besok", code: "", weight: 30 },
             ] }),
-            s({ id: "rail-terbaru", type: "rail", enabled: true, title: "Produk Terbaru", eyebrow: "Baru datang", text: "Koleksi terbaru yang baru masuk toko.", source: "terbaru", category: "", productIds: [], limit: 10 }),
+            s({ id: "rail-terbaru", type: "rail", enabled: true, title: "Baru Mendarat", eyebrow: "Fresh drop", text: "Koleksi terbaru yang baru masuk toko.", source: "terbaru", category: "", productIds: [], limit: 10 }),
             s({ id: "media-logos", type: "media", enabled: true, title: "Bekerja sama dengan", ratio: "1:1", layout: "geser", columns: 6, fit: "contain", items: [
                 { title: "Mitra A", text: "", image: "", link: "" },
                 { title: "Mitra B", text: "", image: "", link: "" },
                 { title: "Mitra C", text: "", image: "", link: "" },
             ] }),
-            s({ id: "posters-1", type: "posters", enabled: true, title: "Info & event", items: [
-                { title: "Menu baru setiap bulan", text: "Ikuti terus kejutannya.", image: "" },
-                { title: "Kemitraan reseller", text: "Hubungi kami lewat asisten.", image: "" },
+            s({ id: "posters-1", type: "posters", enabled: true, title: "Kabar terbaru", items: [
+                { title: "Menu baru tiap bulan", text: "Stay tuned, kejutannya nggak berhenti.", image: "" },
+                { title: "Mau jadi reseller?", text: "Chat asisten, kita ngobrol bareng.", image: "" },
             ] }),
         ],
     };

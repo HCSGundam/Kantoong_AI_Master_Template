@@ -36,7 +36,7 @@ export const ASSISTANT_MARKUP = `
             ></span>
 
             <div class="kc-peek__text">
-                <strong id="peekTitle">Halo Kak!</strong>
+                <strong id="peekTitle">Hai, Kak! 👋</strong>
                 <p id="peekGreeting">
                     Mau cari produk yang cocok untuk kebutuhanmu?
                 </p>
