@@ -186,7 +186,12 @@ scene(2800, "dark", `
   <div class="agentbar in"><span class="mic">${I.agent}</span><span class="q typed" data-type="Buatkan invoice untuk Kafe Senja" data-at="250" data-speed="40"></span><button class="btn gold tgt">Jalankan</button></div>
   ${cur([[[1500, 950], 0], [".tgt", 2100, 1]])}`);
 
-scene(1700, "blur", `<div class="gen">${logo("pulse")}<span>Menyiapkan dokumen…</span></div>`);
+scene(2900, "dark", `
+  <div class="gen2">
+    <div class="gorb"><div class="gring"></div><div class="gring r2"></div><div class="glogo">${logo()}</div></div>
+    <div class="gtxt">Agen AI sedang <span class="shim">menyiapkan dokumen</span></div>
+    <div class="gsteps"><div class="gst" style="--d:0.35s"><i></i><span>Membaca pesanan Kafe Senja</span></div><div class="gst" style="--d:0.77s"><i></i><span>Menghitung PPN 11%</span></div><div class="gst" style="--d:1.19s"><i></i><span>Menyusun INV/014/XI/2026</span></div><div class="gst" style="--d:1.61s"><i></i><span>Membuat QR keaslian</span></div></div>
+  </div>`);
 
 scene(3600, "light", `
   <div class="card inv in">
@@ -552,6 +557,23 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 .wm .logo { width:34px; height:30px; filter:none; }
 .progress { position:absolute; left:0; bottom:0; height:4px; background:var(--gold); width:0; z-index:60; }
 
+
+/* loading agen AI (gaya modern) */
+.gen2 { display:grid; justify-items:center; gap:34px; }
+.gorb { position:relative; width:230px; height:230px; display:grid; place-items:center; }
+.gring { position:absolute; inset:0; border-radius:50%; background: conic-gradient(from 0deg, transparent 0 55%, #3d8bff 75%, #bfeaff 92%, transparent); -webkit-mask: radial-gradient(circle, transparent 60%, #000 62%); mask: radial-gradient(circle, transparent 60%, #000 62%); filter: drop-shadow(0 0 18px #3d8bff); animation: grot 1.1s linear infinite; }
+.gring.r2 { inset:-26px; opacity:.55; animation-duration: 2.4s; animation-direction: reverse; background: conic-gradient(from 90deg, transparent 0 70%, #7fd4ff 88%, transparent); }
+@keyframes grot { to { transform: rotate(360deg); } }
+.glogo { width:120px; height:120px; border-radius:30px; background:#fff; display:grid; place-items:center; box-shadow:0 0 60px rgba(61,139,255,.75); animation: gbreath 1.4s ease-in-out infinite alternate; }
+.glogo .logo { width:92px; height:80px; filter:none; }
+@keyframes gbreath { to { transform: scale(1.06); box-shadow:0 0 90px rgba(127,212,255,.9); } }
+.gtxt { font-size:50px; font-weight:500; color:#eef5ff; letter-spacing:-.02em; }
+.shim { background: linear-gradient(90deg, #5fa8ff 0%, #ffffff 45%, #5fa8ff 70%); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; animation: shm 1.4s linear infinite; text-shadow:none; }
+@keyframes shm { from { background-position:150% 0; } to { background-position:-50% 0; } }
+.gsteps { display:grid; gap:12px; min-width:560px; }
+.gst { display:flex; align-items:center; gap:16px; padding:14px 22px; border-radius:16px; background:rgba(255,255,255,.05); border:1px solid rgba(127,212,255,.25); font-size:26px; color:#cfe3ff; opacity:0; animation: up .45s var(--d) forwards; }
+.gst i { width:26px; height:26px; flex:none; border-radius:50%; border:3px solid rgba(127,212,255,.35); border-top-color:#7fd4ff; animation: grot .7s linear infinite, gdone .01s calc(var(--d) + .55s) forwards; }
+@keyframes gdone { to { animation: none; border:0; background:#1d7a4b url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12l4 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/70% no-repeat; } }
 /* ===== NEON BIRU (selaras logo K & Anachronos) ===== */
 em { color:#7fd4ff; text-shadow: 0 0 8px rgba(127,212,255,.9), 0 0 24px rgba(61,139,255,.75), 0 0 56px rgba(61,139,255,.45); }
 .kin .w, .cap, .divider, .line, .gen span, .pill-intro, .endtag, .tilt__h, .axcap b { text-shadow: 0 0 10px rgba(127,212,255,.45), 0 0 34px rgba(61,139,255,.35); }

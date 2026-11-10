@@ -278,6 +278,23 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 .wm .logo { width:34px; height:30px; filter:none; }
 .progress { position:absolute; left:0; bottom:0; height:4px; background:var(--gold); width:0; z-index:60; }
 
+
+/* loading agen AI (gaya modern) */
+.gen2 { display:grid; justify-items:center; gap:34px; }
+.gorb { position:relative; width:230px; height:230px; display:grid; place-items:center; }
+.gring { position:absolute; inset:0; border-radius:50%; background: conic-gradient(from 0deg, transparent 0 55%, #3d8bff 75%, #bfeaff 92%, transparent); -webkit-mask: radial-gradient(circle, transparent 60%, #000 62%); mask: radial-gradient(circle, transparent 60%, #000 62%); filter: drop-shadow(0 0 18px #3d8bff); animation: grot 1.1s linear infinite; }
+.gring.r2 { inset:-26px; opacity:.55; animation-duration: 2.4s; animation-direction: reverse; background: conic-gradient(from 90deg, transparent 0 70%, #7fd4ff 88%, transparent); }
+@keyframes grot { to { transform: rotate(360deg); } }
+.glogo { width:120px; height:120px; border-radius:30px; background:#fff; display:grid; place-items:center; box-shadow:0 0 60px rgba(61,139,255,.75); animation: gbreath 1.4s ease-in-out infinite alternate; }
+.glogo .logo { width:92px; height:80px; filter:none; }
+@keyframes gbreath { to { transform: scale(1.06); box-shadow:0 0 90px rgba(127,212,255,.9); } }
+.gtxt { font-size:50px; font-weight:500; color:#eef5ff; letter-spacing:-.02em; }
+.shim { background: linear-gradient(90deg, #5fa8ff 0%, #ffffff 45%, #5fa8ff 70%); background-size:200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; animation: shm 1.4s linear infinite; text-shadow:none; }
+@keyframes shm { from { background-position:150% 0; } to { background-position:-50% 0; } }
+.gsteps { display:grid; gap:12px; min-width:560px; }
+.gst { display:flex; align-items:center; gap:16px; padding:14px 22px; border-radius:16px; background:rgba(255,255,255,.05); border:1px solid rgba(127,212,255,.25); font-size:26px; color:#cfe3ff; opacity:0; animation: up .45s var(--d) forwards; }
+.gst i { width:26px; height:26px; flex:none; border-radius:50%; border:3px solid rgba(127,212,255,.35); border-top-color:#7fd4ff; animation: grot .7s linear infinite, gdone .01s calc(var(--d) + .55s) forwards; }
+@keyframes gdone { to { animation: none; border:0; background:#1d7a4b url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12l4 4 8-9' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/70% no-repeat; } }
 /* ===== NEON BIRU (selaras logo K & Anachronos) ===== */
 em { color:#7fd4ff; text-shadow: 0 0 8px rgba(127,212,255,.9), 0 0 24px rgba(61,139,255,.75), 0 0 56px rgba(61,139,255,.45); }
 .kin .w, .cap, .divider, .line, .gen span, .pill-intro, .endtag, .tilt__h, .axcap b { text-shadow: 0 0 10px rgba(127,212,255,.45), 0 0 34px rgba(61,139,255,.35); }
@@ -410,7 +427,12 @@ em { color:#7fd4ff; text-shadow: 0 0 8px rgba(127,212,255,.9), 0 0 24px rgba(61,
   <div class="cap in">Tinggal <em>perintah.</em></div>
   <div class="agentbar in"><span class="mic"><svg viewBox="0 0 48 48" class="ic"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="18" r="9"/><path d="M8 42c2-9 9-13 16-13s14 4 16 13M20 17h.01M28 17h.01"/></g></svg></span><span class="q typed" data-type="Buatkan invoice untuk Kafe Senja" data-at="250" data-speed="40"></span><button class="btn gold tgt">Jalankan</button></div>
   <div class="hand" data-steps='[[[1500,950],0],[".tgt",2100,1]]'><svg viewBox="0 0 32 32"><path d="M11 3.5c1.2 0 2.2 1 2.2 2.2v8.1l.6-.1c.9-.2 1.9.3 2.3 1.2l.2.5.7-.2c1-.2 2 .3 2.4 1.2l.2.4.6-.1c1.1-.2 2.2.6 2.4 1.7l.9 5.2c.4 2.3-.3 4.6-1.9 6.3l-.8.9H10.7l-5-7.3c-.6-.9-.4-2.1.5-2.7.8-.6 1.9-.5 2.6.2l.9.9V5.7c0-1.2 1-2.2 2.2-2.2z" fill="#fff" stroke="#1a1612" stroke-width="1.5" stroke-linejoin="round"/><path d="M13.2 13.8v4M17 15.4v3.2M20.6 16.9v2.8" stroke="#1a1612" stroke-width="1.2" stroke-linecap="round"/></svg></div></section>
-<section class="scene" data-d="1700" data-bg="blur" ><div class="gen"><img src="logo/simbol.png" class="logo pulse" alt=""><span>Menyiapkan dokumen…</span></div></section>
+<section class="scene" data-d="2900" data-bg="dark" >
+  <div class="gen2">
+    <div class="gorb"><div class="gring"></div><div class="gring r2"></div><div class="glogo"><img src="logo/simbol.png" class="logo " alt=""></div></div>
+    <div class="gtxt">Agen AI sedang <span class="shim">menyiapkan dokumen</span></div>
+    <div class="gsteps"><div class="gst" style="--d:0.35s"><i></i><span>Membaca pesanan Kafe Senja</span></div><div class="gst" style="--d:0.77s"><i></i><span>Menghitung PPN 11%</span></div><div class="gst" style="--d:1.19s"><i></i><span>Menyusun INV/014/XI/2026</span></div><div class="gst" style="--d:1.61s"><i></i><span>Membuat QR keaslian</span></div></div>
+  </div></section>
 <section class="scene" data-d="3600" data-bg="light" >
   <div class="card inv in">
     <div class="inv__h"><div><img src="logo/simbol.png" class="logo " alt=""><b>INVOICE</b><small>INV/014/XI/2026</small></div><div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h21v21H0z"/><path stroke="#14120f" d="M0 0.5h7m3 0h1m1 0h1m1 0h7M0 1.5h1m5 0h1m1 0h3m3 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m2 0h1m2 0h1m1 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h7M11 7.5h2M0 8.5h1m1 0h1m1 0h1m1 0h1m3 0h2m4 0h1m2 0h1M1 9.5h1m2 0h1m2 0h4m2 0h1m2 0h3M1 10.5h1m2 0h4m1 0h1m2 0h1m2 0h1m1 0h1m2 0h1M1 11.5h3m1 0h1m1 0h1m2 0h1m2 0h1m2 0h2m1 0h1M0 12.5h1m1 0h2m1 0h3m4 0h1m2 0h1m1 0h1m1 0h2M8 13.5h1m2 0h1m1 0h1m4 0h1m1 0h1M0 14.5h7m3 0h2m2 0h2m2 0h1M0 15.5h1m5 0h1m2 0h5m3 0h1m2 0h1M0 16.5h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h2m2 0h3M0 17.5h1m1 0h3m1 0h1m3 0h2m1 0h2m1 0h2m1 0h1M0 18.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h1m1 0h1M0 19.5h1m5 0h1m2 0h3m3 0h2m2 0h2M0 20.5h7m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1"/></svg>
