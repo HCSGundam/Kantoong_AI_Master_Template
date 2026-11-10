@@ -184,3 +184,6 @@ a.ip__value {
     .ip__row { grid-template-columns: 1fr; gap: 2px; }
     .ip__main { padding: 20px; }
 }
+
+/* Tahap 3: target sentuh nyaman di HP */
+.ip__brand { min-height: 36px; display: inline-flex; align-items: center; }

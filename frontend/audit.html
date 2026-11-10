@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <!-- Halaman ALAT UJI (khusus `npm run dev`, tidak ikut build/publish). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* ws://127.0.0.1:*; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Rapor Tampilan HP vs Laptop</title>
+    <link rel="stylesheet" href="./css/ui-audit.css">
+    <script type="module" src="./js/ui-audit.js"></script>
+</head>
+<body>
+    <header class="au-head">
+        <div>
+            <p class="au-eyebrow">Kantoong · Rapor tampilan</p>
+            <h1>HP (390 px) vs Laptop (1440 px)</h1>
+            <p class="au-sub">Setiap halaman dibuka di dua ukuran, lalu diperiksa otomatis: melebar ke samping, teks "null", teks terpotong, tombol terlalu kecil, tombol tertutup elemen lain, gambar rusak, dan error.</p>
+        </div>
+        <div class="au-actions">
+            <button class="au-btn au-btn--primary" id="auRun" type="button">▶ Jalankan semua</button>
+            <button class="au-btn" id="auCopy" type="button">Salin rapor (teks)</button>
+        </div>
+    </header>
+    <section class="au-summary" id="auSummary" aria-live="polite"></section>
+    <main class="au-list" id="auList"></main>
+    <div class="au-stage" id="auStage" aria-hidden="true"></div>
+</body>
+</html>

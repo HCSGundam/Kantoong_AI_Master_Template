@@ -188,3 +188,25 @@
     .erp-top__right::-webkit-scrollbar { display: none; }
     .erp-top__right > * { flex: none; }
 }
+
+/* ===== Tahap 3: rapi di HP & tablet (hasil rapor tampilan) ===== */
+.erp-main, .erp-page, .erp-page__inner { min-width: 0; }
+.erp-page__head > div { min-width: 0; flex: 1 1 260px; }
+.erp-page__title, .erp-page__sub { overflow-wrap: anywhere; }
+@media (max-width: 899px) {
+    /* Deretan tab panjang: digeser ke samping di dalam pita, halaman tidak ikut melebar. */
+    .erp-seg { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .erp-seg::-webkit-scrollbar { display: none; }
+    .erp-seg__btn { flex: none; white-space: nowrap; }
+    .erp-toolbar { max-width: 100%; min-width: 0; }
+    .erp-page__actions { flex-wrap: wrap; }
+    /* Jari, bukan kursor: target sentuh minimal ±36 px. */
+    .erp-qty button { width: 36px; height: 36px; }
+    .erp-sf__chip-x, .erp-sf__chip-move { width: 32px; height: 32px; }
+    .erp-link { min-height: 36px; display: inline-flex; align-items: center; }
+    .erp-table-wrap { max-width: 100%; overflow-x: auto; }
+}
+@media (max-width: 899px) {
+    .erp-pos__step button { min-width: 36px; min-height: 36px; }
+    .erp-sf__card input[type="checkbox"], .erp-check input[type="checkbox"] { width: 20px; height: 20px; }
+}

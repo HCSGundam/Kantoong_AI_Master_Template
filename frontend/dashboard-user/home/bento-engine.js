@@ -104,6 +104,35 @@ export function packLayout(items, columns) {
     });
 }
 
+/**
+ * Tampilan saja (bukan mode atur): kartu melebar ke kanan mengisi sel kosong di
+ * barisnya, supaya tidak ada "lubang" di HP (mis. 1x1 + 2x2 di 4 kolom).
+ * Ukuran tersimpan pengguna TIDAK berubah.
+ */
+export function fillGaps(placed, columns) {
+    const cols = Math.max(1, Math.floor(columns));
+    const grid = [];
+    const taken = (x, y) => grid[y]?.[x];
+    placed.forEach((p) => {
+        for (let yy = p.y; yy < p.y + p.h; yy++) {
+            grid[yy] = grid[yy] || [];
+            for (let xx = p.x; xx < p.x + p.w; xx++) grid[yy][xx] = true;
+        }
+    });
+    return placed.map((p) => {
+        let w = p.w;
+        const free = (x) => {
+            for (let yy = p.y; yy < p.y + p.h; yy++) if (taken(x, yy)) return false;
+            return true;
+        };
+        while (p.x + w < cols && free(p.x + w)) {
+            for (let yy = p.y; yy < p.y + p.h; yy++) grid[yy][p.x + w] = true;
+            w += 1;
+        }
+        return w === p.w ? p : { ...p, w };
+    });
+}
+
 /** Jumlah baris yang terpakai. */
 export function rowsUsed(placed) {
     return placed.reduce((max, p) => Math.max(max, p.y + p.h), 0);

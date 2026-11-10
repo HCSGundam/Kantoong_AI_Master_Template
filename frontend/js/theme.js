@@ -14,9 +14,11 @@
  * ikut ke tab lain (event storage). Disimpan di perangkat saja.
  */
 
+import "./dom-guard.js";
 import "./personalize.js";
 import "./i18n.js";
 import "./net-status.js";
+import "./sheet-drag.js";
 
 export const THEME_KEY = "kantoong:theme";
 export const AREAS = Object.freeze([

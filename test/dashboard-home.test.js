@@ -129,3 +129,14 @@ describe("31 fitur sesuai Blueprint Vol.7", () => {
         expect(HUB_FEATURES.some((f) => f.id === "my-card")).toBe(true);
     });
 });
+
+import { fillGaps as kcFillGaps, packLayout as kcPack } from "../frontend/dashboard-user/home/bento-engine.js";
+describe("bento: lubang kosong di HP terisi", () => {
+    it("kartu melebar mengisi sel kosong di barisnya", () => {
+        const placed = kcPack([{ id: "a", size: "1x1" }, { id: "b", size: "2x2" }], 4);
+        expect(placed.map((p) => [p.x, p.w])).toEqual([[0, 1], [1, 2]]);
+        const filled = kcFillGaps(placed, 4);
+        expect(filled.find((p) => p.id === "b").w).toBe(3);
+        expect(kcFillGaps(kcPack([{ id: "a", size: "2x1" }, { id: "b", size: "2x1" }], 4), 4).map((p) => p.w)).toEqual([2, 2]);
+    });
+});

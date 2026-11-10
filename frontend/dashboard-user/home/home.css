@@ -3296,3 +3296,14 @@ html[data-theme="dark"]:has(> body .dashboard-user) {
     border-bottom: 1px solid transparent;
     transition: border-color .2s ease;
 }
+
+/* ===== Tahap 3: pil "Hai, Kak!" & orb tidak menutupi isi =====
+   Ruang kosong di bawah halaman setinggi pil chat, jadi kartu terakhir
+   selalu bisa digulir ke atasnya. */
+main#dashboardUser.dashboard-user {
+    padding-bottom: calc(150px + env(safe-area-inset-bottom)) !important;
+    scroll-padding-bottom: 150px;
+}
+@media (min-width: 900px) {
+    main#dashboardUser.dashboard-user { padding-bottom: calc(110px + env(safe-area-inset-bottom)) !important; }
+}

@@ -19,6 +19,7 @@ import {
     moveItem,
     nearestSize,
     packLayout,
+    fillGaps,
     rowsUsed,
     sanitizeState,
     toItems,
@@ -143,7 +144,9 @@ export function createBento({
     }
 
     function layout() {
-        s.placed = packLayout(toItems(s.state), s.cols);
+        const packed = packLayout(toItems(s.state), s.cols);
+        // Di luar mode atur: tutup lubang kosong di samping kartu (rapi di HP).
+        s.placed = s.editing ? packed : fillGaps(packed, s.cols);
         let rows = rowsUsed(s.placed);
 
         s.placed.forEach((p) => {
@@ -164,7 +167,10 @@ export function createBento({
         });
 
         // Kotak "Tambah fitur" mengisi ruang kosong pertama setelah kartu terakhir.
-        const tile = packLayout([...toItems(s.state), { id: "__add", size: "2x1" }], s.cols).pop();
+        // Di luar mode atur lubang sudah terisi → "Tambah fitur" di baris baru agar tidak menimpa kartu.
+        const tile = s.editing
+            ? packLayout([...toItems(s.state), { id: "__add", size: "2x1" }], s.cols).pop()
+            : { id: "__add", x: 0, y: rows, w: Math.min(2, s.cols), h: 1 };
         place(addTile, tile);
         rows = Math.max(rows, tile.y + tile.h);
 

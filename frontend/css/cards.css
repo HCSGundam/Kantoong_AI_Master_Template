@@ -164,3 +164,11 @@
     letter-spacing: .01em;
     transform: rotate(-3deg);
 }
+
+/* ===== Tahap 3: target sentuh di HP (hasil rapor tampilan) ===== */
+/* Tampilan ikon tetap mungil, tapi area ketuknya diperluas tak terlihat (±40 px). */
+#appRoot .product-like, #appRoot .product-ask { position: relative; }
+#appRoot .product-like::after, #appRoot .product-ask::after { content: ""; position: absolute; inset: -8px; border-radius: 999px; }
+@media (max-width: 899px) {
+    #appRoot .hero-cta { min-height: 38px; padding: 8px 16px; font-size: 12.5px; }
+}

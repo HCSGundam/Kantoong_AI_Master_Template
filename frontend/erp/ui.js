@@ -7,6 +7,7 @@
  */
 
 import { formatRupiah, formatShortRupiah } from "./core/metrics.js";
+import "../js/dom-guard.js"; // tidak pernah menulis "null" di layar
 
 export function el(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
