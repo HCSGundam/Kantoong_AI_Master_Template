@@ -36,6 +36,13 @@ export function phase4SupabaseMethods() {
             return (data || []).filter((row) => !row.until || row.until >= today).map((row) => row.addon);
         },
 
+        /** Kuota add-on berjumlah (kolom quota di brand_addons, db/erp-docs.sql). */
+        async addonQuota(addon) {
+            const { data, error } = await supabase.from("brand_addons").select("quota").eq("business_id", CFG.business_id).eq("addon", addon).eq("active", true).maybeSingle();
+            if (error || !data) return 0;
+            return Number(data.quota) || 0;
+        },
+
         /** Data Anachronos Analysis. RLS (db/analysis.sql) menyaring siapa yang boleh membaca. */
         async analysisData({ days = 30 } = {}) {
             const since = new Date(Date.now() - days * 86400000).toISOString();

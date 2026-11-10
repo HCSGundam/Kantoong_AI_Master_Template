@@ -24,7 +24,9 @@ export function phase4Methods({ db: getDb, save, me }) {
 
         /** Add-on yang dibeli brand. Demo/template: Anachronos Analysis aktif untuk presentasi. */
         async listAddons() {
-            return CFG.erp_demo === true || (CFG.addons ?? []).includes(ADDON_ID) ? [ADDON_ID] : [...(CFG.addons ?? [])];
+            // Template/demo: semua add-on menyala untuk presentasi (Analysis + Agen AI).
+            if (CFG.erp_demo === true) return [ADDON_ID, "ai-agents"];
+            return [...(CFG.addons ?? [])];
         },
 
         /** Data Anachronos Analysis — hanya divisi yang berhadapan dengan pembeli + owner/manajer. */
@@ -36,6 +38,11 @@ export function phase4Methods({ db: getDb, save, me }) {
                 lost: clone(db.pos_lost || []),
                 orders: clone(db.orders || []),
             };
+        },
+
+        /** Kuota add-on berjumlah (mis. jumlah Agen AI tambahan). Demo: 4. */
+        async addonQuota(addon) {
+            return CFG.erp_demo === true ? 4 : Number(CFG.addon_quota?.[addon]) || 0;
         },
 
         async researchBrands() {

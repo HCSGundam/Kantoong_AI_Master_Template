@@ -26,6 +26,7 @@ import { posProMethods } from "./demo-adapter-pos.js";
 import { ensurePosMembers } from "./demo-seed-kitchen.js";
 import { ensureProSeed } from "./demo-seed-pro.js";
 import { proMethods } from "./demo-adapter-pro.js";
+import { docsMethods, ensureDocsSeed } from "./demo-adapter-docs.js";
 import { buildChain, decideStep } from "../core/approval-chain.js";
 
 const STORE_KEY = "kantoong_erp_demo_v1";
@@ -57,6 +58,8 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
     ensurePosMembers(db);
     // ERP Pro Max: aturan persetujuan, tagihan, anggaran, batch, SDM & CRM pro.
     ensureProSeed(db);
+    // Dokumen, kop surat, Kotak Masuk & Agen AI.
+    ensureDocsSeed(db);
 
     const save = () => {
         try {
@@ -102,6 +105,7 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
         ...phase3Methods({ db: () => db, save, me, audit }),
         ...phase4Methods({ db: () => db, save, me }),
         ...proMethods({ db: () => db, save, me, audit, journalWrite: posHelpers.journalWrite }),
+        ...docsMethods({ db: () => db, save, me, audit }),
 
         async getSession() {
             const member = me();
@@ -359,6 +363,12 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
             // Cuti ikut status pengajuannya.
             const leave = after.leave_id && db.pro?.leaves.find((entry) => entry.id === after.leave_id);
             if (leave) leave.status = after.status;
+            // Dokumen yang menunggu tanda tangan: terbit bila rantai selesai disetujui.
+            const doc = after.document_id && db.docs?.documents.find((entry) => entry.id === after.document_id);
+            if (doc && after.status !== "menunggu") {
+                doc.status = after.status === "disetujui" ? "terbit" : "ditolak";
+                doc.signed_at = after.status === "disetujui" ? new Date().toISOString() : null;
+            }
             audit("approvals", approvalId, "UPDATE", { langkah: status, status: { dari: before.status, jadi: after.status } });
             save();
         },

@@ -63,6 +63,20 @@ export const MODULES = Object.freeze([
         allow: (member) => hasRole(member, "sales", "marketing"),
     },
     {
+        key: "documents",
+        label: "Dokumen & PDF",
+        hint: "Surat berkop + QR keaslian, Kotak Masuk tanda tangan, alat PDF lengkap",
+        icon: "M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h4",
+        allow: () => true,
+    },
+    {
+        key: "agents",
+        label: "Agen AI",
+        hint: "Tim AI pribadimu: perintah ketik/suara, tampil di layar atau di belakang",
+        icon: "M12 2a3 3 0 0 1 3 3v1h2a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V8a2 2 0 0 1 2-2h2V5a3 3 0 0 1 3-3zM9 12h.01M15 12h.01M9 16h6",
+        allow: () => true,
+    },
+    {
         key: "approvals",
         label: "Persetujuan & Audit",
         hint: "Pengajuan, keputusan atasan, jejak perubahan",

@@ -26,6 +26,10 @@ const SUB_PAGES = [
     { module: "hr", path: "kontrak", label: "Kontrak kerja", keywords: "pkwt percobaan" },
     { module: "hr", path: "kinerja", label: "Penilaian kinerja", keywords: "nilai review kpi" },
     { module: "crm", path: "pipeline", label: "Pipeline penjualan", keywords: "deal prospek calon pelanggan follow up" },
+    { module: "documents", path: "buat", label: "Buat dokumen / surat", keywords: "slip gaji invoice po surat penawaran keterangan kerja peringatan sp laporan" },
+    { module: "documents", path: "kotak", label: "Kotak Masuk dokumen", keywords: "tanda tangan inbox arsip surat" },
+    { module: "documents", path: "alat", label: "Alat PDF", keywords: "gabung pisah split merge kompres tanda tangan watermark jpg scan sensor" },
+    { module: "documents", path: "kop", label: "Kop surat & tanda tangan", keywords: "logo kop signature" },
 ];
 
 let state = { getCtx: null, modules: [], signals: [], raw: null, timer: 0 };

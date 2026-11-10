@@ -20,6 +20,7 @@ export const APPROVAL_KINDS = Object.freeze({
     cuti: "Cuti / izin",
     retur: "Retur barang",
     po: "Purchase order",
+    dokumen: "Tanda tangan dokumen",
     lainnya: "Lainnya",
 });
 
@@ -43,6 +44,7 @@ export const DEFAULT_RULES = Object.freeze([
     { id: "r-ret", kind: "retur", min_amount: 0, steps: ["atasan"] },
     { id: "r-po-0", kind: "po", min_amount: 0, steps: ["atasan"] },
     { id: "r-po-5", kind: "po", min_amount: 5_000_000, steps: ["atasan", "role:keuangan", "owner"] },
+    { id: "r-doc", kind: "dokumen", min_amount: 0, steps: ["atasan", "owner"] },
     { id: "r-other", kind: "lainnya", min_amount: 0, steps: ["atasan"] },
 ]);
 

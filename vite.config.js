@@ -147,6 +147,13 @@ export default defineConfig({
                     )
                 ),
 
+                verify: fileURLToPath(
+                    new URL(
+                        "./frontend/verify.html",
+                        import.meta.url
+                    )
+                ),
+
                 // Tujuan link "Lupa password" dari email.
                 resetPassword: fileURLToPath(
                     new URL(

@@ -33,6 +33,8 @@ import { isUnlocked, lock, touch, unlock } from "./core/erp-lock.js";
 import * as workspace from "./modules/workspace.js";
 import * as cockpit from "./modules/cockpit.js";
 import * as command from "./modules/command.js";
+import * as documents from "./modules/documents.js";
+import * as agents from "./modules/agents.js";
 import { mountProShell, refreshProShell, stopProShell } from "./pro-shell.js";
 import { invalidateProData } from "./modules/pro-data.js";
 import * as sales from "./modules/sales.js";
@@ -60,7 +62,7 @@ import * as analysis from "./modules/analysis.js";
 import * as storefront from "./modules/storefront.js";
 
 const RENDERERS = {
-    workspace, command, cockpit, sales, team, catalog, approvals, org, inventory, pos, kitchen, cashcontrol, posreport, recipes, promos, finance, hr, payroll,
+    workspace, command, documents, agents, cockpit, sales, team, catalog, approvals, org, inventory, pos, kitchen, cashcontrol, posreport, recipes, promos, finance, hr, payroll,
     purchasing, logistics, cs, marketing, crm, brain, analysis, storefront,
 };
 const DEMO_KEY = "kantoong_erp_demo_persona";
