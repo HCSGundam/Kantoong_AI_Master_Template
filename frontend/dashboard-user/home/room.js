@@ -122,6 +122,9 @@ export async function mountRoom(root, def, context = null) {
 
     function panel(tool) {
         const body = el("div", "bx-room__body");
+        // Bagian opsional (cond ? x : null) jangan pernah tertulis "null" di layar.
+        const rawAppend = body.append.bind(body);
+        body.append = (...nodes) => rawAppend(...nodes.flat().filter((n) => n != null && n !== false && n !== ""));
         const back = btn([icon("back"), "Kembali"], () => openTool(null), "bx-room__back");
         try {
             tool.render(body, data, api);

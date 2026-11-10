@@ -3149,3 +3149,14 @@ html[data-theme="dark"]:has(> body .dashboard-user) {
     cursor: pointer;
 }
 .bx-quick .bx-icon { width: 14px; height: 14px; color: var(--bx-gold-soft); }
+
+/* Kipas foto Katalog: tinggi mengikuti kartu (dulu lebar tetap kecil & menempel bawah → ruang kosong besar di atas) */
+.bx-fan .bx-ph {
+    top: 4%;
+    bottom: auto;
+    width: auto;
+    height: min(92%, 200px);
+    max-width: 52%;
+}
+.bx-card[data-mode="row"] .bx-g__visual { flex: 1.3 1 0; }
+.bx-card[data-mode="row"] .bx-g__text { align-self: center; }
