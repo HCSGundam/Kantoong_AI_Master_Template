@@ -82,7 +82,7 @@ const KantoongConfig = {
      * Alamat web utama klien (untuk sitemap.xml, robots.txt, & data Google).
      * Contoh: "https://tokoemaskenzo.com". Kosongkan bila belum punya domain.
      */
-    site_url: "https://master-kantoong-ai.netlify.app",
+    site_url: "https://kantoong-kenzo-ai.pages.dev",
 
 
     // ========================================================
