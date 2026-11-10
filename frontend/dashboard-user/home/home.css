@@ -3160,3 +3160,124 @@ html[data-theme="dark"]:has(> body .dashboard-user) {
 }
 .bx-card[data-mode="row"] .bx-g__visual { flex: 1.3 1 0; }
 .bx-card[data-mode="row"] .bx-g__text { align-self: center; }
+
+/* =========================================================
+   KARTU PRODUK DASHBOARD = KARTU TOKO / HALAMAN KOLEKSI (.bx-pc)
+   ========================================================= */
+.bx-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+@media (min-width: 700px) { .bx-results { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
+@media (min-width: 1100px) { .bx-results { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1400px) { .bx-results { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+.bx-pc {
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    background: var(--bx-card);
+    border: 1px solid var(--bx-line);
+    border-radius: 22px;
+    box-shadow: var(--bx-shadow);
+    transition: transform 260ms var(--bx-ease), box-shadow 260ms var(--bx-ease);
+}
+.bx-pc:hover { transform: translateY(-3px); box-shadow: var(--bx-shadow-lift); }
+
+.bx-pc__open {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0;
+    color: var(--bx-text);
+    text-align: left;
+    background: none;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+}
+
+.bx-pc__media {
+    position: relative;
+    display: block;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--bx-card-2);
+}
+.bx-pc__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 600ms var(--bx-ease); }
+.bx-pc:hover .bx-pc__media img { transform: scale(1.04); }
+.bx-pc__ph { display: grid; place-items: center; height: 100%; color: var(--bx-muted); font-size: 34px; font-weight: 500; }
+
+.bx-pc__badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.bx-pc__badge--off { color: #fff; background: #16130e; }
+.bx-pc__badge--hits { color: #16130e; background: linear-gradient(135deg, #fff3c4, #e8d6a6); box-shadow: 0 6px 16px -6px rgb(0 0 0 / 35%); transform: rotate(-3deg); }
+.bx-pc__out { position: absolute; inset: auto 10px 10px auto; padding: 4px 10px; color: #fff; background: rgb(22 19 14 / 80%); border-radius: 999px; font-size: 11px; font-weight: 600; }
+
+.bx-pc__heart {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    color: #16130e;
+    background: rgb(255 253 248 / 92%);
+    border: 0;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+    cursor: pointer;
+}
+.bx-pc__heart .bx-icon { width: 16px; height: 16px; }
+.bx-pc__heart.is-on .bx-icon { fill: currentColor; }
+
+.bx-pc__body { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px 12px; }
+
+.bx-pc__meta { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; color: var(--bx-muted); font-size: 11.5px; white-space: nowrap; }
+.bx-pc__meta > * + * { padding-left: 6px; border-left: 1px solid var(--bx-line-strong); }
+.bx-pc__rating { display: inline-flex; align-items: center; gap: 3px; color: var(--bx-text); font-weight: 600; }
+.bx-pc__star { color: #f5b301; }
+.bx-pc__rating.is-new { color: var(--bx-gold); font-weight: 500; }
+.bx-pc__rating.is-new .bx-pc__star { color: var(--bx-gold); }
+.bx-pc__sold { overflow: hidden; text-overflow: ellipsis; }
+
+.bx-pc__name { display: -webkit-box; overflow: hidden; font-size: 14px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.bx-pc__spec { color: var(--bx-muted); font-size: 12px; }
+
+.bx-pc__price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; margin-top: 2px; }
+.bx-pc__price strong { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bx-pc__price s { color: var(--bx-muted); font-size: 11.5px; white-space: nowrap; }
+
+.bx-pc__ship { display: flex; align-items: center; gap: 6px; min-width: 0; margin-top: 6px; padding-top: 8px; color: var(--bx-muted); border-top: 1px solid var(--bx-line); font-size: 11.5px; white-space: nowrap; }
+.bx-pc__ship .bx-icon { flex: none; width: 13px; height: 13px; }
+.bx-pc__eta,
+.bx-pc__from { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.bx-pc__eta { flex: none; }
+.bx-pc__from { flex: 1; overflow: hidden; padding-left: 6px; border-left: 1px solid var(--bx-line-strong); }
+.bx-pc__from span { overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 640px) {
+    .bx-pc__price strong { font-size: 16px; }
+    .bx-pc__body { padding: 10px 11px; }
+}
+
+/* Katalog utama: lebar & megah seperti halaman koleksi toko */
+.dashboard-feature-stage__body:has(.bx-cat2) {
+    width: min(100%, 1800px);
+    padding-inline: clamp(14px, 2.4vw, 40px);
+}
+.bx-cat2 .bx-sec { display: grid; gap: 14px; }
+.bx-cat2 .bx-sec + .bx-sec { margin-top: 10px; }
+.bx-cat2 .bx-sec__name { font-size: clamp(20px, 2vw, 26px); font-weight: 600; letter-spacing: -0.01em; }
+/* Wishlist: tombol hapus menggantikan ♡ di pojok kanan atas */
+.bx-pc:has(.bx-tile__remove) .bx-pc__heart { display: none; }
+.bx-pc .bx-tile__remove { top: 10px; right: 10px; z-index: 3; }

@@ -13,6 +13,7 @@
  * - Filter = lembar pop-up dengan latar buram gelap.
  */
 
+import CFG from "../../client-config.js";
 import { el, icon } from "./home-icons.js";
 import { PRICE_BANDS, SORTS, describeFilters, searchCatalog, suggest } from "./catalog-search.js";
 import { applyChip, chipLabel, chipsFor, orderedCategories } from "../../js/storefront-settings.js";
@@ -47,40 +48,93 @@ export function isFilterActive(f) {
 // Teks aman: null/undefined/"null" tidak pernah tampil sebagai tulisan "null".
 const txt = (v) => (v == null || String(v).trim().toLowerCase() === "null" ? "" : String(v));
 
+const WISH_KEY = "kantoong_wishlist";
+function wishIds() {
+    try {
+        const ids = JSON.parse(localStorage.getItem(WISH_KEY) || "[]");
+        return Array.isArray(ids) ? ids.map(String) : [];
+    } catch {
+        return [];
+    }
+}
+function toggleWish(id) {
+    const ids = wishIds();
+    const on = !ids.includes(id);
+    try {
+        localStorage.setItem(WISH_KEY, JSON.stringify(on ? [...ids, id] : ids.filter((x) => x !== id)));
+    } catch {
+        /* diblokir */
+    }
+    return on;
+}
+
+const socialCount = (n) => (n >= 1_000_000 ? `${String(Math.floor(n / 100_000) / 10).replace(".", ",")}jt+` : n >= 1000 ? `${Math.floor(n / 1000)}rb+` : String(n));
+
+/**
+ * Kartu produk dashboard = SAMA dengan kartu toko / halaman koleksi:
+ * foto besar + stiker/diskon + ♡, ★ rating & terjual, nama, harga besar, info kirim.
+ * Tidak memakai .append(null) (dulu menulis "null" di layar).
+ */
 export function productTile(p, { onOpen } = {}) {
-    const tile = el("article", "bx-tile");
-    const open = el("button", "bx-tile__open");
+    const id = String(p.id);
+    const name = txt(p.name) || "Produk";
+    const tile = el("article", "bx-tile bx-pc");
+    const open = el("button", "bx-pc__open");
     open.type = "button";
-    open.setAttribute("aria-label", `Lihat ${p.name}`);
-    const img = el("span", "bx-tile__img");
+    open.setAttribute("aria-label", `Lihat ${name}`);
+
+    const media = el("span", "bx-pc__media");
     const src = productImage(p);
     if (src) {
         const i = document.createElement("img");
         i.src = src;
         i.alt = "";
         i.loading = "lazy";
-        img.append(i);
+        i.decoding = "async";
+        media.append(i);
+    } else {
+        media.append(el("span", "bx-pc__ph", name.charAt(0).toUpperCase()));
     }
     const now = Number(p.price) || 0;
     const was = Number(p.compare_at_price) || 0;
-    if (was > now) img.append(el("span", "bx-tile__off", `-${Math.round((1 - now / was) * 100)}%`));
-    if (p.stock !== null && p.stock !== undefined && Number(p.stock) <= 0) img.append(el("span", "bx-tile__out", "Habis"));
+    const sold = Number(p.sales_count) || 0;
+    if (was > now) media.append(el("span", "bx-pc__badge bx-pc__badge--off", `-${Math.round((1 - now / was) * 100)}%`));
+    else if (sold >= 30) media.append(el("span", "bx-pc__badge bx-pc__badge--hits", "🔥 Lagi hits"));
+    if (p.stock !== null && p.stock !== undefined && Number(p.stock) <= 0) media.append(el("span", "bx-pc__out", "Habis"));
 
     const rating = Number(p.rating_avg) || 0;
     const reviews = Number(p.review_count) || 0;
-    const stars = el("span", `bx-tile__rating${rating > 0 ? "" : " is-new"}`,
-        el("span", "bx-tile__star", "★"),
-        rating > 0 ? `${rating.toFixed(1).replace(".", ",")}${reviews ? ` (${reviews})` : ""}` : "Baru");
+    const meta = el("span", "bx-pc__meta",
+        el("span", `bx-pc__rating${rating > 0 ? "" : " is-new"}`, el("span", "bx-pc__star", "★"),
+            rating > 0 ? `${rating.toFixed(1).replace(".", ",")}${reviews ? ` (${socialCount(reviews)})` : ""}` : "Baru"),
+        el("span", "bx-pc__sold", sold > 0 ? `${socialCount(sold)} terjual` : "Jadi yang pertama!"));
 
-    open.append(
-        img,
-        el("span", "bx-tile__name", txt(p.name) || "Produk"),
-        txt(p.spec_line) ? el("span", "bx-tile__spec", txt(p.spec_line)) : null,
-        el("span", "bx-tile__price", getPlan().industry === "properti" ? bigPrice(now) : rupiah(now), was > now ? el("s", "", rupiah(was)) : null),
-        el("span", "bx-tile__meta", stars, el("span", "bx-tile__dot", "·"), `${Number(p.sales_count) || 0} terjual`),
-    );
+    const eta = txt(p.ship_estimate) || txt(CFG?.shipping?.estimate);
+    const from = txt(p.ship_from) || txt(CFG?.shipping?.from) || "Indonesia";
+    const spec = txt(p.spec_line);
+
+    open.append(...[
+        media,
+        el("span", "bx-pc__body",
+            meta,
+            el("span", "bx-pc__name", name),
+            spec ? el("span", "bx-pc__spec", spec) : null,
+            el("span", "bx-pc__price", el("strong", "", getPlan().industry === "properti" ? bigPrice(now) : rupiah(now)), was > now ? el("s", "", rupiah(was)) : null),
+            el("span", "bx-pc__ship",
+                el("span", "bx-pc__eta", icon("package-tracking"), eta ? `Tiba ${eta}` : "Cek ongkir"),
+                el("span", "bx-pc__from", icon("store-map"), el("span", "", `Dari ${from}`)))),
+    ].filter(Boolean));
     open.addEventListener("click", () => onOpen?.(p));
-    tile.append(open);
+
+    const heart = el("button", `bx-pc__heart${wishIds().includes(id) ? " is-on" : ""}`, icon("wishlist"));
+    heart.type = "button";
+    heart.setAttribute("aria-label", `Simpan ${name} ke wishlist`);
+    heart.addEventListener("click", (event) => {
+        event.stopPropagation();
+        heart.classList.toggle("is-on", toggleWish(id));
+    });
+
+    tile.append(open, heart);
     return tile;
 }
 
