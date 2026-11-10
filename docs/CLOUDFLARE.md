@@ -1,7 +1,7 @@
 # Web online lewat Cloudflare Pages
 
-Link utama tetap `https://kantoong-dhy.pages.dev` dan selalu menampilkan versi terbaru.
-Setiap publish juga membuat link arsip per versi (`abc123.kantoong-dhy.pages.dev`) — boleh diabaikan.
+Link utama tetap `https://kantoong-kenzo-ai.pages.dev` dan selalu menampilkan versi terbaru.
+Setiap publish juga membuat link arsip per versi (`abc123.kantoong-kenzo-ai.pages.dev`) — boleh diabaikan.
 
 - Tampilan web = folder `dist/` (hasil `npm run build`).
 - Backend AI (chat + penerjemah) = `functions/api/[[path]].js`, memakai ulang `backend/ai-chat.js`,
@@ -11,12 +11,12 @@ Setiap publish juga membuat link arsip per versi (`abc123.kantoong-dhy.pages.dev
 
 ## Sekali saja (dikerjakan Koko)
 1. `npx wrangler login` → browser terbuka → daftar/masuk Cloudflare (gratis) → Allow.
-2. `npx wrangler pages project create kantoong --production-branch main`
+2. `npx wrangler pages project create kantoong-kenzo-ai --production-branch main`
    (bila nama `kantoong` sudah dipakai orang, pakai nama lain dan ganti `name` di `wrangler.toml`).
-3. `npx wrangler pages secret put GEMINI_API_KEY --project-name kantoong`
+3. `npx wrangler pages secret put GEMINI_API_KEY --project-name kantoong-kenzo-ai`
    → tempel kunci Gemini dari `backend/.env` sendiri, Enter.
 4. Supabase › Authentication › URL Configuration › Redirect URLs: tambahkan
-   `https://kantoong-dhy.pages.dev/**` (agar link lupa password & login Google kembali ke web online).
+   `https://kantoong-kenzo-ai.pages.dev/**` (agar link lupa password & login Google kembali ke web online).
 
 ## Setiap mau publish
 - `npm run deploy` (build + unggah langsung dari laptop, TANPA push GitHub).
