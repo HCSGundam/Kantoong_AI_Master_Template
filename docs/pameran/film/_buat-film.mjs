@@ -18,7 +18,9 @@ const qr = await QRCode.toString("https://kantoong-kenzo-ai.pages.dev", { type: 
 const qrSmall = await QRCode.toString("INV/014/XI/2026", { type: "svg", margin: 0, color: { dark: "#14120f", light: "#ffffff" } });
 
 /* ---------- aset kecil ---------- */
-const logo = (c = "") => `<svg viewBox="0 0 100 100" class="logo ${c}"><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg>`;
+// Logo resmi Kantoong (latar transparan). Simbol untuk ikon kecil, logo penuh untuk adegan logo.
+const logo = (c = "") => `<img src="logo/simbol.png" class="logo ${c}" alt="">`;
+const logoFull = (c = "") => `<img src="logo/logo.png" class="logofull ${c}" alt="KANTOONG">`;
 const star = (cls = "") => `<svg viewBox="0 0 100 100" class="star ${cls}"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg>`;
 const ic = (d) => `<svg viewBox="0 0 48 48" class="ic"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${d}</g></svg>`;
 const I = {
@@ -61,11 +63,10 @@ const words = (list, cls = "") => `<div class="kin ${cls}">${list.map(([w, delay
 
 /* ================= INTRO ================= */
 scene(2600, "dark", `
-  <div class="pill-intro"><span class="typed" data-type="Memperkenalkan " data-at="100" data-speed="45"></span><b class="typed" data-type="KANTOONG AI" data-at="900" data-speed="70"></b></div>
+  <div class="pill-intro"><span class="typed" data-type="Memperkenalkan " data-at="100" data-speed="45"></span><b class="typed" data-type="KANTOONG KENZO AI" data-at="900" data-speed="60"></b></div>
   <div class="glowline"></div>`);
-scene(1900, "dark", `<div class="logoBig in">${logo()}<span>KANTOONG <b>AI</b></span></div><div class="swoosh"></div>`);
-scene(1300, "light", words([["Jualannya", 0]], "huge gold"));
-scene(1300, "light", words([["Jualannya", 0, "dim"], ["enak.", 0.15]], "big"));
+scene(2400, "dark", `<div class="logoHero in">${logoFull()}</div><div class="swoosh"></div>`);
+scene(2200, "light", words([["Jualannya", 0, "gold"], ["enak.", 0.7]], "huge"));
 scene(2100, "light", `${words([["Ngurusnya", 0], ["yang", 0.2], ["<em>capek.</em>", 0.45, "target"]], "big")}${cur([[[1500, 900], 0], [".target", 1300, 1]])}`);
 scene(1500, "blur", words([["Biar", 0]], "giant white"));
 scene(2600, "rings", `<div class="rings"><i></i><i></i><i></i></div><div class="ringrow"><span class="in">karyawan AI yang ngurus</span><div class="swap"><b>24 jam</b><b>tanpa libur</b><b>10× lebih gesit</b></div></div>`);
@@ -253,12 +254,12 @@ scene(4600, "ax", axcap("SECOND BRAIN", "Bisnismu, dilihat <em>dari atas.</em>")
 /* ================= PENUTUP ================= */
 scene(1500, "dark", `<div class="center">${star()}</div>`);
 scene(2000, "dark", `<div class="line">Masa depan bisnismu <span class="spark">${star("xs")}</span> ada di sini</div>`);
-scene(1900, "dark", `<div class="line">bersama <span class="spark">${star("xs")}</span> <b>KANTOONG AI</b></div>`);
+scene(1900, "dark", `<div class="line">bersama <span class="spark">${star("xs")}</span> <b class="brandw">KANTOONG KENZO AI</b></div>`);
 scene(6000, "final", `
   <div class="final">
     <div class="final__l">
-      <div class="logoBig sm in">${logo()}<span>KANTOONG <b>AI</b></span></div>
-      <h2 class="in" style="animation-delay:.25s">Biar karyawan <em>KANTOONG AI</em> yang ngurus.</h2>
+      <div class="logoHero sm in">${logoFull()}</div>
+      <h2 class="in" style="animation-delay:.25s">Biar karyawan <span class="brandw">KANTOONG KENZO AI</span> yang ngurus.</h2>
       <button class="cta in tgt" style="animation-delay:.6s">${star("xs")}Coba sekarang</button>
     </div>
     <div class="final__r in" style="animation-delay:.5s"><div class="qrbox">${qr}</div><b>Scan, coba 1 menit</b><small>kantoong-kenzo-ai.pages.dev</small></div>
@@ -318,8 +319,8 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 @keyframes car { 50% { opacity:0; } }
 /* teks kinetik */
 .kin { text-align:center; font-weight:700; letter-spacing:-.05em; line-height:1.02; }
-.kin.huge { font-size:250px; } .kin.big { font-size:170px; } .kin.mid { font-size:120px; } .kin.giant { font-size:380px; }
-.kin.gold .w { color:var(--gold); } .kin.white .w { color:#fff; text-shadow:0 10px 60px rgba(160,80,20,.35); }
+.kin.huge { font-size:220px; } .kin.big { font-size:170px; } .kin.mid { font-size:120px; } .kin.giant { font-size:380px; }
+.kin.gold .w, .kin .w.gold { color:var(--gold); } .kin.white .w { color:#fff; text-shadow:0 10px 60px rgba(160,80,20,.35); }
 .kin .w { display:inline-block; opacity:0; animation: word .55s cubic-bezier(.2,.9,.25,1.15) forwards; }
 .kin .w.dim { opacity:.35; animation:none; }
 .kin em { font-size:1.04em; }
@@ -333,6 +334,13 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 .pill-intro b { font-weight:700; color:var(--gold2); }
 .glowline { position:absolute; left:20%; right:20%; top:640px; height:2px; background:linear-gradient(90deg, transparent, var(--gold2), transparent); box-shadow:0 0 30px var(--gold); animation: grow 1.6s ease-out forwards; transform: scaleX(0); }
 @keyframes grow { to { transform: scaleX(1); } }
+.logo { object-fit:contain; filter: drop-shadow(0 0 10px rgba(90,160,255,.35)); }
+.logoHero { position:relative; display:grid; place-items:center; }
+.logoHero::before { content:""; position:absolute; width:760px; height:760px; border-radius:50%; background: radial-gradient(closest-side, rgba(70,140,255,.45), rgba(70,140,255,.12) 55%, transparent); filter: blur(10px); }
+.logofull { position:relative; width:640px; height:auto; filter: brightness(1.35) saturate(1.15) drop-shadow(0 0 40px rgba(80,160,255,.55)); }
+.logoHero.sm::before { width:380px; height:380px; } .logoHero.sm .logofull { width:300px; }
+.final__l .logoHero { justify-items:start; } .final__l .logoHero::before { left:-40px; }
+.brandw { font-family:"Poppins",sans-serif; font-style:normal; font-weight:800; letter-spacing:.02em; background:linear-gradient(90deg,#f5d77e,#e3b33c 45%,#8fc1ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .logoBig { display:flex; align-items:center; gap:34px; font-size:120px; font-weight:700; letter-spacing:.04em; color:#fff; }
 .logoBig .logo { width:150px; height:150px; } .logoBig b { color:var(--gold2); }
 .logoBig.sm { font-size:52px; gap:20px; } .logoBig.sm .logo { width:74px; height:74px; }
@@ -507,12 +515,12 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 .line b { font-weight:700; letter-spacing:.04em; color:var(--gold2); }
 .spark .star.xs { width:70px; height:70px; animation: spin 1s cubic-bezier(.6,0,.3,1) forwards; filter: drop-shadow(0 0 20px rgba(233,196,95,.8)); }
 .final { display:flex; align-items:center; gap:120px; color:#f6f1e4; }
-.final__l { width:980px; } .final h2 { margin-top:40px; font-size:96px; line-height:1.05; font-weight:600; letter-spacing:-.035em; }
+.final__l { width:1000px; } .final h2 { margin-top:30px; font-size:86px; line-height:1.05; font-weight:600; letter-spacing:-.035em; }
 .cta { margin-top:50px; display:inline-flex; align-items:center; gap:18px; padding:28px 54px; border-radius:99px; background:linear-gradient(90deg,#e3c46a,#f3dc96); color:#15120d; font-size:40px; font-weight:700; box-shadow:0 0 80px rgba(227,196,106,.6); }
 .final__r { display:grid; justify-items:center; gap:10px; } .final__r b { margin-top:20px; font-size:40px; } .final__r small { font-size:26px; color:#b5ab96; }
 .qrbox { width:380px; padding:26px; border-radius:36px; background:#fff; box-shadow:0 0 0 10px rgba(227,196,106,.35), 0 0 120px rgba(227,196,106,.5); } .qrbox svg { width:100%; display:block; }
-.wm { position:absolute; right:44px; bottom:30px; display:flex; align-items:center; gap:10px; font-size:20px; letter-spacing:.2em; font-weight:500; z-index:60; color:rgba(120,110,90,.75); mix-blend-mode: difference; color:#bfb39a; }
-.wm .logo { width:28px; height:28px; }
+.wm { position:absolute; right:44px; bottom:30px; display:flex; align-items:center; gap:10px; font-size:20px; letter-spacing:.2em; font-weight:500; z-index:60; color:#9a8c70; padding:8px 16px 8px 10px; border-radius:99px; background:rgba(20,18,14,.35); backdrop-filter: blur(6px); color:#efe6d2; }
+.wm .logo { width:34px; height:34px; }
 .progress { position:absolute; left:0; bottom:0; height:4px; background:var(--gold); width:0; z-index:60; }
 </style></head><body>
 <script src="produk/daftar.js"></script>
@@ -524,7 +532,7 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
   <div class="bg bg--final" data-k="final"></div>
   <iframe id="ax" src="anachronos/index.html" title="Anachronos" tabindex="-1"></iframe>
   ${S.join("\n")}
-  <div class="wm">${logo()}KANTOONG AI</div>
+  <div class="wm">${logo()}KANTOONG KENZO AI</div>
   <div class="progress" id="prog"></div>
 </div>
 <script>
@@ -621,6 +629,9 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 </script>
 </body></html>`;
 for (const n of used) copyFileSync(`${SHOTS}/${n}.jpg`, `${OUT}/ui/${n}.jpg`);
+mkdirSync(`${OUT}/logo`, { recursive: true });
+copyFileSync("C:/Kantoong_AI_Master_Template/docs/pameran/logo/logo-kantoong-transparan.png", `${OUT}/logo/logo.png`);
+copyFileSync("C:/Kantoong_AI_Master_Template/docs/pameran/logo/logo-kantoong-simbol.png", `${OUT}/logo/simbol.png`);
 // Folder foto produk teman (tidak pernah ditimpa saat film dibangun ulang).
 mkdirSync(`${OUT}/produk`, { recursive: true });
 if (!existsSync(`${OUT}/produk/daftar.js`)) writeFileSync(`${OUT}/produk/daftar.js`, `// DAFTAR PRODUK TEMAN UNTUK FILM PAMERAN

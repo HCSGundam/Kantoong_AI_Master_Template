@@ -50,8 +50,8 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 @keyframes car { 50% { opacity:0; } }
 /* teks kinetik */
 .kin { text-align:center; font-weight:700; letter-spacing:-.05em; line-height:1.02; }
-.kin.huge { font-size:250px; } .kin.big { font-size:170px; } .kin.mid { font-size:120px; } .kin.giant { font-size:380px; }
-.kin.gold .w { color:var(--gold); } .kin.white .w { color:#fff; text-shadow:0 10px 60px rgba(160,80,20,.35); }
+.kin.huge { font-size:220px; } .kin.big { font-size:170px; } .kin.mid { font-size:120px; } .kin.giant { font-size:380px; }
+.kin.gold .w, .kin .w.gold { color:var(--gold); } .kin.white .w { color:#fff; text-shadow:0 10px 60px rgba(160,80,20,.35); }
 .kin .w { display:inline-block; opacity:0; animation: word .55s cubic-bezier(.2,.9,.25,1.15) forwards; }
 .kin .w.dim { opacity:.35; animation:none; }
 .kin em { font-size:1.04em; }
@@ -65,6 +65,13 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 .pill-intro b { font-weight:700; color:var(--gold2); }
 .glowline { position:absolute; left:20%; right:20%; top:640px; height:2px; background:linear-gradient(90deg, transparent, var(--gold2), transparent); box-shadow:0 0 30px var(--gold); animation: grow 1.6s ease-out forwards; transform: scaleX(0); }
 @keyframes grow { to { transform: scaleX(1); } }
+.logo { object-fit:contain; filter: drop-shadow(0 0 10px rgba(90,160,255,.35)); }
+.logoHero { position:relative; display:grid; place-items:center; }
+.logoHero::before { content:""; position:absolute; width:760px; height:760px; border-radius:50%; background: radial-gradient(closest-side, rgba(70,140,255,.45), rgba(70,140,255,.12) 55%, transparent); filter: blur(10px); }
+.logofull { position:relative; width:640px; height:auto; filter: brightness(1.35) saturate(1.15) drop-shadow(0 0 40px rgba(80,160,255,.55)); }
+.logoHero.sm::before { width:380px; height:380px; } .logoHero.sm .logofull { width:300px; }
+.final__l .logoHero { justify-items:start; } .final__l .logoHero::before { left:-40px; }
+.brandw { font-family:"Poppins",sans-serif; font-style:normal; font-weight:800; letter-spacing:.02em; background:linear-gradient(90deg,#f5d77e,#e3b33c 45%,#8fc1ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .logoBig { display:flex; align-items:center; gap:34px; font-size:120px; font-weight:700; letter-spacing:.04em; color:#fff; }
 .logoBig .logo { width:150px; height:150px; } .logoBig b { color:var(--gold2); }
 .logoBig.sm { font-size:52px; gap:20px; } .logoBig.sm .logo { width:74px; height:74px; }
@@ -239,12 +246,12 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 .line b { font-weight:700; letter-spacing:.04em; color:var(--gold2); }
 .spark .star.xs { width:70px; height:70px; animation: spin 1s cubic-bezier(.6,0,.3,1) forwards; filter: drop-shadow(0 0 20px rgba(233,196,95,.8)); }
 .final { display:flex; align-items:center; gap:120px; color:#f6f1e4; }
-.final__l { width:980px; } .final h2 { margin-top:40px; font-size:96px; line-height:1.05; font-weight:600; letter-spacing:-.035em; }
+.final__l { width:1000px; } .final h2 { margin-top:30px; font-size:86px; line-height:1.05; font-weight:600; letter-spacing:-.035em; }
 .cta { margin-top:50px; display:inline-flex; align-items:center; gap:18px; padding:28px 54px; border-radius:99px; background:linear-gradient(90deg,#e3c46a,#f3dc96); color:#15120d; font-size:40px; font-weight:700; box-shadow:0 0 80px rgba(227,196,106,.6); }
 .final__r { display:grid; justify-items:center; gap:10px; } .final__r b { margin-top:20px; font-size:40px; } .final__r small { font-size:26px; color:#b5ab96; }
 .qrbox { width:380px; padding:26px; border-radius:36px; background:#fff; box-shadow:0 0 0 10px rgba(227,196,106,.35), 0 0 120px rgba(227,196,106,.5); } .qrbox svg { width:100%; display:block; }
-.wm { position:absolute; right:44px; bottom:30px; display:flex; align-items:center; gap:10px; font-size:20px; letter-spacing:.2em; font-weight:500; z-index:60; color:rgba(120,110,90,.75); mix-blend-mode: difference; color:#bfb39a; }
-.wm .logo { width:28px; height:28px; }
+.wm { position:absolute; right:44px; bottom:30px; display:flex; align-items:center; gap:10px; font-size:20px; letter-spacing:.2em; font-weight:500; z-index:60; color:#9a8c70; padding:8px 16px 8px 10px; border-radius:99px; background:rgba(20,18,14,.35); backdrop-filter: blur(6px); color:#efe6d2; }
+.wm .logo { width:34px; height:34px; }
 .progress { position:absolute; left:0; bottom:0; height:4px; background:var(--gold); width:0; z-index:60; }
 </style></head><body>
 <script src="produk/daftar.js"></script>
@@ -256,17 +263,16 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
   <div class="bg bg--final" data-k="final"></div>
   <iframe id="ax" src="anachronos/index.html" title="Anachronos" tabindex="-1"></iframe>
   <section class="scene" data-d="2600" data-bg="dark" >
-  <div class="pill-intro"><span class="typed" data-type="Memperkenalkan " data-at="100" data-speed="45"></span><b class="typed" data-type="KANTOONG AI" data-at="900" data-speed="70"></b></div>
+  <div class="pill-intro"><span class="typed" data-type="Memperkenalkan " data-at="100" data-speed="45"></span><b class="typed" data-type="KANTOONG KENZO AI" data-at="900" data-speed="60"></b></div>
   <div class="glowline"></div></section>
-<section class="scene" data-d="1900" data-bg="dark" ><div class="logoBig in"><svg viewBox="0 0 100 100" class="logo "><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg><span>KANTOONG <b>AI</b></span></div><div class="swoosh"></div></section>
-<section class="scene" data-d="1300" data-bg="light" ><div class="kin huge gold"><span class="w " style="animation-delay:0s">Jualannya</span></div></section>
-<section class="scene" data-d="1300" data-bg="light" ><div class="kin big"><span class="w dim" style="animation-delay:0s">Jualannya</span> <span class="w " style="animation-delay:0.15s">enak.</span></div></section>
+<section class="scene" data-d="2400" data-bg="dark" ><div class="logoHero in"><img src="logo/logo.png" class="logofull " alt="KANTOONG"></div><div class="swoosh"></div></section>
+<section class="scene" data-d="2200" data-bg="light" ><div class="kin huge"><span class="w gold" style="animation-delay:0s">Jualannya</span> <span class="w " style="animation-delay:0.7s">enak.</span></div></section>
 <section class="scene" data-d="2100" data-bg="light" ><div class="kin big"><span class="w " style="animation-delay:0s">Ngurusnya</span> <span class="w " style="animation-delay:0.2s">yang</span> <span class="w target" style="animation-delay:0.45s"><em>capek.</em></span></div><div class="hand" data-steps='[[[1500,900],0],[".target",1300,1]]'><svg viewBox="0 0 32 32"><path d="M11 3.5c1.2 0 2.2 1 2.2 2.2v8.1l.6-.1c.9-.2 1.9.3 2.3 1.2l.2.5.7-.2c1-.2 2 .3 2.4 1.2l.2.4.6-.1c1.1-.2 2.2.6 2.4 1.7l.9 5.2c.4 2.3-.3 4.6-1.9 6.3l-.8.9H10.7l-5-7.3c-.6-.9-.4-2.1.5-2.7.8-.6 1.9-.5 2.6.2l.9.9V5.7c0-1.2 1-2.2 2.2-2.2z" fill="#fff" stroke="#1a1612" stroke-width="1.5" stroke-linejoin="round"/><path d="M13.2 13.8v4M17 15.4v3.2M20.6 16.9v2.8" stroke="#1a1612" stroke-width="1.2" stroke-linecap="round"/></svg></div></section>
 <section class="scene" data-d="1500" data-bg="blur" ><div class="kin giant white"><span class="w " style="animation-delay:0s">Biar</span></div></section>
 <section class="scene" data-d="2600" data-bg="rings" ><div class="rings"><i></i><i></i><i></i></div><div class="ringrow"><span class="in">karyawan AI yang ngurus</span><div class="swap"><b>24 jam</b><b>tanpa libur</b><b>10× lebih gesit</b></div></div></section>
 <section class="scene" data-d="3000" data-bg="light" >
   <div class="card notif in">
-    <div class="notif__ic"><svg viewBox="0 0 100 100" class="logo "><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg></div>
+    <div class="notif__ic"><img src="logo/simbol.png" class="logo " alt=""></div>
     <div class="notif__b"><b>Kantoong AI</b><p class="typed" data-type="Hai Kak Rina! Sepatu hitam yang cocok sama blazer Noir-mu lagi diskon 15%." data-at="350" data-speed="24"></p>
     <div class="notif__row"><span class="mini"><svg viewBox="0 0 48 48" class="ic"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 40S6 29 6 17a9 9 0 0 1 18-3 9 9 0 0 1 18 3c0 12-18 23-18 23z"/></g></svg><em>dari selera di jaringan Kantoong</em></span><button class="btn gold tgt">Lihat</button></div></div>
   </div><div class="hand" data-steps='[[[1500,950],0],[".tgt",2300,1]]'><svg viewBox="0 0 32 32"><path d="M11 3.5c1.2 0 2.2 1 2.2 2.2v8.1l.6-.1c.9-.2 1.9.3 2.3 1.2l.2.5.7-.2c1-.2 2 .3 2.4 1.2l.2.4.6-.1c1.1-.2 2.2.6 2.4 1.7l.9 5.2c.4 2.3-.3 4.6-1.9 6.3l-.8.9H10.7l-5-7.3c-.6-.9-.4-2.1.5-2.7.8-.6 1.9-.5 2.6.2l.9.9V5.7c0-1.2 1-2.2 2.2-2.2z" fill="#fff" stroke="#1a1612" stroke-width="1.5" stroke-linejoin="round"/><path d="M13.2 13.8v4M17 15.4v3.2M20.6 16.9v2.8" stroke="#1a1612" stroke-width="1.2" stroke-linecap="round"/></svg></div></section>
@@ -320,7 +326,7 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
   <div class="hand" data-steps='[[[1500,950],0],[".tgt",1200,1]]'><svg viewBox="0 0 32 32"><path d="M11 3.5c1.2 0 2.2 1 2.2 2.2v8.1l.6-.1c.9-.2 1.9.3 2.3 1.2l.2.5.7-.2c1-.2 2 .3 2.4 1.2l.2.4.6-.1c1.1-.2 2.2.6 2.4 1.7l.9 5.2c.4 2.3-.3 4.6-1.9 6.3l-.8.9H10.7l-5-7.3c-.6-.9-.4-2.1.5-2.7.8-.6 1.9-.5 2.6.2l.9.9V5.7c0-1.2 1-2.2 2.2-2.2z" fill="#fff" stroke="#1a1612" stroke-width="1.5" stroke-linejoin="round"/><path d="M13.2 13.8v4M17 15.4v3.2M20.6 16.9v2.8" stroke="#1a1612" stroke-width="1.2" stroke-linecap="round"/></svg></div></section>
 <section class="scene" data-d="3000" data-bg="light" >
   <div class="card consent in">
-    <div class="consent__h"><svg viewBox="0 0 100 100" class="logo "><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg><b>Konsultasi AI</b></div>
+    <div class="consent__h"><img src="logo/simbol.png" class="logo " alt=""><b>Konsultasi AI</b></div>
     <p>Boleh aku mengingat obrolan kita di semua toko jaringan Kantoong? Kamu bisa menghapusnya kapan saja.</p>
     <div class="btns"><button class="btn dark tgt">Ingat di semua toko</button><button class="btn ghost">Hanya di toko ini</button></div>
   </div>
@@ -358,10 +364,10 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
   <div class="cap in">Tinggal <em>perintah.</em></div>
   <div class="agentbar in"><span class="mic"><svg viewBox="0 0 48 48" class="ic"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="18" r="9"/><path d="M8 42c2-9 9-13 16-13s14 4 16 13M20 17h.01M28 17h.01"/></g></svg></span><span class="q typed" data-type="Buatkan invoice untuk Kafe Senja" data-at="250" data-speed="40"></span><button class="btn gold tgt">Jalankan</button></div>
   <div class="hand" data-steps='[[[1500,950],0],[".tgt",2100,1]]'><svg viewBox="0 0 32 32"><path d="M11 3.5c1.2 0 2.2 1 2.2 2.2v8.1l.6-.1c.9-.2 1.9.3 2.3 1.2l.2.5.7-.2c1-.2 2 .3 2.4 1.2l.2.4.6-.1c1.1-.2 2.2.6 2.4 1.7l.9 5.2c.4 2.3-.3 4.6-1.9 6.3l-.8.9H10.7l-5-7.3c-.6-.9-.4-2.1.5-2.7.8-.6 1.9-.5 2.6.2l.9.9V5.7c0-1.2 1-2.2 2.2-2.2z" fill="#fff" stroke="#1a1612" stroke-width="1.5" stroke-linejoin="round"/><path d="M13.2 13.8v4M17 15.4v3.2M20.6 16.9v2.8" stroke="#1a1612" stroke-width="1.2" stroke-linecap="round"/></svg></div></section>
-<section class="scene" data-d="1700" data-bg="blur" ><div class="gen"><svg viewBox="0 0 100 100" class="logo pulse"><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg><span>Menyiapkan dokumen…</span></div></section>
+<section class="scene" data-d="1700" data-bg="blur" ><div class="gen"><img src="logo/simbol.png" class="logo pulse" alt=""><span>Menyiapkan dokumen…</span></div></section>
 <section class="scene" data-d="3600" data-bg="light" >
   <div class="card inv in">
-    <div class="inv__h"><div><svg viewBox="0 0 100 100" class="logo "><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg><b>INVOICE</b><small>INV/014/XI/2026</small></div><div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h21v21H0z"/><path stroke="#14120f" d="M0 0.5h7m3 0h1m1 0h1m1 0h7M0 1.5h1m5 0h1m1 0h3m3 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m2 0h1m2 0h1m1 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h7M11 7.5h2M0 8.5h1m1 0h1m1 0h1m1 0h1m3 0h2m4 0h1m2 0h1M1 9.5h1m2 0h1m2 0h4m2 0h1m2 0h3M1 10.5h1m2 0h4m1 0h1m2 0h1m2 0h1m1 0h1m2 0h1M1 11.5h3m1 0h1m1 0h1m2 0h1m2 0h1m2 0h2m1 0h1M0 12.5h1m1 0h2m1 0h3m4 0h1m2 0h1m1 0h1m1 0h2M8 13.5h1m2 0h1m1 0h1m4 0h1m1 0h1M0 14.5h7m3 0h2m2 0h2m2 0h1M0 15.5h1m5 0h1m2 0h5m3 0h1m2 0h1M0 16.5h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h2m2 0h3M0 17.5h1m1 0h3m1 0h1m3 0h2m1 0h2m1 0h2m1 0h1M0 18.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h1m1 0h1M0 19.5h1m5 0h1m2 0h3m3 0h2m2 0h2M0 20.5h7m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1"/></svg>
+    <div class="inv__h"><div><img src="logo/simbol.png" class="logo " alt=""><b>INVOICE</b><small>INV/014/XI/2026</small></div><div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h21v21H0z"/><path stroke="#14120f" d="M0 0.5h7m3 0h1m1 0h1m1 0h7M0 1.5h1m5 0h1m1 0h3m3 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m2 0h1m2 0h1m1 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h7M11 7.5h2M0 8.5h1m1 0h1m1 0h1m1 0h1m3 0h2m4 0h1m2 0h1M1 9.5h1m2 0h1m2 0h4m2 0h1m2 0h3M1 10.5h1m2 0h4m1 0h1m2 0h1m2 0h1m1 0h1m2 0h1M1 11.5h3m1 0h1m1 0h1m2 0h1m2 0h1m2 0h2m1 0h1M0 12.5h1m1 0h2m1 0h3m4 0h1m2 0h1m1 0h1m1 0h2M8 13.5h1m2 0h1m1 0h1m4 0h1m1 0h1M0 14.5h7m3 0h2m2 0h2m2 0h1M0 15.5h1m5 0h1m2 0h5m3 0h1m2 0h1M0 16.5h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h2m2 0h3M0 17.5h1m1 0h3m1 0h1m3 0h2m1 0h2m1 0h2m1 0h1M0 18.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h1m1 0h1M0 19.5h1m5 0h1m2 0h3m3 0h2m2 0h2M0 20.5h7m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1"/></svg>
 <small>QR keaslian</small></div></div>
     <div class="inv__to"><small>Kepada</small><b>Kafe Senja</b></div>
     <div class="inv__l"><span>Miloat Chocolate × 120</span><b>Rp 12.000.000</b></div>
@@ -421,19 +427,19 @@ em { font-family:"Playfair Display",serif; font-style:italic; font-weight:600; c
 <section class="scene" data-d="4600" data-bg="ax" data-ax="cinema"><div class="axcap"><small class="in">SECOND BRAIN</small><b class="in" style="animation-delay:.2s">Bisnismu, dilihat <em>dari atas.</em></b></div></section>
 <section class="scene" data-d="1500" data-bg="dark" ><div class="center"><svg viewBox="0 0 100 100" class="star "><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg></div></section>
 <section class="scene" data-d="2000" data-bg="dark" ><div class="line">Masa depan bisnismu <span class="spark"><svg viewBox="0 0 100 100" class="star xs"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg></span> ada di sini</div></section>
-<section class="scene" data-d="1900" data-bg="dark" ><div class="line">bersama <span class="spark"><svg viewBox="0 0 100 100" class="star xs"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg></span> <b>KANTOONG AI</b></div></section>
+<section class="scene" data-d="1900" data-bg="dark" ><div class="line">bersama <span class="spark"><svg viewBox="0 0 100 100" class="star xs"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg></span> <b class="brandw">KANTOONG KENZO AI</b></div></section>
 <section class="scene" data-d="6000" data-bg="final" >
   <div class="final">
     <div class="final__l">
-      <div class="logoBig sm in"><svg viewBox="0 0 100 100" class="logo "><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg><span>KANTOONG <b>AI</b></span></div>
-      <h2 class="in" style="animation-delay:.25s">Biar karyawan <em>KANTOONG AI</em> yang ngurus.</h2>
+      <div class="logoHero sm in"><img src="logo/logo.png" class="logofull " alt="KANTOONG"></div>
+      <h2 class="in" style="animation-delay:.25s">Biar karyawan <span class="brandw">KANTOONG KENZO AI</span> yang ngurus.</h2>
       <button class="cta in tgt" style="animation-delay:.6s"><svg viewBox="0 0 100 100" class="star xs"><defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff4cf"/><stop offset=".45" stop-color="#e3c46a"/><stop offset="1" stop-color="#8a6a12"/></linearGradient></defs><path d="M50 2 C54 34 66 46 98 50 C66 54 54 66 50 98 C46 66 34 54 2 50 C34 46 46 34 50 2Z" fill="url(#sg)"/></svg>Coba sekarang</button>
     </div>
     <div class="final__r in" style="animation-delay:.5s"><div class="qrbox"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h29v29H0z"/><path stroke="#0b0a08" d="M0 0.5h7m5 0h1m2 0h5m2 0h7M0 1.5h1m5 0h1m4 0h1m8 0h1m1 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h2m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m1 0h1m6 0h1m1 0h1m2 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h1m3 0h4m2 0h3m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h4m1 0h3m2 0h1m3 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h1m1 0h2m1 0h1m2 0h1m2 0h1M0 8.5h1m1 0h5m2 0h2m1 0h1m1 0h4m1 0h2m1 0h5M0 9.5h5m2 0h1m1 0h3m4 0h9m3 0h1M2 10.5h1m2 0h4m2 0h1m3 0h2m1 0h1m3 0h1m1 0h1M0 11.5h1m1 0h3m2 0h1m1 0h1m4 0h3m2 0h2m1 0h4m1 0h1M3 12.5h1m1 0h4m2 0h1m3 0h1m1 0h3m3 0h1m1 0h2M0 13.5h1m2 0h2m2 0h1m1 0h1m1 0h1m1 0h2m1 0h9m3 0h1M1 14.5h1m1 0h1m1 0h2m1 0h1m1 0h2m1 0h3m1 0h1m2 0h1m1 0h1m2 0h2M0 15.5h2m1 0h1m3 0h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m1 0h2m3 0h1M1 16.5h1m3 0h2m2 0h1m1 0h2m1 0h2m1 0h1m7 0h2M0 17.5h3m2 0h1m2 0h1m2 0h2m3 0h1m2 0h6m1 0h1m1 0h1M0 18.5h1m1 0h1m3 0h1m2 0h1m2 0h1m2 0h1m2 0h1m1 0h1m1 0h3m1 0h1M0 19.5h1m2 0h2m2 0h1m2 0h3m1 0h1m1 0h1m1 0h2m1 0h2m1 0h1m2 0h1M0 20.5h1m1 0h2m2 0h2m3 0h2m4 0h1m1 0h6m1 0h3M8 21.5h3m2 0h2m3 0h1m1 0h1m3 0h5M0 22.5h7m3 0h1m1 0h5m1 0h3m1 0h1m1 0h3M0 23.5h1m5 0h1m1 0h6m5 0h2m3 0h1m3 0h1M0 24.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h4m2 0h5m1 0h2M0 25.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h2m5 0h4M0 26.5h1m1 0h3m1 0h1m1 0h3m4 0h3m1 0h9M0 27.5h1m5 0h1m6 0h4m3 0h1m2 0h1m1 0h1m1 0h1M0 28.5h7m1 0h4m1 0h1m1 0h1m1 0h1m4 0h1m3 0h1"/></svg>
 </div><b>Scan, coba 1 menit</b><small>kantoong-kenzo-ai.pages.dev</small></div>
   </div>
   <div class="hand" data-steps='[[[1500,1000],0],[".tgt",1700,1]]'><svg viewBox="0 0 32 32"><path d="M11 3.5c1.2 0 2.2 1 2.2 2.2v8.1l.6-.1c.9-.2 1.9.3 2.3 1.2l.2.5.7-.2c1-.2 2 .3 2.4 1.2l.2.4.6-.1c1.1-.2 2.2.6 2.4 1.7l.9 5.2c.4 2.3-.3 4.6-1.9 6.3l-.8.9H10.7l-5-7.3c-.6-.9-.4-2.1.5-2.7.8-.6 1.9-.5 2.6.2l.9.9V5.7c0-1.2 1-2.2 2.2-2.2z" fill="#fff" stroke="#1a1612" stroke-width="1.5" stroke-linejoin="round"/><path d="M13.2 13.8v4M17 15.4v3.2M20.6 16.9v2.8" stroke="#1a1612" stroke-width="1.2" stroke-linecap="round"/></svg></div></section>
-  <div class="wm"><svg viewBox="0 0 100 100" class="logo "><rect x="16" y="8" width="20" height="84" fill="#c9a227"/><polygon points="36,52 72,8 92,8 52,52" fill="#e3c46a"/><polygon points="36,52 52,52 92,92 70,92" fill="#9e7b1a"/></svg>KANTOONG AI</div>
+  <div class="wm"><img src="logo/simbol.png" class="logo " alt="">KANTOONG KENZO AI</div>
   <div class="progress" id="prog"></div>
 </div>
 <script>
