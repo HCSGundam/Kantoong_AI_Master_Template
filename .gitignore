@@ -8,3 +8,7 @@ node_modules/
 
 # Log
 *.log
+
+# Kunci lokal Cloudflare (wrangler pages dev) & cache wrangler
+.dev.vars
+.wrangler/

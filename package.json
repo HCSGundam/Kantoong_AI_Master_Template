@@ -8,11 +8,14 @@
     "dev:hp": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run --root ."
+    "test": "vitest run --root .",
+    "cf:dev": "npm run build && wrangler pages dev --port 8788",
+    "deploy": "npm run build && wrangler pages deploy --branch main"
   },
   "devDependencies": {
     "vite": "^7.0.0",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "wrangler": "^4.159.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0"

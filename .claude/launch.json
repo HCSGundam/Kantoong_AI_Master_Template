@@ -30,6 +30,18 @@
         "start"
       ],
       "port": 5000
+    },
+    {
+      "name": "kantoong-cloudflare",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "wrangler",
+        "pages",
+        "dev",
+        "--port",
+        "8788"
+      ],
+      "port": 8788
     }
   ]
 }

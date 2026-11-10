@@ -1,0 +1,6 @@
+# Cloudflare Pages — web online Kantoong (lihat docs/CLOUDFLARE.md)
+# Tampilan = folder dist/ (hasil `npm run build`), backend AI = folder functions/.
+name = "kantoong"
+pages_build_output_dir = "./dist"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
