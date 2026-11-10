@@ -10,12 +10,15 @@
 import { SEGMENTS, segmentOf } from "../core/crm.js";
 import { dateTime, el, emptyState, formDialog, friendlyError, pageHeader, rupiah, segmented, statCard, toast } from "../ui.js";
 
+import { CRM_PRO_TABS, pipelineView } from "./crm-pro.js";
+import { subRoute } from "./pro-data.js";
+
+let view = "pelanggan";
 let segment = "all";
 let query = "";
 
 export async function render(ctx) {
     const { data, me } = ctx;
-    const customers = (await data.listCustomers()).map((customer) => ({ ...customer, segment: segmentOf(customer) }));
     const own = me.job_role === "sales" && me.level < 3;
 
     const page = el("div", { class: "erp-page__inner" });
@@ -23,6 +26,21 @@ export async function render(ctx) {
         own ? "Pelangganku" : "CRM Pelanggan",
         own ? "Pembeli dari tokomu. Catat kebiasaan mereka untuk penawaran berikutnya." : "Semua pembeli dari seluruh toko, otomatis dari pesanan."
     ));
+
+    // Pro Max: pipeline calon pelanggan (tautan langsung #/crm/pipeline).
+    const routed = subRoute();
+    if (CRM_PRO_TABS.some((t) => t.value === routed)) view = routed;
+    page.appendChild(segmented(CRM_PRO_TABS, view, (next) => {
+        view = next;
+        if (location.hash.split("/").length > 2) history.replaceState(null, "", "#/crm");
+        ctx.rerender();
+    }));
+    if (view === "pipeline") {
+        page.appendChild(await pipelineView(ctx));
+        return page;
+    }
+
+    const customers = (await data.listCustomers()).map((customer) => ({ ...customer, segment: segmentOf(customer) }));
 
     const count = (key) => customers.filter((customer) => customer.segment === key).length;
     page.appendChild(el("div", { class: "erp-stats" },

@@ -32,6 +32,9 @@ import { isUnlocked, lock, touch, unlock } from "./core/erp-lock.js";
 
 import * as workspace from "./modules/workspace.js";
 import * as cockpit from "./modules/cockpit.js";
+import * as command from "./modules/command.js";
+import { mountProShell, refreshProShell, stopProShell } from "./pro-shell.js";
+import { invalidateProData } from "./modules/pro-data.js";
 import * as sales from "./modules/sales.js";
 import * as team from "./modules/team.js";
 import * as catalog from "./modules/catalog.js";
@@ -57,7 +60,7 @@ import * as analysis from "./modules/analysis.js";
 import * as storefront from "./modules/storefront.js";
 
 const RENDERERS = {
-    workspace, cockpit, sales, team, catalog, approvals, org, inventory, pos, kitchen, cashcontrol, posreport, recipes, promos, finance, hr, payroll,
+    workspace, command, cockpit, sales, team, catalog, approvals, org, inventory, pos, kitchen, cashcontrol, posreport, recipes, promos, finance, hr, payroll,
     purchasing, logistics, cs, marketing, crm, brain, analysis, storefront,
 };
 const DEMO_KEY = "kantoong_erp_demo_persona";
@@ -186,7 +189,9 @@ function renderTopbar() {
 
 function currentModuleKey() {
     const key = location.hash.replace(/^#\/?/, "").split("/")[0];
-    return app.modules.some((module) => module.key === key) ? key : "workspace";
+    if (app.modules.some((module) => module.key === key)) return key;
+    // Owner/direktur langsung masuk Ruang Komando.
+    return app.modules.some((module) => module.key === "command") ? "command" : "workspace";
 }
 
 async function renderPage() {
@@ -229,6 +234,7 @@ async function renderPage() {
     }
 
     root.focus({ preventScroll: true });
+    refreshProShell();
 }
 
 /* ---------- Kunci otomatis saat tidak aktif ---------- */
@@ -254,6 +260,7 @@ function onActivity() {
 
 function lockErp(message) {
     lock();
+    stopProShell();
     app.cleanup?.();
     app.cleanup = null;
     app.data = null;
@@ -264,6 +271,9 @@ function start(adapter, member, userId = null) {
     if (adapter.mode === "supabase") startIdleWatch(userId);
     app.data = adapter;
     app.me = member;
+    invalidateProData();
+    // Ctrl+K & lonceng notifikasi (Pro Max).
+    mountProShell({ getCtx: () => (app.data ? { data: app.data, me: app.me } : null), getModules: () => app.modules });
     // Paket (Pro/Free): Free hanya katalog, etalase, akun & tim (js/plan.js).
     app.modules = modulesFor(member, getPlan().erpModules);
     // Add-on (mis. Anachronos Analysis) dibaca dari pusat; menu ikut muncul begitu aktif.
@@ -360,6 +370,7 @@ async function boot() {
             app.cleanup?.();
             app.cleanup = null;
             app.data = null;
+            stopProShell();
             location.hash = "";
             showLogin();
             return;

@@ -11,6 +11,10 @@ import { hasRole } from "../core/org.js";
 import { MOVE_LABELS, stockStatus } from "../core/inventory.js";
 import { dateTime, el, emptyState, formDialog, friendlyError, pageHeader, segmented, shortRupiah, statCard, toast } from "../ui.js";
 import { scanBarcode } from "./catalog.js";
+import { INVENTORY_PRO_TABS, inventoryProView } from "./inventory-pro.js";
+import { subRoute } from "./pro-data.js";
+
+let view = "stok";
 
 let warehouseFilter = "all";
 let query = "";
@@ -49,6 +53,19 @@ export async function render(ctx) {
         canEdit ? el("button", { class: "erp-btn", type: "button", onclick: () => editWarehouse(ctx, {}) }, "+ Gudang/outlet") : null,
         canEdit ? el("button", { class: "erp-btn erp-btn--primary", type: "button", onclick: () => moveDialog(ctx, { warehouses, products, levels }) }, "Catat mutasi") : null
     ));
+
+    // Pro Max: Saran belanja & Kedaluwarsa (tautan langsung #/inventory/saran).
+    const routed = subRoute();
+    if (INVENTORY_PRO_TABS.some((t) => t.value === routed)) view = routed;
+    page.appendChild(segmented(INVENTORY_PRO_TABS, view, (next) => {
+        view = next;
+        if (location.hash.split("/").length > 2) history.replaceState(null, "", "#/inventory");
+        ctx.rerender();
+    }));
+    if (view !== "stok") {
+        page.appendChild(await inventoryProView(ctx, view, { warehouses, levels, products }));
+        return page;
+    }
 
     page.appendChild(segmented(
         [{ value: "all", label: "Semua" }].concat(warehouses.filter((entry) => entry.is_active !== false).map((entry) => ({

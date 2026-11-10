@@ -10,6 +10,8 @@
 import { ACCOUNT_TYPES, balanceSheet, balances, flattenLines, monthRange, profitLoss, validateJournal } from "../core/accounting.js";
 import { currentPeriod, periodLabel, previousPeriod, wibDate } from "../core/hr.js";
 import { el, emptyState, formDialog, friendlyError, hbarList, pageHeader, rupiah, segmented, statCard, toast } from "../ui.js";
+import { FINANCE_PRO_TABS, financeProView } from "./finance-pro.js";
+import { subRoute } from "./pro-data.js";
 
 let tab = "summary";
 let period = null;
@@ -21,6 +23,10 @@ export async function render(ctx) {
     const [accounts, entries] = await Promise.all([data.listAccounts(), data.listJournal()]);
 
     period = period || currentPeriod();
+    // Tautan langsung dari Ruang Komando / notifikasi: #/finance/piutang dst.
+    const routed = subRoute();
+    if (FINANCE_PRO_TABS.some((t) => t.value === routed)) tab = routed;
+    const proTab = FINANCE_PRO_TABS.some((t) => t.value === tab);
     const range = monthRange(period);
     const lines = flattenLines(entries);
     const nameOf = (code) => accounts.find((account) => account.code === code)?.name || code;
@@ -43,11 +49,13 @@ export async function render(ctx) {
             { value: "pl", label: "Laba rugi" },
             { value: "bs", label: "Neraca" },
             { value: "accounts", label: "Akun" },
+            ...FINANCE_PRO_TABS,
         ], tab, (value) => {
             tab = value;
+            if (location.hash.split("/").length > 2) history.replaceState(null, "", "#/finance");
             ctx.rerender();
         }),
-        tab !== "bs" && tab !== "accounts"
+        tab !== "bs" && tab !== "accounts" && !proTab
             ? segmented(periods.map((value) => ({ value, label: periodLabel(value) })), period, (value) => {
                 period = value;
                 ctx.rerender();
@@ -60,6 +68,10 @@ export async function render(ctx) {
         return page;
     }
 
+    if (proTab) {
+        page.appendChild(await financeProView(ctx, tab, accounts, entries));
+        return page;
+    }
     if (tab === "summary") page.appendChild(summaryView(accounts, lines, range));
     if (tab === "journal") page.appendChild(journalView(entries, range, nameOf));
     if (tab === "pl") page.appendChild(profitLossView(accounts, lines, range));

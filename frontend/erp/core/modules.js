@@ -20,6 +20,13 @@ export const MODULES = Object.freeze([
         allow: () => true,
     },
     {
+        key: "command",
+        label: "Ruang Komando",
+        hint: "3 keputusan hari ini, denyut perusahaan & proyeksi kas",
+        icon: "M12 2l3 6 6 .9-4.5 4.4 1 6.2L12 16.6 6.5 19.5l1-6.2L3 8.9 9 8z",
+        allow: (member) => member.level >= 4,
+    },
+    {
         key: "cockpit",
         label: "Ringkasan Owner",
         hint: "Seluruh perusahaan dalam satu layar",

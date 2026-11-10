@@ -11,6 +11,10 @@ import { hasRole, subtreeIds } from "../core/org.js";
 import { ATTENDANCE_LABELS, DEFAULT_HR_SETTINGS, currentPeriod, monthlyRecap, periodLabel, previousPeriod, wibDate, wibTime, workDuration } from "../core/hr.js";
 import { monthRange } from "../core/accounting.js";
 import { el, emptyState, formDialog, friendlyError, initials, pageHeader, segmented, statCard, toast } from "../ui.js";
+import { HR_PRO_TABS, hrProView } from "./hr-pro.js";
+import { subRoute } from "./pro-data.js";
+
+let view = "absensi";
 
 let period = null;
 
@@ -40,6 +44,19 @@ export async function render(ctx) {
         `Jam masuk ${rules.work_start} WIB · toleransi ${rules.grace_minutes} menit · ${rules.working_days} hari kerja/bulan`,
         isHr ? el("button", { class: "erp-btn", type: "button", onclick: () => editSettings(ctx, rules) }, "Aturan jam kerja") : null
     ));
+
+    // Pro Max: Cuti, Kontrak, Kinerja (tautan langsung #/hr/kontrak).
+    const routed = subRoute();
+    if (HR_PRO_TABS.some((t) => t.value === routed)) view = routed;
+    page.appendChild(segmented(HR_PRO_TABS, view, (next) => {
+        view = next;
+        if (location.hash.split("/").length > 2) history.replaceState(null, "", "#/hr");
+        ctx.rerender();
+    }));
+    if (view !== "absensi") {
+        page.appendChild(await hrProView(ctx, view, members));
+        return page;
+    }
 
     // ---------- Absensiku ----------
     const mineToday = records.find((record) => record.member_id === me.id && record.work_date === today);

@@ -14,6 +14,7 @@ import { phase2SupabaseMethods } from "./supabase-adapter-phase2.js";
 import { phase3SupabaseMethods } from "./supabase-adapter-phase3.js";
 import { phase4SupabaseMethods } from "./supabase-adapter-phase4.js";
 import { posProSupabaseMethods } from "./supabase-adapter-pos.js";
+import { proSupabaseMethods } from "./supabase-adapter-pro.js";
 import { createProduct, deleteProduct, setPublication, updateProduct, uploadProductImage } from "./product-service.js";
 
 const MEMBER_FIELDS =
@@ -46,6 +47,7 @@ export function createSupabaseAdapter() {
         ...phase3SupabaseMethods(),
         ...phase4SupabaseMethods(),
         ...posProSupabaseMethods(),
+        ...proSupabaseMethods(),
 
         async getSession() {
             const { data } = await supabase.auth.getUser();
@@ -178,17 +180,18 @@ export function createSupabaseAdapter() {
             ) || [];
         },
 
+        // Rantai persetujuan berjenjang dihitung SERVER (db/erp-pro.sql).
         async createApproval(values) {
-            const { data } = await supabase.rpc("erp_link_me");
-            check(await supabase.from("approvals").insert({ ...values, requester_id: data }));
+            check(await supabase.rpc("erp_pro_submit_approval", {
+                p_kind: values.kind,
+                p_title: values.title,
+                p_amount: values.amount ?? null,
+                p_note: values.note ?? null,
+            }));
         },
 
         async decideApproval(approvalId, status, note) {
-            check(await supabase.from("approvals").update({
-                status,
-                decision_note: note || null,
-                decided_at: new Date().toISOString(),
-            }).eq("id", approvalId));
+            check(await supabase.rpc("erp_pro_decide_approval", { p_id: approvalId, p_decision: status, p_note: note || null }));
         },
 
         async listAudit() {

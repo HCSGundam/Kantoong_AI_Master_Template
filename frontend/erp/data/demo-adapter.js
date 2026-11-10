@@ -24,6 +24,9 @@ import { phase3Methods } from "./demo-adapter-phase3.js";
 import { phase4Methods } from "./demo-adapter-phase4.js";
 import { posProMethods } from "./demo-adapter-pos.js";
 import { ensurePosMembers } from "./demo-seed-kitchen.js";
+import { ensureProSeed } from "./demo-seed-pro.js";
+import { proMethods } from "./demo-adapter-pro.js";
+import { buildChain, decideStep } from "../core/approval-chain.js";
 
 const STORE_KEY = "kantoong_erp_demo_v1";
 const listeners = new Set();
@@ -52,6 +55,8 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
     }
     // POS Pro Tahap 2: peran Barista (Dapur & Bar) juga untuk data demo lama.
     ensurePosMembers(db);
+    // ERP Pro Max: aturan persetujuan, tagihan, anggaran, batch, SDM & CRM pro.
+    ensureProSeed(db);
 
     const save = () => {
         try {
@@ -96,6 +101,7 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
         ...posProMethods({ db: () => db, save, me, audit, ...posHelpers }),
         ...phase3Methods({ db: () => db, save, me, audit }),
         ...phase4Methods({ db: () => db, save, me }),
+        ...proMethods({ db: () => db, save, me, audit, journalWrite: posHelpers.journalWrite }),
 
         async getSession() {
             const member = me();
@@ -309,6 +315,7 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
                     .filter((item) =>
                         item.requester_id === viewer.id ||
                         item.approver_id === viewer.id ||
+                        (item.chain || []).some((step) => step.approver_id === viewer.id || step.original_id === viewer.id) ||
                         viewer.level >= 5
                     )
                     .sort((a, b) => b.created_at.localeCompare(a.created_at))
@@ -317,16 +324,25 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
 
         async createApproval(values) {
             const viewer = me();
-            const owner = db.members.find((member) => member.level === 5 && member.id !== viewer.id);
+            // Rantai berjenjang dihitung dari aturan (jenis + nominal), bukan dari kiriman pengguna.
+            const built = buildChain(
+                { kind: values.kind, amount: Number(values.amount) || 0, requester_id: viewer.id },
+                { rules: db.pro?.rules, members: db.members, delegations: db.pro?.delegations }
+            );
+            const now = new Date().toISOString();
             const created = {
                 id: id("a"),
-                status: "menunggu",
                 decision_note: null,
-                decided_at: null,
-                created_at: new Date().toISOString(),
-                ...values,
+                created_at: now,
+                kind: values.kind,
+                title: values.title,
+                amount: values.amount ?? null,
+                note: values.note ?? null,
                 requester_id: viewer.id,
-                approver_id: viewer.manager_id || owner?.id || null,
+                ...built,
+                status: built.chain.length ? "menunggu" : "disetujui",
+                decided_at: built.chain.length ? null : now,
+                approver_id: built.chain[0]?.approver_id ?? null,
             };
             db.approvals.push(created);
             audit("approvals", created.id, "INSERT", { title: created.title });
@@ -335,14 +351,15 @@ export function createDemoAdapter({ meId, realProducts = [] }) {
 
         async decideApproval(approvalId, status, note) {
             const viewer = me();
-            const item = db.approvals.find((entry) => entry.id === approvalId);
-            if (!item) throw new Error("Pengajuan tidak ditemukan.");
-            if (item.approver_id !== viewer.id && viewer.level < 5) throw denied();
-
-            item.status = status;
-            item.decision_note = note || null;
-            item.decided_at = new Date().toISOString();
-            audit("approvals", approvalId, "UPDATE", { status: { dari: "menunggu", jadi: status } });
+            const index = db.approvals.findIndex((entry) => entry.id === approvalId);
+            if (index < 0) throw new Error("Pengajuan tidak ditemukan.");
+            const before = db.approvals[index];
+            const after = decideStep(before, viewer, status, note);
+            db.approvals[index] = after;
+            // Cuti ikut status pengajuannya.
+            const leave = after.leave_id && db.pro?.leaves.find((entry) => entry.id === after.leave_id);
+            if (leave) leave.status = after.status;
+            audit("approvals", approvalId, "UPDATE", { langkah: status, status: { dari: before.status, jadi: after.status } });
             save();
         },
 

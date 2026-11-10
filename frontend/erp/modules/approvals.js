@@ -8,14 +8,10 @@
  */
 
 import { dateTime, el, emptyState, formDialog, friendlyError, pageHeader, rupiah, segmented, toast } from "../ui.js";
+import { APPROVAL_KINDS, chainProgress, currentApprover, isOverdue, stepLabel } from "../core/approval-chain.js";
+import { rulesView, delegationsView } from "./approvals-pro.js";
 
-const KINDS = Object.freeze({
-    diskon: "Diskon khusus",
-    cuti: "Cuti / izin",
-    pengeluaran: "Pengeluaran",
-    retur: "Retur barang",
-    lainnya: "Lainnya",
-});
+const KINDS = APPROVAL_KINDS;
 
 const STATUS = Object.freeze({
     menunggu: { label: "Menunggu", tone: "warn" },
@@ -40,15 +36,22 @@ export async function render(ctx) {
     const [items, members] = await Promise.all([data.listApprovals(), data.listMembers()]);
     const nameOf = (id) => members.find((member) => member.id === id)?.full_name || "—";
 
-    const toDecide = items.filter((item) => item.approver_id === me.id);
+    // Giliranku sekarang + yang pernah kuputuskan (riwayat), dari rantai berjenjang.
+    const turnOf = (item) => currentApprover(item) ?? item.approver_id;
+    const toDecide = items.filter((item) => item.requester_id !== me.id && (
+        (item.status === "menunggu" && turnOf(item) === me.id)
+        || (item.chain || []).some((step) => step.decided_by === me.id || (step.approver_id === me.id && step.decision))
+        || (!(item.chain || []).length && item.approver_id === me.id)));
     const mine = items.filter((item) => item.requester_id === me.id);
-    const waiting = toDecide.filter((item) => item.status === "menunggu").length;
+    const waiting = toDecide.filter((item) => item.status === "menunggu" && turnOf(item) === me.id).length;
 
     const tabs = [
         { value: "decide", label: `Perlu kuputuskan${waiting ? ` (${waiting})` : ""}` },
         { value: "mine", label: "Pengajuanku" },
     ];
     if (me.level >= 5) tabs.push({ value: "all", label: "Semua" });
+    tabs.push({ value: "rules", label: "Aturan berjenjang" });
+    if (me.level >= 2) tabs.push({ value: "delegate", label: "Delegasi" });
     if (me.level >= 4) tabs.push({ value: "audit", label: "Jejak audit" });
     if (!tabs.some((entry) => entry.value === tab)) tab = "decide";
 
@@ -56,7 +59,7 @@ export async function render(ctx) {
 
     page.appendChild(pageHeader(
         "Persetujuan & Audit",
-        "Pengajuanmu otomatis masuk ke atasan langsung.",
+        "Pengajuan otomatis berjalan berjenjang sesuai jenis & nominal: atasan → keuangan → owner.",
         el("button", { class: "erp-btn erp-btn--primary", type: "button", onclick: () => newRequest(ctx) }, "+ Buat pengajuan")
     ));
 
@@ -67,6 +70,14 @@ export async function render(ctx) {
 
     if (tab === "audit") {
         page.appendChild(await auditView(ctx, nameOf));
+        return page;
+    }
+    if (tab === "rules") {
+        page.appendChild(await rulesView(ctx));
+        return page;
+    }
+    if (tab === "delegate") {
+        page.appendChild(await delegationsView(ctx, members));
         return page;
     }
 
@@ -80,7 +91,10 @@ export async function render(ctx) {
     page.appendChild(el("div", { class: "erp-approvals" },
         list.map((item) => {
             const status = STATUS[item.status] || STATUS.menunggu;
-            const canDecide = item.status === "menunggu" && (item.approver_id === me.id || me.level >= 5);
+            const canDecide = item.status === "menunggu" && (turnOf(item) === me.id || me.level >= 5)
+                && (item.requester_id !== me.id || me.level >= 5);
+            const progress = chainProgress(item);
+            const late = isOverdue(item);
 
             return el("article", { class: "erp-card erp-approval" },
                 el("div", { class: "erp-approval__top" },
@@ -90,8 +104,10 @@ export async function render(ctx) {
                 el("h3", { text: item.title }),
                 item.amount ? el("p", { class: "erp-approval__amount", text: rupiah(item.amount) }) : null,
                 item.note ? el("p", { class: "erp-muted", text: item.note }) : null,
-                el("p", { class: "erp-approval__meta", text: `${nameOf(item.requester_id)} → ${nameOf(item.approver_id)} · ${dateTime(item.created_at)}` }),
-                item.decision_note ? el("p", { class: "erp-approval__decision", text: `Catatan atasan: ${item.decision_note}` }) : null,
+                el("p", { class: "erp-approval__meta", text: `Diajukan ${nameOf(item.requester_id)} · ${dateTime(item.created_at)}` }),
+                chainSteps(item, nameOf),
+                el("p", { class: "erp-approval__progress" }, progress.label, late ? el("span", { class: "erp-pill erp-pill--bad", text: "Menunggu > 24 jam" }) : null),
+                item.decision_note ? el("p", { class: "erp-approval__decision", text: `Catatan keputusan: ${item.decision_note}` }) : null,
                 canDecide
                     ? el("div", { class: "erp-approval__actions" },
                         el("button", { class: "erp-btn erp-btn--sm", type: "button", onclick: () => decide(ctx, item, "ditolak") }, "Tolak"),
@@ -103,6 +119,24 @@ export async function render(ctx) {
     ));
 
     return page;
+}
+
+/** Rantai penyetuju: ✓ sudah, ● giliran sekarang, ○ menunggu giliran, ✕ ditolak. */
+function chainSteps(item, nameOf) {
+    const chain = item.chain || [];
+    if (!chain.length) return null;
+    const turn = item.status === "menunggu" ? chain.findIndex((step) => !step.decision) : -1;
+    return el("ol", { class: "erp-chain", "aria-label": "Rantai persetujuan" },
+        chain.map((step, index) => {
+            const state = step.decision === "disetujui" ? "done" : step.decision === "ditolak" ? "rejected" : index === turn ? "now" : "next";
+            const mark = { done: "✓", rejected: "✕", now: "●", next: "○" }[state];
+            const delegated = step.original_id && step.original_id !== step.approver_id ? ` (wakil ${nameOf(step.original_id)})` : "";
+            return el("li", { class: `erp-chain__step is-${state}`, title: step.note || "" },
+                el("span", { class: "erp-chain__mark", text: mark }),
+                el("span", { class: "erp-chain__text" },
+                    el("strong", { text: nameOf(step.approver_id) + delegated }),
+                    el("small", { text: stepLabel(step.step) + (step.at ? ` · ${dateTime(step.at)}` : "") })));
+        }));
 }
 
 async function auditView(ctx, nameOf) {
@@ -137,7 +171,7 @@ async function auditView(ctx, nameOf) {
 async function newRequest(ctx) {
     const values = await formDialog({
         title: "Buat pengajuan",
-        submitLabel: "Kirim ke atasan",
+        submitLabel: "Kirim pengajuan",
         fields: [
             { name: "kind", label: "Jenis", type: "select", options: Object.entries(KINDS).map(([value, label]) => ({ value, label })) },
             { name: "title", label: "Judul", required: true, max: 120, placeholder: "contoh: Diskon 10% untuk pembelian 40 botol" },
@@ -160,7 +194,10 @@ async function newRequest(ctx) {
             amount: values.amount ? Math.round(Number(values.amount)) : null,
             note: values.note.trim() || null,
         });
-        toast("Pengajuan terkirim ke atasanmu.");
+        const chain = await ctx.data.previewChain?.({ kind: values.kind, amount: values.amount ? Number(values.amount) : 0 }).catch(() => []);
+        const members = await ctx.data.listMembers().catch(() => []);
+        const names = (chain || []).map((step) => members.find((m) => m.id === step.approver_id)?.full_name).filter(Boolean);
+        toast(names.length ? `Pengajuan terkirim. Alurnya: ${names.join(" → ")}.` : "Pengajuan terkirim.");
         tab = "mine";
         ctx.rerender();
     } catch (error) {
