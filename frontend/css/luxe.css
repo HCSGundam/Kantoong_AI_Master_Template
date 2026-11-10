@@ -428,12 +428,15 @@ html[data-commerce="off"] #appRoot .pdp-sticky .pdp-btn--secondary {
     font-size: 11px;
 }
 #appRoot .kc-footer__credit-by { color: rgb(241 234 217 / 50%); letter-spacing: .04em; }
-/* Logo biru di pita gelap: diberi cahaya tipis agar tetap terbaca */
+/* Logo resmi di lencana putih kecil (sesuai logo asli berlatar putih) */
 #appRoot .kc-footer__credit-logo {
     width: auto;
-    height: 20px;
+    height: 24px;
+    padding: 3px 4px;
     object-fit: contain;
-    filter: brightness(1.35) drop-shadow(0 0 6px rgb(90 160 255 / 55%));
+    background: #fff;
+    border-radius: 7px;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 20%);
 }
 #appRoot .kc-footer__credit-name {
     color: #e8d6a6;

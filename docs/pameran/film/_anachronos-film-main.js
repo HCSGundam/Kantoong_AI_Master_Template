@@ -140,8 +140,9 @@ async function ensureMall(t) {
 const SEQ = {
     // Putaran cepat di lapis mall.
     async orbit(t) {
+        // selalu mulai dari luar: bola otak utuh
         showCursor(false); hotName = null;
-        await ensureMall(t);
+        engine.goMall();
     },
     // Kursor pencet brand -> masuk neuron -> pencet organ.
     async dive(t) {
