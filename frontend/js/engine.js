@@ -3948,7 +3948,11 @@ function renderFooter() {
 
   const grid = makeElement("div", "kc-footer__grid");
   grid.append(brandCol, contactCol, placeCol, infoCol);
-  root.replaceChildren(grid, bottom);
+  // Kredit pembuat platform (logo menyusul — teks dulu).
+  const credit = makeElement("div", "kc-footer__credit");
+  credit.setAttribute("translate", "no");
+  credit.append(makeElement("span", "kc-footer__credit-by", "Dibuat oleh"), makeElement("strong", "kc-footer__credit-name", "KANTOONG KENZO AI"));
+  root.replaceChildren(grid, bottom, credit);
 
   // Data terstruktur toko untuk Google & mesin AI (GEO).
   let ld = document.getElementById("storeJsonLd");

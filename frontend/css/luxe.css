@@ -415,3 +415,21 @@ html[data-commerce="off"] #appRoot .pdp-sticky .pdp-btn--secondary {
 .kc-vf__rail { position: absolute; right: max(14px, calc(50% - min(50%, 100dvh * 9 / 32) + 14px)); bottom: calc(110px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; }
 .kc-vf__act { width: 48px; height: 48px; color: #f1ead9; background: rgb(255 255 255 / 10%); border: 0; border-radius: 50%; font-size: 20px; opacity: .55; }
 .kc-vf__count { position: absolute; top: calc(70px + env(safe-area-inset-top, 0px)); right: 18px; color: rgb(241 234 217 / 50%); font-size: 12px; }
+
+/* Kredit pembuat platform di dasar footer (logo menyusul) */
+#appRoot .kc-footer__credit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgb(241 234 217 / 10%);
+    font-size: 11px;
+}
+#appRoot .kc-footer__credit-by { color: rgb(241 234 217 / 50%); letter-spacing: .04em; }
+#appRoot .kc-footer__credit-name {
+    color: #e8d6a6;
+    font-weight: 600;
+    letter-spacing: .22em;
+}

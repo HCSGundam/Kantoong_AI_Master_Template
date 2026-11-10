@@ -3281,3 +3281,18 @@ html[data-theme="dark"]:has(> body .dashboard-user) {
 /* Wishlist: tombol hapus menggantikan ♡ di pojok kanan atas */
 .bx-pc:has(.bx-tile__remove) .bx-pc__heart { display: none; }
 .bx-pc .bx-tile__remove { top: 10px; right: 10px; z-index: 3; }
+
+/* Kotak cari Katalog yang menempel di atas: pita penuh selebar layar, tanpa "bingkai" yang memotong kartu */
+.dashboard-feature-stage__body:has(.bx-cat2) .bx-cat2__top {
+    /* Menempel tepat di bawah judul (tutup celah padding atas 32px). */
+    top: -32px;
+    margin-top: -32px;
+    padding-top: 42px !important;
+    margin-inline: calc(-1 * clamp(14px, 2.4vw, 40px));
+    padding: 10px clamp(14px, 2.4vw, 40px) 12px;
+    background: color-mix(in srgb, var(--bx-bg) 86%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    backdrop-filter: blur(16px) saturate(1.2);
+    border-bottom: 1px solid transparent;
+    transition: border-color .2s ease;
+}
