@@ -94,7 +94,7 @@ const pick = (list, rand) => list[Math.floor(rand() * list.length) % list.length
 export function localGreeting(a, rand = Math.random) {
     const hi = a.name
         ? pick([`Hai ${a.name}!`, `Halo ${a.name} 👋`, `Eh, ${a.name}!`, `Hai lagi, ${a.name}!`], rand)
-        : pick(["Hai, Kak!", "Halo Kak 👋", "Hai hai!", "Halo!", "Hai, selamat datang!"], rand);
+        : pick(["Hai, Kak!", "Halo Kak 👋", "Hai hai!", "Halo!"], rand);
     const time = pick([`Selamat ${a.part_of_day}.`, `Gimana ${a.part_of_day} ini?`, ""], rand);
     let q;
     if (a.cart.length) {

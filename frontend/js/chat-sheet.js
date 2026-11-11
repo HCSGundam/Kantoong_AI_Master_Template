@@ -1058,15 +1058,30 @@ function initChatSheet() {
 
     // Sapaan di kotak "Hai, Kak!" ikut sapaan AI (selalu baru), diketik per huruf.
     if (peekGreeting) {
-        peekGreeting.textContent = "";
-        peekGreeting.classList.add("is-typing");
         let stopTyping = null;
-        document.addEventListener("kantoong:ai-greeting", (event) => {
-            const text = String(event.detail?.text || "").trim();
+        const show = (text, instant) => {
+            text = String(text || "").trim();
             if (!text) return;
             stopTyping?.();
-            stopTyping = typewrite(peekGreeting, text, { speed: 26 });
-        });
+            peekGreeting.classList.remove("is-waiting");
+            if (instant) {
+                peekGreeting.classList.remove("is-typing");
+                peekGreeting.textContent = text;
+            } else {
+                stopTyping = typewrite(peekGreeting, text, { speed: 26 });
+            }
+        };
+        // Selama AI menyiapkan sapaan: titik-titik "sedang mengetik" (bukan kosong).
+        peekGreeting.textContent = "";
+        peekGreeting.classList.add("is-waiting");
+        document.addEventListener("kantoong:ai-greeting", (event) => show(event.detail?.text, event.detail?.instant));
+        if (window.__kcGreeting) show(window.__kcGreeting.text, true);
+        // Pengaman: bila tetap belum ada sapaan, pakai kalimat cadangan dari toko.
+        setTimeout(() => {
+            if (peekGreeting.textContent.trim()) return;
+            const list = Array.isArray(CFG?.ai_greetings) ? CFG.ai_greetings.filter(Boolean) : [];
+            show(list[Math.floor(Math.random() * list.length)] || "Lagi cari apa hari ini? Ceritain aja, aku bantu carikan.", false);
+        }, 9000);
     }
 
     /* ====================================================

@@ -2131,3 +2131,18 @@ html[data-chat-skin="light"] .kc-sheet {
     animation: kcCaret 1s steps(1) infinite;
 }
 @keyframes kcCaret { 50% { opacity: 0; } }
+
+/* Kotak "Hai, Kak!" saat sapaan AI sedang disiapkan: tiga titik bergerak */
+#peekGreeting.is-waiting::before {
+    content: "";
+    display: inline-block;
+    width: 36px;
+    height: 10px;
+    background:
+        radial-gradient(circle 4px, currentColor 95%, transparent) 0 50% / 12px 10px no-repeat,
+        radial-gradient(circle 4px, currentColor 95%, transparent) 12px 50% / 12px 10px no-repeat,
+        radial-gradient(circle 4px, currentColor 95%, transparent) 24px 50% / 12px 10px no-repeat;
+    opacity: .55;
+    animation: kcDots 1s ease-in-out infinite;
+}
+@keyframes kcDots { 50% { opacity: .2; } }

@@ -2173,6 +2173,7 @@ const PDP_ICONS = {
   expand: ["M4 9V4h5", "M20 9V4h-5", "M4 15v5h5", "M20 15v5h-5"],
   play: ["M8 5l11 7-11 7z"],
   chart: ["M4 19h16", "M5 15l4-4 3 3 6-7", "M15 7h3v3"],
+  shareNodes: ["M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", "M8.6 13.5l6.8 4", "M15.4 6.5l-6.8 4"],
   tag: ["M3 12V4h8l9 9-8 8z", "M7.5 8.5h.01"],
 };
 
@@ -2531,7 +2532,9 @@ function createPdpSummary(product) {
   const box = makeElement("div", "pdp-summary");
   const plan = getPlan();
 
-  // Harga paling atas, besar, TANPA kotak (gaya marketplace).
+  box.appendChild(makeElement("h1", "pdp-name", getProductName(product)));
+
+  // Harga besar TANPA kotak (gaya marketplace).
   const priceRow = makeElement("div", "pdp-price");
   priceRow.appendChild(makeElement("p", "pdp-price__now", plan.industry === "properti" ? bigPrice(getProductPrice(product)) : formatCurrency(getProductPrice(product))));
   if (plan.industry === "properti" && product?.attributes?.listing === "Disewakan") {
@@ -2555,18 +2558,11 @@ function createPdpSummary(product) {
     box.appendChild(was);
   }
 
-  box.appendChild(makeElement("h1", "pdp-name", getProductName(product)));
-
-  // Rating & terjual (angka asli). Klik = loncat ke ulasan.
+  // ★ rating | terjual | Stok: n  (stok = tulisan saja; detail stok di ERP)
   const meta = createProductMeta(product);
   meta.classList.add("pdp-meta");
-  const reviews = toNumber(product?.review_count, 0);
-  const link = makeElement("button", "pdp-meta__link", reviews > 0 ? `${reviews} ulasan` : "Belum ada ulasan");
-  link.type = "button";
-  link.addEventListener("click", () => {
-    productPage.root?.querySelector(".pdp-reviews-sec")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-  meta.appendChild(link);
+  const stockText = stockLabel(product);
+  if (stockText) meta.appendChild(makeElement("span", `pdp-stock-inline${stockText.out ? " is-out" : ""}`, stockText.text));
   box.appendChild(meta);
 
   // Produk kolaborasi antar brand Kantoong (atribut collab_with di product_attributes).
@@ -2581,6 +2577,14 @@ function createPdpSummary(product) {
   if (caption) box.appendChild(makeElement("p", "pdp-caption", caption));
 
   return box;
+}
+
+/** "Stok: 12" / "Stok habis" — null bila stok tidak dicatat. */
+function stockLabel(product) {
+  const raw = product?.stock;
+  if (raw === null || raw === undefined || raw === "") return null;
+  const n = Math.max(0, Math.floor(toNumber(raw, 0)));
+  return n === 0 ? { text: "Stok habis", out: true } : { text: `Stok: ${n}`, out: false };
 }
 
 /** Pop-up Harga Jujur (toko emas): latar gelap buram, grafik 30 hari. */
@@ -2630,30 +2634,7 @@ function createPdpInfo(product) {
     box.appendChild(row(ICONS.truck, "Pengiriman", `Dikirim dari ${from}`, estimate ? `Estimasi tiba ${estimate}` : "Estimasi tiba muncul saat checkout", "Ongkir dihitung saat checkout"));
   }
 
-  // Stok = tulisan biasa (angka stok detail ada di ERP).
-  box.appendChild(makeElement("p", `pdp-stocktext pdp-stocktext--${stock.key}`, stock.label));
-
-  let qty = clampQty(1, stock.max);
-  if (plan.commerce && plan.industry !== "properti" && stock.key !== "out") {
-    const q = makeElement("div", "pdp-info__qty");
-    const stepper = makeElement("div", "pdp-qty");
-    stepper.setAttribute("role", "group");
-    stepper.setAttribute("aria-label", "Jumlah");
-    const minus = pdpButton("pdp-qty__btn", "Kurangi", null, "−");
-    const value = makeElement("output", "pdp-qty__value", String(qty));
-    const plus = pdpButton("pdp-qty__btn", "Tambah", null, "+");
-    const sync = () => {
-      value.textContent = String(qty);
-      minus.disabled = qty <= 1;
-      plus.disabled = qty >= stock.max;
-    };
-    minus.addEventListener("click", () => { qty = clampQty(qty - 1, stock.max); sync(); });
-    plus.addEventListener("click", () => { qty = clampQty(qty + 1, stock.max); sync(); });
-    stepper.append(minus, value, plus);
-    sync();
-    q.append(makeElement("span", "", "Jumlah"), stepper);
-    box.appendChild(q);
-  }
+  const qty = 1;
   return { box, getQty: () => qty };
 }
 
@@ -2690,6 +2671,13 @@ function createPdpDetailSections(product) {
 /** Bar bawah (menempel): kiri Chat <brand> AI (garis bercahaya bergerak), kanan + Keranjang (hitam solid). */
 function createPdpBottomBar(product, getQty) {
   const bar = makeElement("div", "pdp-cta");
+  // Wishlist di BAWAH (hati), bukan di atas.
+  const like = pdpButton("pdp-cta__like product-like", "Simpan ke wishlist", ICONS.heart);
+  setLikeState(like, isWishlisted(product));
+  like.addEventListener("click", () => {
+    toggleWishlist(product);
+    setLikeState(like, isWishlisted(product));
+  });
   const chat = makeElement("button", "pdp-cta__chat");
   chat.type = "button";
   const orb = makeElement("span", "product-ask pdp-cta__orb");
@@ -2720,7 +2708,7 @@ function createPdpBottomBar(product, getQty) {
     main.dataset.action = "add-to-cart";
     main.addEventListener("click", () => addToCart(product, getQty()));
   }
-  bar.append(chat, main);
+  bar.append(like, chat, main);
   return bar;
 }
 
@@ -2749,7 +2737,6 @@ function createSpecTable(product) {
     ["Kategori", getProductCategory(product)],
     ["SKU", escapeText(product?.sku)],
     ["Barcode", escapeText(product?.barcode)],
-    ["Ketersediaan", stockState(product?.stock).label],
     ["Dikirim dari", escapeText(product?.ship_from) || escapeText(CFG?.shipping?.from)],
     ["Estimasi kirim", escapeText(product?.ship_estimate) || escapeText(CFG?.shipping?.estimate)],
   ].filter(([, value]) => value && value !== "Lainnya");
@@ -2968,41 +2955,29 @@ function renderProductPage(product) {
   page.replaceChildren();
   page.dataset.productId = id;
 
-  // Bar atas: kembali, jejak halaman, bagikan, wishlist.
-  const bar = makeElement("div", "product-page__bar pdp-bar");
-  const back = pdpButton("quickview__icon product-page__back", "Kembali", PDP_ICONS.left);
+  // Bar atas: kembali, NAMA PRODUK, ikon bagikan & keranjang (tanpa lingkaran).
+  const bar = makeElement("div", "product-page__bar pdp-bar pdp-bar--plain");
+  const back = pdpButton("pdp-bar__btn product-page__back", "Kembali", PDP_ICONS.left);
   back.addEventListener("click", closeProductPage);
-
-  const crumb = makeElement("nav", "pdp-crumb");
-  crumb.setAttribute("aria-label", "Jejak halaman");
-  const home = makeElement("button", "pdp-crumb__link", "Beranda");
-  home.type = "button";
-  home.addEventListener("click", closeProductPage);
-  crumb.appendChild(home);
-  const category = getProductCategory(product);
-  if (category && category !== "Lainnya") {
-    const cat = makeElement("button", "pdp-crumb__link", category);
-    cat.type = "button";
-    cat.addEventListener("click", () => {
-      closeProductPage();
-      setTimeout(() => {
-        filterByCategory(category);
-        scrollToCatalog();
-      }, 60);
-    });
-    crumb.append(makeElement("span", "pdp-crumb__sep", "/"), cat);
-  }
-  crumb.append(makeElement("span", "pdp-crumb__sep", "/"), makeElement("span", "pdp-crumb__here", getProductName(product)));
-
-  const share = pdpButton("quickview__icon pdp-bar__icon", "Bagikan produk", PDP_ICONS.share);
+  const title = makeElement("p", "pdp-bar__title", getProductName(product));
+  const share = pdpButton("pdp-bar__btn", "Bagikan produk", PDP_ICONS.shareNodes);
   share.addEventListener("click", () => shareProduct(product));
-  const like = pdpButton("quickview__icon pdp-bar__icon product-like", "Simpan ke wishlist", ICONS.heart);
-  setLikeState(like, isWishlisted(product));
-  like.addEventListener("click", () => {
-    toggleWishlist(product);
-    setLikeState(like, isWishlisted(product));
-  });
-  bar.append(back, crumb, makeElement("span", "pdp-bar__space"), share, like);
+  const cartBtn = pdpButton("pdp-bar__btn pdp-bar__cart", "Buka keranjang", ICONS.bag);
+  const badge = makeElement("span", "pdp-bar__badge");
+  cartBtn.appendChild(badge);
+  const syncBadge = () => {
+    const n = toNumber(document.getElementById("cartCount")?.textContent, 0);
+    badge.textContent = n > 99 ? "99+" : String(n);
+    badge.hidden = n <= 0;
+  };
+  syncBadge();
+  // Satu pendengar saja (halaman produk dibuat ulang tiap ganti produk).
+  if (productPage.onCart) window.removeEventListener("kantoong:cart-changed", productPage.onCart);
+  productPage.onCart = () => setTimeout(syncBadge, 30);
+  window.addEventListener("kantoong:cart-changed", productPage.onCart);
+  cartBtn.addEventListener("click", () => $(SELECTORS.cartButton)?.click());
+  if (!getPlan().commerce) cartBtn.hidden = true;
+  bar.append(back, title, share, cartBtn);
 
   const { element: galleryEl, gallery } = createPdpGallery(product);
   productPage.gallery = gallery;
@@ -3261,7 +3236,9 @@ function updateRailFocus(rail) {
   if (!section) return;
 
   const panel = rail.querySelector(".featured-panel");
-  const edge = (panel?.offsetWidth || 0) * 0.6;
+  // HP: tulisan di kiri/kanan HANYA saat benar-benar mentok; selama digeser, tulisan di atas
+  // (agar tidak menabrak kartu). Laptop: ambang lebih longgar seperti sebelumnya.
+  const edge = rail.clientWidth < 700 ? 6 : (panel?.offsetWidth || 0) * 0.6;
   let layout = "middle";
 
   if (!panel || max <= 1 || rail.scrollLeft <= edge) {
@@ -3339,9 +3316,9 @@ function positionFeaturedFloat(section) {
 
   const carouselMode = isCarouselMode(section);
   const layout = carouselMode ? "start" : section.dataset.layout || "start";
-  // HP (layar sempit): tulisan SELALU di atas agar tidak menabrak kartu yang sedang digeser.
+  // HP 3D: panel samping disembunyikan, jadi tulisan di atas.
   const narrow = section.clientWidth < 700;
-  const spot = narrow ? "top" : layout === "middle" ? "top" : layout === "end" ? "right" : "left";
+  const spot = narrow && carouselMode ? "top" : layout === "middle" ? "top" : layout === "end" ? "right" : "left";
   section.dataset.textSpot = spot;
 
   const pad = parseFloat(getComputedStyle(section).getPropertyValue("--page-pad")) || 16;

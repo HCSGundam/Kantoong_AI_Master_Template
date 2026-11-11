@@ -943,6 +943,9 @@ function renderInitialGreeting() {
         });
 
         scrollChatToBottom();
+        // Kotak "Hai, Kak!" ikut menampilkan pesan AI terakhir (tidak pernah kosong).
+        const lastAI = [...AIState.history].reverse().find((m) => m.who === "ai" && m.text);
+        if (lastAI) announceGreeting(String(lastAI.text), true);
         return;
     }
 
@@ -975,6 +978,12 @@ function currentActivity() {
     });
 }
 
+/** Simpan & umumkan sapaan (dibaca kotak "Hai, Kak!" walau ia dipasang belakangan). */
+function announceGreeting(text, instant) {
+    window.__kcGreeting = { text, instant };
+    emit("ai-greeting", { text, instant });
+}
+
 async function startGreeting() {
     if (AIState.greeting) {
         // Sapaan sedang disiapkan: cukup tampilkan lagi "sedang mengetik".
@@ -996,7 +1005,7 @@ async function startGreeting() {
     if (seq !== AIState.requestSequence || AIState.history.length) return;
     const message = addHistoryMessage("ai", text);
     renderMessage(message, { typewriter: true });
-    emit("ai-greeting", { text });
+    announceGreeting(text, false);
 }
 
 /* ============================================================
