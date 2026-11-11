@@ -1573,6 +1573,12 @@ export function renderDashboardFeatures() {
         renderWelcome(state.elements.welcomeTitle?.closest("[data-welcome-card]"));
         // Dashboard baru siap: tampilkan (kerangka HTML lama tidak pernah terlihat).
         document.documentElement.dataset.dashReady = "1";
+        // Muat kode halaman fitur di latar (saat senggang) agar fitur pertama yang dibuka langsung tampil.
+        if (!window.__kcRoomsWarm) {
+            window.__kcRoomsWarm = true;
+            const warm = () => Promise.all([import("./home/room.js"), import("./home/rooms/index.js")]).catch(() => {});
+            ("requestIdleCallback" in window ? requestIdleCallback : (fn) => setTimeout(fn, 1200))(warm);
+        }
         shelf?.refresh();
 
         if (state.elements.featureLoading) state.elements.featureLoading.hidden = true;
