@@ -532,3 +532,5 @@ html.kc-pdp-open #kcFloatOrb {
         0 10px 26px -8px rgb(180 90 255 / 65%),
         0 22px 50px -24px rgb(60 40 140 / 45%) !important;
 }
+/* Tanpa garis tepi bawaan (putih) di luar garis neon */
+#chatPanel.kc-sheet[data-state="peek"] { border: 0 !important; background-clip: padding-box; }
