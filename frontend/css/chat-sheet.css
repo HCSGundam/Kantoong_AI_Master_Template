@@ -2271,6 +2271,10 @@ html[data-chat-skin="light"] .kc-sheet {
     pointer-events: none;
 }
 .kc-orb.gl-on .kc-nano { display: none; }
+/* Orb 3D muncul halus (tidak ada versi 2D yang tampil duluan) */
+.kc-orb .kc-nano-gl { animation: kcNanoIn .6s ease both; }
+@keyframes kcNanoIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+html:not(.kc-nano-2d) .kc-orb .kc-nano { visibility: hidden; }
 .kc-orb.has-nano.is-away .kc-nano-gl { opacity: .12; transition: opacity .25s; }
 
 /* ===== ORB MINI (salinan orb 3D): kartu produk, tombol Chat AI, avatar chat ===== */
@@ -2308,3 +2312,13 @@ html[data-chat-skin="light"] .kc-sheet {
 }
 .kc-float-orb .kc-nano-gl,
 .kc-float-orb .kc-nano { inset: -25% !important; width: 150% !important; height: 150% !important; }
+
+/* Orb belum siap (versi 3D sedang dimuat): JANGAN tampilkan bola merah muda lama sebagai pengganti
+   sementara. Orb muncul halus begitu versi 3D siap; kanvas 2D hanya cadangan bila WebGL gagal (html.kc-nano-2d). */
+html:not(.kc-nano-2d) .kc-orb:not(.gl-on) {
+    background: transparent !important;
+    box-shadow: none !important;
+    animation: none !important;
+}
+html:not(.kc-nano-2d) .kc-orb:not(.gl-on)::before,
+html:not(.kc-nano-2d) .kc-orb:not(.gl-on)::after { display: none !important; }

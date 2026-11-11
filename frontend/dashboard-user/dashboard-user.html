@@ -68,6 +68,25 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
 
+    <!-- Pemuat langsung (sebelum CSS/JS lain tiba): kerangka HTML tidak pernah terlihat setengah jadi. -->
+    <style>
+        html:not([data-dash-ready]) .dashboard-user__viewport { visibility: hidden; }
+        html:not([data-dash-ready]) body { background: #f7f3ea; }
+        html:not([data-dash-ready]) body::after {
+            content: ""; position: fixed; z-index: 2147483000; left: 50%; top: 45%; width: 30px; height: 30px; margin: -15px 0 0 -15px;
+            border-radius: 50%; border: 3px solid rgb(184 145 63 / 22%); border-top-color: #b8913f;
+            animation: kcDashSpin .8s linear infinite;
+        }
+        html:not([data-dash-ready]) body::before {
+            content: "Koneksimu lagi lambat, bentar ya…"; position: fixed; z-index: 2147483000; left: 0; right: 0; top: calc(45% + 34px);
+            text-align: center; font: 500 13px/1.4 Poppins, system-ui, sans-serif; color: #8a7f6c;
+            opacity: 0; animation: kcDashSlow .4s ease 5s forwards;
+        }
+        @keyframes kcDashSlow { to { opacity: 1; } }
+        :root[data-theme="dark"]:not([data-dash-ready]) body { background: #12100c; }
+        @keyframes kcDashSpin { to { transform: rotate(360deg); } }
+    </style>
+
     <link
         rel="stylesheet"
         href="./dashboard-user.css"
@@ -514,71 +533,7 @@
             </section>
 
 
-            <!-- =================================================
-                 06. TOOLBAR MODE EDIT
-                 =================================================
-
-                 Tersembunyi saat dashboard berada dalam mode normal.
-
-                 JavaScript akan mengaktifkannya saat pengguna
-                 memulai pengaturan tata letak kartu.
-                 ================================================= -->
-
-            <section
-                id="dashboardLayoutToolbar"
-                class="dashboard-layout-toolbar"
-                data-layout-toolbar
-                aria-label="Pengaturan tata letak kartu"
-                hidden
-            >
-
-                <div class="dashboard-layout-toolbar__description">
-
-                    <h2>Atur tata letak</h2>
-
-                    <p>
-                        Pilih kartu, lalu pilih ukuran di bawah ini
-                        atau tarik pegangan di sudut kartu.
-                    </p>
-
-                </div>
-
-                <div
-                    class="dashboard-layout-toolbar__sizes"
-                    data-size-chips
-                    role="group"
-                    aria-label="Ukuran kartu terpilih"
-                ></div>
-
-                <div class="dashboard-layout-toolbar__actions">
-
-                    <button
-                        class="dashboard-text-button"
-                        type="button"
-                        data-action="cancel-layout-edit"
-                    >
-                        Batal
-                    </button>
-
-                    <button
-                        class="dashboard-text-button"
-                        type="button"
-                        data-action="reset-layout"
-                    >
-                        Atur ulang
-                    </button>
-
-                    <button
-                        class="dashboard-primary-button"
-                        type="button"
-                        data-action="save-layout"
-                    >
-                        Selesai
-                    </button>
-
-                </div>
-
-            </section>
+            
 
 
             <!-- =================================================
@@ -598,43 +553,10 @@
                         Menu kamu
                     </h2>
 
-                    <p
-                        class="dashboard-section-heading__description"
-                        data-feature-area-description
-                        hidden
-                    >
-                        Susun fitur sesuai kebutuhanmu.
-                    </p>
-
                 </header>
 
 
-                <!-- =============================================
-                     GRID GUIDE
-                     =============================================
-
-                     Grid guide adalah lapisan visual penuntun
-                     posisi kartu ketika mode edit aktif.
-
-                     MOBILE:
-                     Maksimal 4 kolom.
-
-                     DESKTOP:
-                     Maksimal 10 kolom.
-
-                     BARIS:
-                     Bertambah ke bawah tanpa batas posisi tetap.
-
-                     Grid guide tidak boleh selalu terlihat.
-                     ============================================= -->
-
-                <div
-                    id="dashboardGridGuide"
-                    class="dashboard-grid-guide"
-                    data-grid-guide
-                    aria-hidden="true"
-                    hidden
-                ></div>
+                
 
 
                 <!-- =============================================
@@ -744,65 +666,7 @@
             </section>
 
 
-            <!-- =================================================
-                 08. FEATURE HUB ENTRY
-                 ================================================= -->
-
-            <section
-                class="dashboard-feature-hub-entry"
-                aria-label="Tambah fitur"
-            >
-
-                <button
-                    id="dashboardOpenFeatureHubButton"
-                    class="dashboard-feature-hub-entry__button"
-                    type="button"
-                    data-action="open-feature-hub"
-                    aria-haspopup="dialog"
-                    aria-controls="dashboardFeatureHubDialog"
-                    aria-label="Tambah fitur: buka Feature Hub"
-                >
-
-                    <span
-                        class="dashboard-feature-hub-entry__thumbs"
-                        data-hub-entry-thumbs
-                        aria-hidden="true"
-                    ></span>
-
-                    <span class="dashboard-feature-hub-entry__row">
-
-                        <span
-                            class="dashboard-feature-hub-entry__plus"
-                            aria-hidden="true"
-                        >
-                            <svg
-                                viewBox="0 0 24 24"
-                                focusable="false"
-                                aria-hidden="true"
-                            >
-                                <path d="M12 5v14M5 12h14" />
-                            </svg>
-                        </span>
-
-                        <span class="dashboard-feature-hub-entry__pill">
-                            <svg
-                                viewBox="0 0 24 24"
-                                focusable="false"
-                                aria-hidden="true"
-                            >
-                                <path d="M7 17 17 7M8 7h9v9" />
-                            </svg>
-
-                            <span class="dashboard-feature-hub-entry__title">
-                                Tambah Fitur
-                            </span>
-                        </span>
-
-                    </span>
-
-                </button>
-
-            </section>
+            
 
 
             <!-- =================================================

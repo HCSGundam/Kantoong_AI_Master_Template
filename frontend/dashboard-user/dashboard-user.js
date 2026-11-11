@@ -347,7 +347,6 @@ function collectDashboardElements() {
         ["root", state.elements.root],
         ["featureGrid", state.elements.featureGrid],
         ["featureCardTemplate", state.elements.featureCardTemplate],
-        ["layoutToolbar", state.elements.layoutToolbar],
     ];
 
     for (const [name, element] of requiredElements) {
@@ -1571,8 +1570,9 @@ export function renderDashboardFeatures() {
     if (grid && getBento()) {
         bento.render(getActiveDashboardFeatures());
         renderWelcome(state.elements.welcomeTitle?.closest("[data-welcome-card]"));
-        // Dashboard baru siap: tampilkan (kerangka HTML lama tidak pernah terlihat).
-        document.documentElement.dataset.dashReady = "1";
+        // Dashboard baru siap bila kartu sudah ada (penemuan fitur selesai → bootstrap juga menandai siap,
+        // termasuk bila memang 0 kartu). Tidak pernah memperlihatkan grid kosong yang masih memuat.
+        if (getActiveDashboardFeatures().length) document.documentElement.dataset.dashReady = "1";
         // Muat kode halaman fitur di latar (saat senggang) agar fitur pertama yang dibuka langsung tampil.
         if (!window.__kcRoomsWarm) {
             window.__kcRoomsWarm = true;
@@ -1632,6 +1632,7 @@ export function renderDashboardFeatures() {
     updateFeatureState();
     renderGridGuide();
     updateEditModeUI();
+    document.documentElement.dataset.dashReady = "1";
 }
 
 let hubEntryElement = null;
@@ -3402,6 +3403,8 @@ export function setDashboardError(message) {
     if (state.elements.featureError) {
         state.elements.featureError.hidden = false;
     }
+    // Gagal memuat: tampilkan pesan & tombol "Coba lagi" (bukan pemuat selamanya).
+    document.documentElement.dataset.dashReady = "1";
 
     if (state.elements.featureLoading) {
         state.elements.featureLoading.hidden = true;
@@ -3533,8 +3536,8 @@ window.addEventListener("kantoong:bento-open", async (event) => {
 });
 
 export function initDashboardUser() {
-    // Pengaman: bila pembuatan dashboard tersendat, tetap tampilkan setelah 6 detik.
-    setTimeout(() => { document.documentElement.dataset.dashReady = "1"; }, 6000);
+    // Koneksi lambat: kerangka setengah jadi TIDAK pernah ditampilkan; pesan "lagi lambat" muncul
+    // sendiri lewat CSS di <style> dashboard-user.html.
     if (state.initialized) {
         return getDashboardState();
     }

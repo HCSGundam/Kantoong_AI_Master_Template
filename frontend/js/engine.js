@@ -107,6 +107,8 @@ const state = {
   matched: [],
   cart: [],
   isLoading: false,
+  // true setelah percobaan memuat produk pertama selesai (berhasil/gagal) → hero boleh menampilkan isi.
+  productsSettled: false,
   usingDemo: false,
   activeTenant: String(CFG?.business_id || ""),
   searchQuery: "",
@@ -875,6 +877,10 @@ const HERO_MAX_SLIDES = 5;
  * 2. Jika belum ada, slide dari client-config.js.
  */
 function getHeroSlides() {
+  // Produk belum selesai dimuat: kerangka berkilau, BUKAN teks contoh dari client-config
+  // (dulu "Nama produk unggulan" sempat terlihat sebelum produk asli datang).
+  if (!state.productsSettled) return [{ skeleton: true }];
+
   const fromProducts = state.products
     .filter((product) => product?.is_hero === true && product?.is_demo !== true)
     .slice(0, HERO_MAX_SLIDES)
@@ -982,6 +988,12 @@ function askConsultation(hint) {
 }
 
 function createHeroSlide(rawSlide, index) {
+  if (rawSlide?.skeleton) {
+    const skeleton = makeElement("article", "hero-slide hero-slide--skeleton");
+    skeleton.setAttribute("aria-busy", "true");
+    skeleton.setAttribute("aria-label", "Memuat");
+    return skeleton;
+  }
   const slide = normalizeHeroSlide(rawSlide);
   const element = makeElement("article", "hero-slide");
   element.dataset.heroIndex = String(index);
@@ -1292,6 +1304,7 @@ async function loadProducts() {
     }
   } finally {
     state.isLoading = false;
+    state.productsSettled = true;
 
     // Hero mengikuti produk yang ditandai owner sebagai is_hero.
     renderHero();

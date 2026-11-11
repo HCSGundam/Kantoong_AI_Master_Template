@@ -534,3 +534,30 @@ html.kc-pdp-open #kcFloatOrb {
 }
 /* Tanpa garis tepi bawaan (putih) di luar garis neon */
 #chatPanel.kc-sheet[data-state="peek"] { border: 0 !important; background-clip: padding-box; }
+
+/* =========================================================
+   KEADAAN MEMUAT TOKO: tidak ada teks contoh / tombol melayang
+   yang tampil sebelum datanya siap (terasa seperti UI belum selesai).
+   ========================================================= */
+#appRoot .hero-slide--skeleton {
+  aspect-ratio: 21 / 9;
+  max-height: 220px;
+  width: 100%;
+  background: linear-gradient(100deg, #1a1712 30%, #2a251c 50%, #1a1712 70%);
+  background-size: 300% 100%;
+  animation: kcHeroShimmer 1.4s ease-in-out infinite;
+}
+@media (min-width: 900px) {
+  #appRoot .hero-slide--skeleton { max-height: none; aspect-ratio: 21 / 7; }
+}
+@keyframes kcHeroShimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+/* Judul & "Cek semuanya" etalase baru tampil setelah posisinya dihitung (sebelumnya menumpuk di pojok). */
+#appRoot .featured:not([data-float-ready="true"]) .featured-float,
+#appRoot .featured:not([data-float-ready="true"]) .featured-float-cta { visibility: hidden; }
+#appRoot .featured[data-float-ready="true"] .featured-float,
+#appRoot .featured[data-float-ready="true"] .featured-float-cta { animation: kcFloatIn .35s ease both; }
+@keyframes kcFloatIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  #appRoot .hero-slide--skeleton { animation: none; }
+}

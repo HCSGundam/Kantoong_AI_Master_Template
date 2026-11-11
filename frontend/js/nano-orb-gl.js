@@ -260,6 +260,13 @@ function scanMinis() {
 }
 
 export function startGL() {
+    // Tanpa WebGL: beri tahu nano-orb.js agar memakai orb 2D cadangan.
+    try {
+        const probe = document.createElement("canvas");
+        if (!(probe.getContext("webgl2") || probe.getContext("webgl"))) return false;
+    } catch {
+        return false;
+    }
     document.querySelectorAll(".kc-orb.has-nano").forEach(attachGL);
     ensureMaster();
     scanMinis();

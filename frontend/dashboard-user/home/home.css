@@ -3112,22 +3112,7 @@ main#dashboardUser.dashboard-user {
     }
 }
 
-/* Sebelum dashboard baru selesai dibuat: sembunyikan kerangka HTML lama, tampilkan pemuat halus */
-html:not([data-dash-ready]) .dashboard-user .dashboard-user__viewport { visibility: hidden; }
-html:not([data-dash-ready]) .dashboard-user::after {
-    content: "";
-    position: fixed;
-    left: 50%;
-    top: 45%;
-    width: 34px;
-    height: 34px;
-    margin: -17px 0 0 -17px;
-    border-radius: 50%;
-    border: 3px solid rgb(184 145 63 / 25%);
-    border-top-color: #b8913f;
-    animation: dashSpin .8s linear infinite;
-}
-@keyframes dashSpin { to { transform: rotate(360deg); } }
+/* Pemuat sebelum dashboard siap: ada di <style> dashboard-user.html (aktif sebelum CSS ini tiba). */
 
 
 /* =========================================================

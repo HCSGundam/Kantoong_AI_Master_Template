@@ -859,6 +859,9 @@ function showBootstrapError(error) {
         error
     );
 
+    // Pemuat ditutup agar pesan error & tombol "Coba lagi" terlihat.
+    document.documentElement.dataset.dashReady = "1";
+
     const root = document.querySelector(
         "[data-dashboard-user-root]"
     );
@@ -1023,6 +1026,7 @@ async function runBootstrap(options = {}) {
          */
 
         renderDashboardFeatures();
+        document.documentElement.dataset.dashReady = "1";
 
 
         /*

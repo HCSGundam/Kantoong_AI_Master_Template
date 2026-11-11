@@ -100,6 +100,14 @@ export function attachNano(host) {
 
 /** Ubah semua orb: "star" atau "orb". */
 let glMorph = null; // diisi saat versi WebGL selesai dimuat
+// Orb kanvas 2D HANYA cadangan bila WebGL gagal/tidak didukung — tidak pernah tampil duluan
+// (dulu tampil sebentar sebelum versi 3D siap = terlihat seperti UI lama yang belum selesai).
+let use2D = false;
+function enable2D() {
+    if (use2D) return;
+    use2D = true;
+    document.documentElement.classList.add("kc-nano-2d");
+}
 
 export function morph(shape) {
     orbs.forEach((o) => {
@@ -118,7 +126,7 @@ function drawOrb(o, t, dt) {
         return;
     }
     const base = host.clientWidth;
-    if (!base || host.offsetParent === null || host.classList.contains("gl-on")) return;
+    if (!use2D || !base || host.offsetParent === null || host.classList.contains("gl-on")) return;
     const size = base * 1.9; // kanvas melebihi tombol agar tepi bergelombang tidak terpotong
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const px = Math.round(size * dpr);
@@ -369,13 +377,20 @@ window.KantoongNano = Object.freeze({ attach: attachNano, morph, flyTo });
 // Versi WebGL (three.js) dimuat SETELAH halaman tampil, agar toko tetap cepat.
 // Gagal/tidak didukung = tetap orb kanvas 2D di atas.
 function loadGL() {
-    if (reduceMotion()) return;
+    if (reduceMotion()) {
+        enable2D();
+        return;
+    }
+    // Koneksi sangat lambat: jangan biarkan orb kosong terlalu lama.
+    const slow = setTimeout(enable2D, 9000);
     import("./nano-orb-gl.js")
         .then((m) => {
             glMorph = m.morphGL;
-            m.startGL();
+            const ok = m.startGL();
+            if (ok === false) enable2D();
+            else clearTimeout(slow);
         })
-        .catch(() => {});
+        .catch(enable2D);
 }
-if (document.readyState === "complete") setTimeout(loadGL, 800);
-else window.addEventListener("load", () => setTimeout(loadGL, 800), { once: true });
+if (document.readyState === "complete") loadGL();
+else window.addEventListener("load", loadGL, { once: true });
