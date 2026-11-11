@@ -127,12 +127,12 @@ function attachGL(host) {
         new THREE.TorusGeometry(2.05, 0.03, 6, 160, Math.PI * 1.2),
         new THREE.MeshBasicMaterial({ color: 0x3d7dff, transparent: true, opacity: 0.75 })
     );
-    scene.add(ring);
+    ring.visible = false; // pita dihapus (permintaan Koko)
     const ring2 = new THREE.Mesh(
         new THREE.TorusGeometry(2.3, 0.02, 6, 160, Math.PI * 0.7),
         new THREE.MeshBasicMaterial({ color: 0xe0489f, transparent: true, opacity: 0.55 })
     );
-    scene.add(ring2);
+    ring2.visible = false;
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1a1240, transparent: true });
     const eyes = new THREE.Group();
     for (const x of [-0.24, 0.24]) {

@@ -141,17 +141,6 @@ function drawOrb(o, t, dt) {
     ctx.globalCompositeOperation = "source-over";
     const dot = Math.max(1, px / 120);
 
-    // cincin biru yang mengorbit (seperti pita di video)
-    ctx.lineWidth = Math.max(1, px / 70);
-    const ringA = t * 0.9;
-    const grad = ctx.createLinearGradient(0, 0, px, px);
-    grad.addColorStop(0, "rgba(61,139,255,0.0)");
-    grad.addColorStop(0.5, "rgba(120,190,255,0.85)");
-    grad.addColorStop(1, "rgba(255,255,255,0.0)");
-    ctx.strokeStyle = grad;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, R * 1.3, R * 0.42, ringA, 0.2, Math.PI * 1.25);
-    ctx.stroke();
 
     for (const p of o.pts) {
         const k = ease(Math.min(1, Math.max(0, (o.morph * 1.45) - p.delay)));

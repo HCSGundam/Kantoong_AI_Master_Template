@@ -141,9 +141,9 @@ scene.add(cloud);
 const ringGeo = new THREE.TorusGeometry(2.05, 0.011, 8, 220, Math.PI * 1.2);
 const ringMat = new THREE.MeshBasicMaterial({ color: 0x6fa8ff, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending });
 const ring = new THREE.Mesh(ringGeo, ringMat);
-scene.add(ring);
+ring.visible = false;
 const ring2 = new THREE.Mesh(new THREE.TorusGeometry(2.35, 0.006, 6, 220, Math.PI * 0.7), new THREE.MeshBasicMaterial({ color: 0xff7ad9, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending }));
-scene.add(ring2);
+ring2.visible = false;
 
 /* ---------- mata ---------- */
 const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true });
