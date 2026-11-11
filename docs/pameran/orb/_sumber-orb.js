@@ -172,7 +172,7 @@ addEventListener("pointermove", (e) => {
 const toStar = () => {
     morphTo = 1;
     capMode.textContent = "AI ORB · BERPIKIR ✦";
-    setTimeout(() => { morphTo = 0; capMode.textContent = "AI ORB · SIAGA"; }, 2000);
+    setTimeout(() => { morphTo = 0; capMode.textContent = "AI ORB · SIAGA"; }, 5000);
 };
 addEventListener("pointerdown", toStar);
 addEventListener("keydown", (e) => {

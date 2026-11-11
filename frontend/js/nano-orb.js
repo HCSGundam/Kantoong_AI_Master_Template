@@ -345,8 +345,8 @@ function loop(now) {
 setInterval(() => {
     if (reduceMotion() || document.hidden) return;
     morph("star");
-    setTimeout(() => morph("orb"), 1600);
-}, 30000); // orb bermata lama (±30 dtk), bintang sebentar
+    setTimeout(() => morph("orb"), 5000);
+}, 30000); // orb bermata lama (±30 dtk), bintang ±5 dtk
 
 // Saat AI sedang menyiapkan jawaban: jadi bintang.
 document.addEventListener("kantoong:ai-thinking", (e) => morph(e.detail?.busy ? "star" : "orb"));
