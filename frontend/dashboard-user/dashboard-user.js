@@ -1571,6 +1571,8 @@ export function renderDashboardFeatures() {
     if (grid && getBento()) {
         bento.render(getActiveDashboardFeatures());
         renderWelcome(state.elements.welcomeTitle?.closest("[data-welcome-card]"));
+        // Dashboard baru siap: tampilkan (kerangka HTML lama tidak pernah terlihat).
+        document.documentElement.dataset.dashReady = "1";
         shelf?.refresh();
 
         if (state.elements.featureLoading) state.elements.featureLoading.hidden = true;
@@ -3525,6 +3527,8 @@ window.addEventListener("kantoong:bento-open", async (event) => {
 });
 
 export function initDashboardUser() {
+    // Pengaman: bila pembuatan dashboard tersendat, tetap tampilkan setelah 6 detik.
+    setTimeout(() => { document.documentElement.dataset.dashReady = "1"; }, 6000);
     if (state.initialized) {
         return getDashboardState();
     }

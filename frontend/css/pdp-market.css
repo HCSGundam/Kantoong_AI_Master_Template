@@ -256,7 +256,7 @@ html.kc-pdp-open #kcFloatOrb {
 #chatPanel[data-state="peek"],
 #appRoot .pdp-cta__chat {
     isolation: isolate;
-    --kc-aurora-colors: #6fb6ff, #8f7dff, #c86bff, #ff7ac8, #ffb38a, #8f7dff, #6fb6ff;
+    --kc-aurora-colors: #2fa8ff, #6b5cff, #b44dff, #ff3fb4, #ff9a5c, #6b5cff, #2fa8ff;
 }
 #chatPanel[data-state="peek"] {
     --kc-r: 26px;
@@ -274,14 +274,14 @@ html.kc-pdp-open #kcFloatOrb {
     position: absolute;
     inset: 0;
     z-index: 3;
-    padding: 1.2px;
+    padding: 2px;
     border-radius: inherit;
     background: conic-gradient(from var(--kc-aurora), var(--kc-aurora-colors));
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-    opacity: .9;
-    animation: kcAurora 7s linear infinite;
+    opacity: 1;
+    animation: kcAurora 5s linear infinite;
     pointer-events: none;
 }
 /* Cahaya lembut di luar kotak (mengikuti warna yang mengalir) */
@@ -523,9 +523,12 @@ html.kc-pdp-open #kcFloatOrb {
    bayangan berwarna yang berputar mengelilingi kotak. */
 #chatPanel[data-state="peek"]::after { display: none; }
 #chatPanel.kc-sheet[data-state="peek"] {
+    /* NEON: garis menyala + pendar berlapis (dekat pekat, jauh lembut) */
     box-shadow:
-        0 18px 44px -24px rgb(60 40 140 / 40%),
-        -10px -2px 30px -10px rgb(111 182 255 / 60%),
-        10px 2px 30px -10px rgb(255 122 200 / 55%),
-        0 12px 30px -14px rgb(200 107 255 / 45%) !important;
+        0 0 0 1px rgb(150 120 255 / 35%),
+        0 0 8px 0 rgb(120 150 255 / 55%),
+        -8px 0 22px -4px rgb(80 170 255 / 75%),
+        8px 0 22px -4px rgb(255 90 200 / 70%),
+        0 10px 26px -8px rgb(180 90 255 / 65%),
+        0 22px 50px -24px rgb(60 40 140 / 45%) !important;
 }

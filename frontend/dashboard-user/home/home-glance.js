@@ -39,12 +39,30 @@ export const TONES = {
     membership: "gold",
 };
 
-function frame({ visual, value, note, extra } = {}) {
+/**
+ * Kerangka isi kartu. Makin besar kartu, makin banyak yang tampil (diatur CSS lewat data-mode):
+ *   icon (1x1)  : ikon saja
+ *   pill (2x1)  : ikon + angka/judul satu baris
+ *   box  (2x2)  : visual + angka + keterangan
+ *   row  (4x2)  : visual di kiri, angka + 2 baris detail di kanan
+ *   tall (2x4, 4x4): visual + angka + keterangan + SEMUA detail (more) + daftar (list)
+ * more = [[label, nilai], ...]   list = elemen tambahan (mis. daftar produk)
+ */
+function frame({ visual, value, note, extra, more, list } = {}) {
     const box = el("div", "bx-g");
     if (visual) box.append(el("div", "bx-g__visual", visual));
     box.append(el("div", "bx-g__text", value ? el("p", "bx-g__value", value) : null, note ? el("p", "bx-g__note", note) : null));
     if (extra) box.append(extra);
+    const rows = (more || []).filter((row) => row && row[1] !== undefined && row[1] !== null && row[1] !== "");
+    if (rows.length) {
+        box.append(el("dl", "bx-g__more", rows.map(([label, value]) => el("div", "", el("dt", "", label), el("dd", "", String(value))))));
+    }
+    if (list) box.append(el("div", "bx-g__list", list));
     return box;
+}
+
+function miniItem(p) {
+    return el("div", "bx-li", photo(productImage(p), "bx-ph bx-li__ph"), el("span", "bx-li__name", p.name), el("span", "bx-li__price", shortRupiah(Number(p.price) || 0)));
 }
 
 function photo(src, className = "bx-ph") {
@@ -95,6 +113,7 @@ const RENDER = {
             visual: face,
             value: user ? name : "Masuk ke akunmu",
             note: user ? greet : "Simpan pesanan & poin di satu tempat",
+            more: user ? [["Email", user.email], ["Bergabung", user.created_at ? new Date(user.created_at).toLocaleDateString("id-ID", { month: "long", year: "numeric" }) : null], ["Favorit", getWishlistIds().length]] : [],
         }));
     },
 
@@ -102,10 +121,19 @@ const RENDER = {
         const products = await loadProducts();
         const pics = products.map(productImage).filter(Boolean).slice(0, 4);
         const fan = el("div", "bx-fan", pics.map((src) => photo(src)));
+        const prices = products.map((p) => Number(p.price) || 0).filter((n) => n > 0);
+        const cats = new Set(products.map((p) => p.category).filter(Boolean));
+        const newest = [...products].sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")))[0];
         fill(slot, frame({
             visual: fan,
             value: products.length ? `${products.length} produk` : "Katalog",
             note: "Cari, saring & bandingkan",
+            more: [
+                ["Kategori", cats.size || null],
+                ["Mulai dari", prices.length ? shortRupiah(Math.min(...prices)) : null],
+                ["Terbaru", newest?.name],
+            ],
+            list: products.slice(0, 3).map(miniItem),
         }));
     },
 
@@ -123,7 +151,14 @@ const RENDER = {
             return;
         }
         const stack = el("div", "bx-stack", items.slice(0, 4).map((p) => photo(productImage(p), "bx-ph bx-ph--round")));
-        fill(slot, frame({ visual: stack, value: `${items.length} favorit`, note: items[0].name }));
+        const total = items.reduce((n, p) => n + (Number(p.price) || 0), 0);
+        fill(slot, frame({
+            visual: stack,
+            value: `${items.length} favorit`,
+            note: items[0].name,
+            more: [["Total harga", shortRupiah(total)], ["Termurah", shortRupiah(Math.min(...items.map((p) => Number(p.price) || 0)))]],
+            list: items.slice(0, 3).map(miniItem),
+        }));
     },
 
     async "my-orders"(slot) {
@@ -145,6 +180,11 @@ const RENDER = {
             value: active.length === 1 ? "1 pesanan aktif" : `${active.length} pesanan aktif`,
             note: ORDER_LABEL[top.status] ?? top.status,
             extra: dots,
+            more: [
+                ["Kode", top.order_code],
+                ["Total", top.total ? shortRupiah(Number(top.total)) : null],
+                ["Selesai", orders.length - active.length],
+            ],
         }));
     },
 
@@ -185,7 +225,13 @@ const RENDER = {
             const pct = Math.round(((now - prev) / prev) * 100);
             note = `Bulan ini · ${pct >= 0 ? "↑" : "↓"}${Math.abs(pct)}% dari bulan lalu`;
         }
-        fill(slot, frame({ value: signedIn ? shortRupiah(now) : "Rp —", note, extra: bars }));
+        const year = months.reduce((n, m) => n + m.total, 0);
+        fill(slot, frame({
+            value: signedIn ? shortRupiah(now) : "Rp —",
+            note,
+            extra: bars,
+            more: signedIn ? [["Bulan lalu", shortRupiah(prev)], ["6 bulan", shortRupiah(year)], ["Pesanan", orders.length]] : [],
+        }));
     },
 
     async "ai-chat-history"(slot) {
@@ -199,6 +245,7 @@ const RENDER = {
             visual: el("p", "bx-bubble", `“${last.title}”`),
             value: `${sessions.length} percakapan`,
             note: last.at ? timeAgoShort(last.at) : "Terakhir",
+            more: sessions.slice(1, 4).map((s) => [s.at ? timeAgoShort(s.at) : "", s.title]),
         }));
     },
 
@@ -229,6 +276,7 @@ const RENDER = {
             visual: map,
             value: info.name,
             note: info.address || info.hours || "Lihat lokasi & jam buka",
+            more: [["Alamat", info.address], ["Jam buka", info.hours], ["WhatsApp", info.whatsapp ? "Tersedia" : null]],
         }));
     },
 

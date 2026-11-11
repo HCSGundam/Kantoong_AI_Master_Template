@@ -2300,3 +2300,11 @@ html[data-chat-skin="light"] .kc-sheet {
     margin: calc(var(--kc-avatar) * -0.25);
     pointer-events: none;
 }
+/* Orb melayang (dashboard/ERP): cakram kaca bening agar terbaca sebagai tombol, partikel tetap lepas */
+.kc-float-orb.has-nano.has-nano {
+    background: radial-gradient(circle, rgb(255 255 255 / 70%) 0%, rgb(255 255 255 / 35%) 60%, rgb(255 255 255 / 0) 72%) !important;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+.kc-float-orb .kc-nano-gl,
+.kc-float-orb .kc-nano { inset: -25% !important; width: 150% !important; height: 150% !important; }

@@ -498,6 +498,9 @@ function openDashboard() {
       });
     }
 
+    // Ingat bahwa dashboard terbuka: bila halaman dimuat ulang, dashboard dibuka lagi.
+    try { sessionStorage.setItem("kantoong:dash-open", "1"); } catch { /* abaikan */ }
+
     emit("dashboard-opened", {
       tenant: state.activeTenant,
       url: DASHBOARD_URL,
@@ -518,6 +521,7 @@ function closeDashboard() {
 
   state.dashboardOpen = false;
   setPageVisibilityForDashboard(false);
+  try { sessionStorage.removeItem("kantoong:dash-open"); } catch { /* abaikan */ }
   // Katalog ditutup: link kembali bersih.
   if (new URLSearchParams(location.search).has(CATALOG_PARAM)) {
     history.replaceState(history.state, "", `${location.pathname}${stripCatalogParams(location.search)}${location.hash}`);
@@ -4799,6 +4803,13 @@ async function initKantoongEngine() {
     syncProductRoute();
 
     // Halaman koleksi tiap bagian homepage (#koleksi/<kunci>).
+    // Halaman dimuat ulang saat dashboard terbuka (mis. sinyal putus): buka lagi dashboard-nya.
+    try {
+      if (sessionStorage.getItem("kantoong:dash-open") === "1" && !location.hash.startsWith(PRODUCT_ROUTE)) {
+        setTimeout(() => openDashboard(), 300);
+      }
+    } catch { /* abaikan */ }
+
     initCollections({
       makeCard: (product, index) => createProductCard(product, index, { direct: true }),
       onAllProducts: () => openDashboardFeature("product-catalog"),
