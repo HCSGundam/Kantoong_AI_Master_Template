@@ -2272,3 +2272,31 @@ html[data-chat-skin="light"] .kc-sheet {
 }
 .kc-orb.gl-on .kc-nano { display: none; }
 .kc-orb.has-nano.is-away .kc-nano-gl { opacity: .12; transition: opacity .25s; }
+
+/* ===== ORB MINI (salinan orb 3D): kartu produk, tombol Chat AI, avatar chat ===== */
+#appRoot .product-ask.has-mini-orb {
+    position: relative;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    animation: none !important;
+    overflow: visible;
+}
+#appRoot .product-ask.has-mini-orb .product-ask__eye { display: none; }
+#appRoot .product-ask .kc-mini-orb {
+    position: absolute;
+    inset: -45%;
+    width: 190%;
+    height: 190%;
+    pointer-events: none;
+}
+.ai-message--ai.has-mini-orb::before { display: none; }
+.ai-message--ai .kc-mini-orb {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    width: calc(var(--kc-avatar) * 1.5);
+    height: calc(var(--kc-avatar) * 1.5);
+    margin: calc(var(--kc-avatar) * -0.25);
+    pointer-events: none;
+}

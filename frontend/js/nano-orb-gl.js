@@ -166,7 +166,8 @@ function loop(now) {
             return;
         }
         const base = v.host.clientWidth;
-        if (!base || v.host.offsetParent === null || v.host.classList.contains("is-away")) return;
+        if (!base || (v.host !== masterHost && v.host.offsetParent === null) || v.host.classList.contains("is-away")) return;
+        if (v.host === masterHost && !visibleMinis.size) return;
         const size = Math.round(base * 1.9);
         if (v.size !== size) {
             v.size = size;
@@ -189,12 +190,88 @@ function loop(now) {
         v.eyeMat.opacity = Math.max(0, 1 - v.morph * 1.8);
         v.renderer.render(v.scene, v.camera);
     });
+    drawMinis(now);
+}
+
+/* ============================================================
+   ORB MINI (kartu produk, avatar chat, tombol Chat AI)
+   SATU mesin 3D (orb "induk" tersembunyi) menggambar orb sekali per frame,
+   lalu gambarnya DISALIN ke semua ikon kecil yang terlihat. Ringan: berapa pun
+   jumlah ikon, tetap hanya 1 mesin WebGL.
+   ============================================================ */
+const MINI_SELECTOR = "#appRoot .product-ask, .ai-message--ai, .kc-mini-orb-host";
+const minis = new Set();
+const visibleMinis = new Set();
+let masterHost = null;
+let lastMini = 0;
+const io = "IntersectionObserver" in window
+    ? new IntersectionObserver((entries) => entries.forEach((e) => (e.isIntersecting ? visibleMinis.add(e.target) : visibleMinis.delete(e.target))))
+    : null;
+
+function ensureMaster() {
+    if (masterHost) return;
+    masterHost = document.createElement("div");
+    masterHost.setAttribute("aria-hidden", "true");
+    Object.assign(masterHost.style, { position: "absolute", left: "-9999px", top: "0", width: "56px", height: "56px", pointerEvents: "none" });
+    document.body.appendChild(masterHost);
+    attachGL(masterHost);
+}
+
+function attachMini(host) {
+    if (host.dataset.miniOrb === "1") return;
+    host.dataset.miniOrb = "1";
+    const c = document.createElement("canvas");
+    c.className = "kc-mini-orb";
+    c.setAttribute("aria-hidden", "true");
+    if (host.classList.contains("ai-message--ai")) host.prepend(c);
+    else host.appendChild(c);
+    host.classList.add("has-mini-orb");
+    minis.add(c);
+    if (io) io.observe(c);
+    else visibleMinis.add(c);
+}
+
+function drawMinis(now) {
+    if (!visibleMinis.size || now - lastMini < 40) return; // ±24 fps cukup untuk ikon kecil
+    lastMini = now;
+    const src = masterHost?.querySelector("canvas");
+    if (!src || !src.width) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    visibleMinis.forEach((c) => {
+        if (!c.isConnected) {
+            visibleMinis.delete(c);
+            minis.delete(c);
+            return;
+        }
+        const w = Math.round(c.clientWidth * dpr);
+        if (!w) return;
+        if (c.width !== w) {
+            c.width = w;
+            c.height = w;
+        }
+        const g = c.getContext("2d");
+        g.clearRect(0, 0, w, w);
+        g.drawImage(src, 0, 0, w, w);
+    });
+}
+
+function scanMinis() {
+    document.querySelectorAll(MINI_SELECTOR).forEach(attachMini);
 }
 
 export function startGL() {
     document.querySelectorAll(".kc-orb.has-nano").forEach(attachGL);
-    // orb yang dibuat belakangan (mis. orb melayang) ikut ditingkatkan
-    new MutationObserver(() => document.querySelectorAll(".kc-orb.has-nano:not([data-nano-gl])").forEach(attachGL))
-        .observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["class"] });
+    ensureMaster();
+    scanMinis();
+    // orb/ikon yang dibuat belakangan ikut ditingkatkan (dikumpulkan per frame agar hemat)
+    let pending = 0;
+    new MutationObserver(() => {
+        if (pending) return;
+        pending = requestAnimationFrame(() => {
+            pending = 0;
+            document.querySelectorAll(".kc-orb.has-nano:not([data-nano-gl])").forEach(attachGL);
+            scanMinis();
+        });
+    }).observe(document.body, { subtree: true, childList: true });
     requestAnimationFrame(loop);
 }
