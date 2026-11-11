@@ -92,8 +92,8 @@ export const ASSISTANT_MARKUP = `
         <div class="kc-attachments" id="kcAttachments" hidden></div>
 
         <!-- Bar ketik, dua keadaan (data-typing di #kcComposer):
-             DIAM     : [kirim | Tulis Context]  suara  link  lampiran | saran
-             MENGETIK : [+ | Tulis Context ........ mic]  (kirim)
+             DIAM     : [+ | Ketik pesan…]  suara  link  lampiran | saran
+             MENGETIK : [+ | Ketik pesan… ........ mic]  (kirim)
              Saat mengetik, semua fitur pindah ke menu +. -->
         <div class="kc-composer__row">
 
@@ -189,7 +189,7 @@ export const ASSISTANT_MARKUP = `
                 <textarea
                     id="kolomKetik"
                     rows="1"
-                    placeholder="Tulis Context"
+                    placeholder="Ketik pesan…"
                     aria-label="Ketik pesan"
                     enterkeyhint="send"
                     autocomplete="off"

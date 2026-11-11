@@ -21,7 +21,10 @@
  */
 
 import CFG from "../client-config.js";
-import { assistantContext, brandName, currentSurface, historyStorageKey } from "./assistant-context.js";
+import { assistantContext, brandName, currentPage, currentSurface, historyStorageKey } from "./assistant-context.js";
+import { beginSession, collectActivity, fetchAIGreeting, localGreeting, typewrite, SEEN_KEY } from "./ai-greeting.js";
+import { TRAIL_KEY } from "./doubt-room.js";
+import { HISTORY_KEY as SEARCH_KEY } from "./catalog-url.js";
 
 /* ============================================================
    01. KONFIGURASI
@@ -127,7 +130,9 @@ const AIState = {
     suggestionsOpen: false,
     requestController: null,
     requestSequence: 0,
-    boundElements: null
+    boundElements: null,
+    greeting: null, // Promise sapaan AI yang sedang disiapkan
+    visit: null
 };
 
 const STORAGE_PREFIX = "kantoong:chat:";
@@ -671,6 +676,10 @@ function renderMessage(message, options = {}) {
      */
     bubble.textContent = String(message.text ?? "");
 
+    if (options.typewriter) {
+        typewrite(bubble, String(message.text ?? ""), { speed: 24, onDone: () => scrollChatToBottom() });
+    }
+
     wrapper.appendChild(bubble);
 
     if (message.brand && message.brand !== brandName()) {
@@ -937,23 +946,57 @@ function renderInitialGreeting() {
         return;
     }
 
-    const greetings = AI_CONFIG.greetings;
+    startGreeting();
+}
 
-    const baseGreeting = greetings.length
-        ? greetings[
-            Math.floor(Math.random() * greetings.length)
-        ]
-        : "Halo! Ada yang bisa aku bantu?";
+/* ---------- Sapaan pembuka dari AI (selalu baru, dari jejak pengunjung) ---------- */
 
-    const firstName = String(window.KantoongAssistantContext?.userName || "").split(" ")[0];
-    const greeting = firstName ? `Hai ${firstName}! ${baseGreeting}` : baseGreeting;
+function readJSON(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+    } catch {
+        return fallback;
+    }
+}
 
-    const message = addHistoryMessage(
-        "ai",
-        greeting
-    );
+function currentActivity() {
+    const cartKey = Object.keys(localStorage || {}).find((key) => key.startsWith("kantoong:cart:v2:"));
+    return collectActivity({
+        visit: AIState.visit,
+        seen: readJSON(SEEN_KEY, []),
+        trail: readJSON(TRAIL_KEY, []),
+        cart: cartKey ? readJSON(cartKey, []) : [],
+        wishlist: readJSON("kantoong_wishlist", []),
+        searches: readJSON(SEARCH_KEY, []),
+        products: getProducts(),
+        page: currentPage?.() || currentSurface(),
+        userName: window.KantoongAssistantContext?.userName || "",
+    });
+}
 
-    renderMessage(message);
+async function startGreeting() {
+    if (AIState.greeting) {
+        // Sapaan sedang disiapkan: cukup tampilkan lagi "sedang mengetik".
+        renderTypingIndicator();
+        return;
+    }
+    const seq = AIState.requestSequence;
+    renderTypingIndicator();
+    AIState.greeting = (async () => {
+        const activity = currentActivity();
+        const lang = (() => { try { return localStorage.getItem("kantoong:lang") || "id"; } catch { return "id"; } })();
+        const aiText = await fetchAIGreeting(AI_CONFIG.endpoint, activity, { businessId: AI_CONFIG.businessId, lang });
+        return aiText || localGreeting(activity);
+    })();
+    const text = await AIState.greeting;
+    AIState.greeting = null;
+    removeTypingIndicator();
+    // Pembeli sudah mengirim pesan duluan / riwayat lain sudah dibuka: sapaan tidak perlu.
+    if (seq !== AIState.requestSequence || AIState.history.length) return;
+    const message = addHistoryMessage("ai", text);
+    renderMessage(message, { typewriter: true });
+    emit("ai-greeting", { text });
 }
 
 /* ============================================================
@@ -1663,6 +1706,10 @@ function performResultAction(action, result) {
     }
 }
 
+function isTouchDevice() {
+    return window.matchMedia?.("(pointer: coarse)")?.matches || navigator.maxTouchPoints > 0;
+}
+
 export async function sendMessage(rawText) {
     const text = String(rawText ?? "").trim();
 
@@ -1704,6 +1751,9 @@ export async function sendMessage(rawText) {
 
         // Beri tahu kotak ketik agar tingginya dikembalikan.
         input.dispatchEvent(new Event("input", { bubbles: true }));
+
+        // HP: turunkan keyboard setelah kirim.
+        if (isTouchDevice()) input.blur();
     }
 
 
@@ -1828,7 +1878,10 @@ export async function sendMessage(rawText) {
 
             const elements = getElements();
 
-            if (elements.input) {
+            // Layar sentuh (HP): kirim = keyboard turun, seperti WhatsApp/IG.
+            // Keyboard baru muncul lagi saat pengguna mengetuk kolom ketik.
+            // Laptop: kursor tetap di kolom agar bisa langsung lanjut mengetik.
+            if (elements.input && !isTouchDevice()) {
                 elements.input.focus();
             }
         }
@@ -1967,6 +2020,19 @@ export function initAIBrain() {
     AIState.initialized = true;
     AIState.boundElements = elements;
     AIState.history = readHistory();
+
+    // Tab baru dibuka = chat baru. Chat sebelumnya disimpan di Riwayat Chat AI.
+    const session = beginSession();
+    AIState.visit = session.visit;
+    if (session.fresh && AIState.history.length) {
+        if (hasUserMessage(AIState.history)) {
+            const archive = readArchive();
+            archive.push({ endedAt: getTimestamp(), messages: AIState.history });
+            writeArchive(archive);
+        }
+        AIState.history = [];
+        try { localStorage.removeItem(historyKey()); } catch { /* abaikan */ }
+    }
 
     if (elements.sendButton) {
         elements.sendButton.addEventListener(

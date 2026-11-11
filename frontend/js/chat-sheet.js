@@ -29,6 +29,7 @@
  *                           di belakang terlihat
  */
 
+import { typewrite } from "./ai-greeting.js";
 import { cameraSupported, openWebCamera } from "./web-camera.js";
 import CFG from "../client-config.js";
 import { AgentMode, AGENT_MODES } from "./agent-state.js";
@@ -1055,15 +1056,17 @@ function initChatSheet() {
         peekTitle.textContent = CFG?.ai_title || "Halo Kak!";
     }
 
+    // Sapaan di kotak "Hai, Kak!" ikut sapaan AI (selalu baru), diketik per huruf.
     if (peekGreeting) {
-        const greetings = Array.isArray(CFG?.ai_greetings)
-            ? CFG.ai_greetings.filter(Boolean)
-            : [];
-
-        if (greetings.length > 0) {
-            peekGreeting.textContent =
-                greetings[Math.floor(Math.random() * greetings.length)];
-        }
+        peekGreeting.textContent = "";
+        peekGreeting.classList.add("is-typing");
+        let stopTyping = null;
+        document.addEventListener("kantoong:ai-greeting", (event) => {
+            const text = String(event.detail?.text || "").trim();
+            if (!text) return;
+            stopTyping?.();
+            stopTyping = typewrite(peekGreeting, text, { speed: 26 });
+        });
     }
 
     /* ====================================================
@@ -1076,8 +1079,7 @@ function initChatSheet() {
         }
 
         if (!event.detail?.text) {
-            const hint = String(event.detail?.hint || "").trim();
-            if (textarea && hint) textarea.placeholder = hint.slice(0, 90);
+            // Placeholder tetap "Ketik pesan…" (seperti WhatsApp/IG), tidak diganti kalimat panjang.
             textarea?.focus({ preventScroll: true });
         }
     });
@@ -1090,7 +1092,7 @@ function initChatSheet() {
         snapTo(window.innerWidth < 900 ? "full" : "mid");
 
         if (textarea) {
-            textarea.placeholder = "Ceritakan yang kamu cari: warna, ukuran, model…";
+            textarea.placeholder = "Ketik pesan…";
             window.setTimeout(() => textarea.focus({ preventScroll: true }), 320);
         }
     });

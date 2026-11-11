@@ -1034,7 +1034,16 @@ function createHeroSlide(rawSlide, index) {
     `Chat ${CFG?.app_name || "Kantoong"} AI`
   );
   askButton.type = "button";
-  askButton.addEventListener("click", () => askConsultation(slide.aiPrompt));
+  askButton.addEventListener("click", () => {
+    // Slide produk/promo: produknya DISEMATKAN ke chat (sama seperti tombol AI di kartu produk),
+    // agar AI tahu persis banner mana yang ditanyakan.
+    const product = slide.product_id ? findProductById(slide.product_id) : null;
+    if (product) {
+      attachProductToChat(product);
+      return;
+    }
+    askConsultation(slide.aiPrompt || slide.ai_prompt);
+  });
 
   actions.append(askButton);
   body.appendChild(actions);
@@ -1394,7 +1403,7 @@ function getDiscountPercent(product) {
    10. RENDER PRODUK
    ============================================================ */
 
-function createProductCard(product, index) {
+function createProductCard(product, index, { direct = false } = {}) {
   const card = makeElement("article", "product-card");
   card.dataset.productId = getProductId(product);
 
@@ -1492,14 +1501,16 @@ function createProductCard(product, index) {
   // Tombol hati & orb AI di kartu tetap bekerja sendiri.
   card.tabIndex = 0;
   card.setAttribute("aria-label", `Lihat ${name}`);
+  // direct = halaman koleksi: ketuk kartu langsung ke halaman produk (seperti "Selengkapnya").
+  const openCard = () => (direct ? openProductPage(product) : openQuickView(product));
   card.addEventListener("click", (event) => {
     if (event.target.closest("button, a")) return;
-    openQuickView(product);
+    openCard();
   });
   card.addEventListener("keydown", (event) => {
     if (event.target !== card || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
-    openQuickView(product);
+    openCard();
   });
 
   return card;
@@ -1643,7 +1654,7 @@ function getProductMedia(product) {
 
   push("video", product?.video_url, product?.video_label);
   push("image", getProductImage(product), product?.variant_label);
-  push("image", product?.hero_image_url);
+  // Foto hero (melebar) KHUSUS banner homepage — tidak dipakai di popup/halaman produk.
 
   // Galeri admin: [{ url, label }] (atau daftar URL lama).
   const gallery = Array.isArray(product?.gallery)
@@ -2141,6 +2152,7 @@ function closeProductPage() {
 }
 
 function hideProductPage() {
+  document.documentElement.classList.remove("kc-pdp-open");
   productPage.gallery?.stop();
   clearProductSeo();
   if (productPage.root) productPage.root.hidden = true;
@@ -2157,6 +2169,8 @@ const PDP_ICONS = {
   right: ["M9 5l7 7-7 7"],
   expand: ["M4 9V4h5", "M20 9V4h-5", "M4 15v5h5", "M20 15v5h-5"],
   play: ["M8 5l11 7-11 7z"],
+  chart: ["M4 19h16", "M5 15l4-4 3 3 6-7", "M15 7h3v3"],
+  tag: ["M3 12V4h8l9 9-8 8z", "M7.5 8.5h.01"],
 };
 
 const pdp = { title: "", description: "", reviewsFor: "" };
@@ -2512,152 +2526,206 @@ function createPdpGallery(product) {
 
 function createPdpSummary(product) {
   const box = makeElement("div", "pdp-summary");
-  const category = getProductCategory(product);
-  if (category && category !== "Lainnya") box.appendChild(makeElement("p", "pdp-eyebrow", category));
+  const plan = getPlan();
+
+  // Harga paling atas, besar, TANPA kotak (gaya marketplace).
+  const priceRow = makeElement("div", "pdp-price");
+  priceRow.appendChild(makeElement("p", "pdp-price__now", plan.industry === "properti" ? bigPrice(getProductPrice(product)) : formatCurrency(getProductPrice(product))));
+  if (plan.industry === "properti" && product?.attributes?.listing === "Disewakan") {
+    priceRow.appendChild(makeElement("span", "pdp-price__unit", "per tahun"));
+  }
+  // Harga Jujur hanya untuk TOKO EMAS (harga harian): ikon kecil di samping harga -> pop-up.
+  if (plan.industry === "emas" && createHonestPrice(product, getProductPrice(product), formatCurrency)) {
+    const info = pdpButton("pdp-honest-btn", "Lihat riwayat harga 30 hari", PDP_ICONS.chart);
+    info.addEventListener("click", () => openHonestPopup(product));
+    priceRow.appendChild(info);
+  }
+  box.appendChild(priceRow);
+
+  const saving = priceSaving(getProductPrice(product), getCompareAtPrice(product));
+  if (saving > 0) {
+    const was = makeElement("p", "pdp-price__was");
+    was.append(
+      makeElement("span", "pdp-price__off", `${getDiscountPercent(product)}%`),
+      makeElement("s", "", formatCurrency(getCompareAtPrice(product)))
+    );
+    box.appendChild(was);
+  }
 
   box.appendChild(makeElement("h1", "pdp-name", getProductName(product)));
 
-  // Rating & terjual (angka asli). Klik rating = loncat ke ulasan.
+  // Rating & terjual (angka asli). Klik = loncat ke ulasan.
   const meta = createProductMeta(product);
   meta.classList.add("pdp-meta");
   const reviews = toNumber(product?.review_count, 0);
   const link = makeElement("button", "pdp-meta__link", reviews > 0 ? `${reviews} ulasan` : "Belum ada ulasan");
   link.type = "button";
   link.addEventListener("click", () => {
-    const tab = productPage.root?.querySelector('[data-pdp-tab="reviews"]');
-    tab?.click();
-    tab?.scrollIntoView({ behavior: "smooth", block: "start" });
+    productPage.root?.querySelector(".pdp-reviews-sec")?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   meta.appendChild(link);
   box.appendChild(meta);
 
+  // Produk kolaborasi antar brand Kantoong (atribut collab_with di product_attributes).
+  const collab = escapeText(product?.attributes?.collab_with);
+  if (collab) {
+    const tag = makeElement("p", "pdp-collab");
+    tag.append(makeElement("strong", "", "Produk kolaborasi kami"), makeElement("span", "", ` bersama ${collab}`));
+    box.appendChild(tag);
+  }
+
   const caption = escapeText(product?.caption);
   if (caption) box.appendChild(makeElement("p", "pdp-caption", caption));
-
-  // Harga: harga coret hanya bila memang lebih tinggi (diskon asli).
-  const priceBox = makeElement("div", "pdp-price");
-  priceBox.appendChild(makeElement("p", "pdp-price__now", getPlan().industry === "properti" ? bigPrice(getProductPrice(product)) : formatCurrency(getProductPrice(product))));
-  if (getPlan().industry === "properti" && product?.attributes?.listing === "Disewakan") {
-    priceBox.appendChild(makeElement("p", "pdp-price__was", "per tahun"));
-  }
-  const saving = priceSaving(getProductPrice(product), getCompareAtPrice(product));
-  if (saving > 0) {
-    const was = makeElement("p", "pdp-price__was");
-    was.append(
-      makeElement("s", "", formatCurrency(getCompareAtPrice(product))),
-      makeElement("span", "pdp-price__off", `-${getDiscountPercent(product)}%`),
-      makeElement("span", "pdp-price__save", `Hemat ${formatCurrency(saving)}`)
-    );
-    priceBox.appendChild(was);
-  }
-  box.appendChild(priceBox);
-
-  const honest = createHonestPrice(product, getProductPrice(product), formatCurrency);
-  if (honest) box.appendChild(honest);
 
   return box;
 }
 
-function createPdpBuy(product) {
-  const stock = stockState(product?.stock);
-  const box = makeElement("div", "pdp-buy");
-  box.dataset.stock = stock.key;
+/** Pop-up Harga Jujur (toko emas): latar gelap buram, grafik 30 hari. */
+function openHonestPopup(product) {
+  const honest = createHonestPrice(product, getProductPrice(product), formatCurrency);
+  if (!honest) return;
+  const pop = makeElement("div", "pdp-pop");
+  pop.setAttribute("role", "dialog");
+  pop.setAttribute("aria-modal", "true");
+  pop.setAttribute("aria-label", "Riwayat harga");
+  const card = makeElement("div", "pdp-pop__card");
+  const x = pdpButton("pdp-pop__x", "Tutup", PDP_ICONS.close);
+  const shut = () => {
+    pop.classList.remove("is-open");
+    setTimeout(() => pop.remove(), 220);
+  };
+  x.addEventListener("click", shut);
+  pop.addEventListener("click", (event) => {
+    if (event.target === pop) shut();
+  });
+  card.append(x, honest);
+  pop.appendChild(card);
+  (productPage.root || document.body).appendChild(pop);
+  requestAnimationFrame(() => pop.classList.add("is-open"));
+}
 
-  const top = makeElement("div", "pdp-buy__top");
-  const pill = makeElement("span", `pdp-stock pdp-stock--${stock.key}`);
-  pill.append(makeElement("span", "pdp-stock__dot"), document.createTextNode(stock.label));
-  top.appendChild(pill);
+/** Promo, pengiriman & estimasi tiba, stok (tulisan), jumlah — gaya marketplace. */
+function createPdpInfo(product) {
+  const box = makeElement("section", "pdp-info");
+  const stock = stockState(product?.stock);
+  const plan = getPlan();
+  const row = (iconPaths, title, ...lines) => {
+    const r = makeElement("div", "pdp-info__row");
+    const body = makeElement("div", "pdp-info__body");
+    body.appendChild(makeElement("strong", "", title));
+    lines.filter(Boolean).forEach((line) => body.appendChild(makeElement("span", "", line)));
+    r.append(makeIcon("pdp-icon", iconPaths), body);
+    return r;
+  };
+
+  const saving = priceSaving(getProductPrice(product), getCompareAtPrice(product));
+  if (saving > 0) box.appendChild(row(PDP_ICONS.tag, "Promo", `Hemat ${formatCurrency(saving)} untuk produk ini`));
+
+  if (plan.commerce && plan.industry !== "properti") {
+    const estimate = escapeText(product?.ship_estimate) || escapeText(CFG?.shipping?.estimate) || "";
+    const from = escapeText(product?.ship_from) || escapeText(CFG?.shipping?.from) || "Indonesia";
+    box.appendChild(row(ICONS.truck, "Pengiriman", `Dikirim dari ${from}`, estimate ? `Estimasi tiba ${estimate}` : "Estimasi tiba muncul saat checkout", "Ongkir dihitung saat checkout"));
+  }
+
+  // Stok = tulisan biasa (angka stok detail ada di ERP).
+  box.appendChild(makeElement("p", `pdp-stocktext pdp-stocktext--${stock.key}`, stock.label));
 
   let qty = clampQty(1, stock.max);
-  const stepper = makeElement("div", "pdp-qty");
-  stepper.setAttribute("role", "group");
-  stepper.setAttribute("aria-label", "Jumlah");
-  const minus = pdpButton("pdp-qty__btn", "Kurangi", null, "−");
-  const value = makeElement("output", "pdp-qty__value", String(qty));
-  const plus = pdpButton("pdp-qty__btn", "Tambah", null, "+");
-  const sync = () => {
-    value.textContent = String(qty);
-    minus.disabled = qty <= 1;
-    plus.disabled = qty >= stock.max;
-  };
-  minus.addEventListener("click", () => {
-    qty = clampQty(qty - 1, stock.max);
+  if (plan.commerce && plan.industry !== "properti" && stock.key !== "out") {
+    const q = makeElement("div", "pdp-info__qty");
+    const stepper = makeElement("div", "pdp-qty");
+    stepper.setAttribute("role", "group");
+    stepper.setAttribute("aria-label", "Jumlah");
+    const minus = pdpButton("pdp-qty__btn", "Kurangi", null, "−");
+    const value = makeElement("output", "pdp-qty__value", String(qty));
+    const plus = pdpButton("pdp-qty__btn", "Tambah", null, "+");
+    const sync = () => {
+      value.textContent = String(qty);
+      minus.disabled = qty <= 1;
+      plus.disabled = qty >= stock.max;
+    };
+    minus.addEventListener("click", () => { qty = clampQty(qty - 1, stock.max); sync(); });
+    plus.addEventListener("click", () => { qty = clampQty(qty + 1, stock.max); sync(); });
+    stepper.append(minus, value, plus);
     sync();
-  });
-  plus.addEventListener("click", () => {
-    qty = clampQty(qty + 1, stock.max);
-    sync();
-  });
-  stepper.append(minus, value, plus);
-  if (stock.key !== "out") top.appendChild(stepper);
-  sync();
-  box.appendChild(top);
+    q.append(makeElement("span", "", "Jumlah"), stepper);
+    box.appendChild(q);
+  }
+  return { box, getQty: () => qty };
+}
 
-  // Tombol utama = konsultasi (bukan checkout). Checkout tombol sekunder.
-  const ask = makeElement("button", "pdp-btn pdp-btn--ask");
-  ask.type = "button";
-  const orb = makeElement("span", "product-ask pdp-btn__orb");
+/** Ulasan pembeli — naik ke atas, langsung terlihat (tidak di tab). */
+function createPdpReviewsSection(product) {
+  const sec = makeElement("section", "pdp-sec pdp-reviews-sec");
+  const n = toNumber(product?.review_count, 0);
+  sec.appendChild(makeElement("h2", "pdp-sec__title", n ? `Ulasan pembeli (${n})` : "Ulasan pembeli"));
+  const list = makeElement("div", "pdp-reviews");
+  sec.appendChild(list);
+  loadProductReviews(product, list);
+  return sec;
+}
+
+function createPdpDetailSections(product) {
+  const out = [];
+  const specRows = createSpecTable(product);
+  const industrySpecs = createPdpSpecs(product);
+  if (industrySpecs || specRows.children.length) {
+    const sec = makeElement("section", "pdp-sec");
+    sec.appendChild(makeElement("h2", "pdp-sec__title", "Spesifikasi"));
+    if (industrySpecs) sec.appendChild(industrySpecs);
+    if (specRows.children.length) sec.appendChild(specRows);
+    out.push(sec);
+  }
+  const description = escapeText(product?.description);
+  const about = makeElement("section", "pdp-sec pdp-about");
+  about.append(makeElement("h2", "pdp-sec__title", "Deskripsi"),
+    makeElement("p", "", description || escapeText(product?.caption) || "Deskripsi belum diisi. Tanyakan detailnya ke asisten."));
+  out.push(about);
+  return out;
+}
+
+/** Bar bawah (menempel): kiri Chat <brand> AI (garis bercahaya bergerak), kanan + Keranjang (hitam solid). */
+function createPdpBottomBar(product, getQty) {
+  const bar = makeElement("div", "pdp-cta");
+  const chat = makeElement("button", "pdp-cta__chat");
+  chat.type = "button";
+  const orb = makeElement("span", "product-ask pdp-cta__orb");
   orb.setAttribute("aria-hidden", "true");
   orb.append(makeElement("span", "product-ask__eye"), makeElement("span", "product-ask__eye"));
-  const askText = makeElement("span", "pdp-btn__stack");
-  askText.append(
-    makeElement("strong", "", "Tanya apa aja soal produk ini"),
-    makeElement("small", "", "Ukuran, cocok nggaknya, sampai pilihan terbaik buat kamu")
-  );
-  ask.append(orb, askText);
-  ask.addEventListener("click", () =>
-    attachProductToChat(product, { photoIndex: productPage.gallery?.index ?? null })
-  );
-  box.appendChild(ask);
+  chat.append(orb, makeElement("span", "", `Chat ${CFG?.app_name || "Kantoong"} AI`));
+  chat.addEventListener("click", () => attachProductToChat(product, { photoIndex: productPage.gallery?.index ?? null }));
 
-  const row = makeElement("div", "pdp-buy__row");
   const plan = getPlan();
+  const stock = stockState(product?.stock);
+  let main;
   if (!plan.commerce || plan.industry === "properti") {
-    // Tanpa keranjang: pesan / jadwalkan survei lewat WhatsApp (pembeli menekan kirim sendiri).
-    const wa = pdpButton("pdp-btn pdp-btn--secondary pdp-btn--wa", "", null, plan.industry === "properti" ? "Jadwalkan survei via WhatsApp" : "Pesan via WhatsApp");
-    wa.addEventListener("click", () => {
+    main = pdpButton("pdp-cta__main", "", null, plan.industry === "properti" ? "Jadwalkan survei" : "Pesan via WhatsApp");
+    main.addEventListener("click", () => {
       if (plan.industry === "properti") {
         const link = whatsappLink(getStorefront(), `Halo, saya ingin jadwalkan survei untuk ${getProductName(product)}. ${location.href}`);
         if (link) window.open(link, "_blank", "noopener");
         else orderViaWhatsApp(product, 1);
       } else {
-        orderViaWhatsApp(product, qty);
+        orderViaWhatsApp(product, getQty());
       }
     });
-    row.classList.add("pdp-buy__row--single");
-    row.append(wa);
   } else if (stock.key === "out") {
-    const remind = pdpButton("pdp-btn pdp-btn--secondary", "", ICONS.heart, isWishlisted(product) ? "Tersimpan di wishlist" : "Simpan & cek lagi nanti");
-    remind.addEventListener("click", () => {
-      if (!isWishlisted(product)) toggleWishlist(product);
-      remind.querySelector("span").textContent = "Tersimpan di wishlist";
-    });
-    const askStock = pdpButton("pdp-btn pdp-btn--ghost", "", null, "Tanya kapan restok");
-    askStock.addEventListener("click", () => {
-      attachProductToChat(product, { photoIndex: productPage.gallery?.index ?? null });
-    });
-    row.append(remind, askStock);
+    main = pdpButton("pdp-cta__main", "", null, "Stok habis");
+    main.disabled = true;
   } else {
-    const cart = pdpButton("pdp-btn pdp-btn--secondary", `Tambah ${getProductName(product)} ke keranjang`, ICONS.bag, "Keranjang");
-    cart.dataset.action = "add-to-cart";
-    cart.addEventListener("click", () => addToCart(product, qty));
-    const buy = pdpButton("pdp-btn pdp-btn--ghost", "", null, "Beli sekarang");
-    buy.addEventListener("click", () => openWaitDialog(product, qty));
-    row.append(cart, buy);
+    main = pdpButton("pdp-cta__main", `Tambah ${getProductName(product)} ke keranjang`, null, "+ Keranjang");
+    main.dataset.action = "add-to-cart";
+    main.addEventListener("click", () => addToCart(product, getQty()));
   }
-  box.appendChild(row);
-
-  return box;
+  bar.append(chat, main);
+  return bar;
 }
 
 function createPdpAssurance(product) {
   const list = makeElement("ul", "pdp-assure");
-  const estimate = escapeText(product?.ship_estimate) || escapeText(CFG?.shipping?.estimate) || "Cek ongkir saat checkout";
-  const from = escapeText(product?.ship_from) || escapeText(CFG?.shipping?.from) || "Indonesia";
   const policy = CFG?.policies || {};
 
   const items = [
-    [ICONS.truck, "Pengiriman", `${estimate} · dari ${from}`],
     [PDP_ICONS.refresh, "Tukar & retur", escapeText(policy.returns) || "Tanyakan kebijakan tukar ke toko lewat asisten"],
     [PDP_ICONS.shield, "Pembayaran aman", "Pembayaran selalu kamu lakukan sendiri. Asisten tidak pernah membayar atas namamu."],
   ];
@@ -2700,7 +2768,7 @@ function renderReviewList(container, product, reviews) {
     const empty = makeElement("div", "pdp-reviews__empty");
     empty.append(
       makeElement("strong", "", "Belum ada ulasan"),
-      makeElement("span", "", "Ulasan hanya bisa ditulis pembeli asli setelah pesanannya selesai, jadi semua ulasan di sini jujur.")
+      makeElement("span", "", "Jadilah yang pertama! Ulasan bisa ditulis setelah pesananmu tiba — cuma dari pembeli asli, jadi semuanya jujur ✨")
     );
     container.appendChild(empty);
     return;
@@ -2771,53 +2839,6 @@ async function loadProductReviews(product, container) {
   renderReviewList(container, product, reviews);
 }
 
-function createPdpTabs(product) {
-  const wrap = makeElement("section", "pdp-tabs");
-  const nav = makeElement("div", "pdp-tabs__nav");
-  nav.setAttribute("role", "tablist");
-  const panels = makeElement("div", "pdp-tabs__panels");
-
-  const reviews = makeElement("div", "pdp-reviews");
-  const description = escapeText(product?.description);
-  const about = makeElement("div", "pdp-about");
-  about.appendChild(
-    makeElement("p", "", description || escapeText(product?.caption) || "Deskripsi belum diisi. Tanyakan detailnya ke asisten.")
-  );
-
-  const tabs = [
-    ["about", "Deskripsi", about],
-    ["spec", "Spesifikasi", createSpecTable(product)],
-    ["reviews", `Ulasan${toNumber(product?.review_count, 0) ? ` (${toNumber(product.review_count, 0)})` : ""}`, reviews],
-  ];
-
-  tabs.forEach(([key, label, panel], i) => {
-    const button = makeElement("button", "pdp-tabs__btn", label);
-    button.type = "button";
-    button.dataset.pdpTab = key;
-    button.setAttribute("role", "tab");
-    panel.classList.add("pdp-tabs__panel");
-    panel.setAttribute("role", "tabpanel");
-    const select = () => {
-      nav.querySelectorAll(".pdp-tabs__btn").forEach((b) => {
-        const on = b === button;
-        b.classList.toggle("is-active", on);
-        b.setAttribute("aria-selected", String(on));
-      });
-      panels.querySelectorAll(".pdp-tabs__panel").forEach((p) => {
-        p.hidden = p !== panel;
-      });
-    };
-    button.addEventListener("click", select);
-    nav.appendChild(button);
-    panels.appendChild(panel);
-    if (i === 0) select();
-  });
-
-  loadProductReviews(product, reviews);
-  wrap.append(nav, panels);
-  return wrap;
-}
-
 function createMiniCard(product) {
   const card = makeElement("button", "pdp-mini");
   card.type = "button";
@@ -2855,26 +2876,6 @@ function createPdpRail(title, products) {
   products.forEach((p) => track.appendChild(createMiniCard(p)));
   section.appendChild(track);
   return section;
-}
-
-/** Bar beli yang menempel di bawah (HP). */
-function createPdpStickyBar(product, buyBox) {
-  const bar = makeElement("div", "pdp-sticky");
-  const info = makeElement("div", "pdp-sticky__info");
-  info.append(
-    makeElement("span", "pdp-sticky__name", getProductName(product)),
-    makeElement("strong", "", formatCurrency(getProductPrice(product)))
-  );
-  const ask = pdpButton("pdp-btn pdp-btn--ghost pdp-sticky__ask", "Tanyakan produk ini ke asisten", null, "Tanya");
-  ask.addEventListener("click", () =>
-    attachProductToChat(product, { photoIndex: productPage.gallery?.index ?? null })
-  );
-  const out = stockState(product?.stock).key === "out";
-  const cart = pdpButton("pdp-btn pdp-btn--secondary", out ? "Stok habis" : `Tambah ${getProductName(product)} ke keranjang`, out ? null : ICONS.bag, out ? "Habis" : "Keranjang");
-  cart.disabled = out;
-  cart.addEventListener("click", () => buyBox.querySelector('[data-action="add-to-cart"]')?.click());
-  bar.append(info, ask, cart);
-  return bar;
 }
 
 /** Pembantu untuk tampilan Bandingkan / Ruang Ragu (js/pdp-extras.js). */
@@ -2957,15 +2958,14 @@ function renderProductPage(product) {
   productPage.gallery = gallery;
 
   const body = makeElement("div", "product-page__body pdp-body");
-  const buy = createPdpBuy(product);
-  body.append(createPdpSummary(product));
-  const specs = createPdpSpecs(product);
-  if (specs) body.append(specs);
+  const info = createPdpInfo(product);
+  body.append(createPdpSummary(product), info.box);
   const fit = createFitCard(product);
   if (fit) body.append(fit);
-  body.append(buy, createCompareLink(pdpCtx(), product, () => compareCandidates(product)), createPdpAssurance(product));
+  body.append(createPdpReviewsSection(product), ...createPdpDetailSections(product));
   const origin = createOriginCard(product);
   if (origin) body.append(origin);
+  body.append(createCompareLink(pdpCtx(), product, () => compareCandidates(product)), createPdpAssurance(product));
 
   // Ruang Ragu: bolak-balik A → B → A dalam 30 menit = tawarkan perbandingan.
   const doubt = createDoubtBanner(pdpCtx(), product);
@@ -2975,7 +2975,6 @@ function renderProductPage(product) {
   main.append(galleryEl, body);
 
   const below = makeElement("div", "pdp-below");
-  below.appendChild(createPdpTabs(product));
 
   const related = createPdpRail("Produk serupa", relatedProducts(product, state.products, { limit: 10, idOf: getProductId }));
   if (related) below.appendChild(related);
@@ -2988,19 +2987,10 @@ function renderProductPage(product) {
   const recentRail = createPdpRail("Terakhir kamu lihat", recent);
   if (recentRail) below.appendChild(recentRail);
 
-  // Bar ringkas (nama, harga, tombol) muncul di atas saat kotak beli tergulir lewat.
-  const sticky = createPdpStickyBar(product, buy);
-  page.append(bar, sticky, main, below);
+  page.append(bar, main, below, createPdpBottomBar(product, info.getQty));
   productPage.observer?.disconnect();
-  if ("IntersectionObserver" in window) {
-    productPage.observer = new IntersectionObserver(
-      ([entry]) => {
-        sticky.classList.toggle("is-shown", !entry.isIntersecting && entry.boundingClientRect.top < 0);
-      },
-      { root: page, threshold: 0 }
-    );
-    productPage.observer.observe(buy);
-  }
+  // Asisten: orb & kotak "Hai Kak" disembunyikan di halaman produk (chat lewat tombol bawah).
+  document.documentElement.classList.add("kc-pdp-open");
 
   page.hidden = false;
   page.scrollTop = 0;
@@ -3299,7 +3289,9 @@ function positionFeaturedFloat(section) {
 
   const carouselMode = isCarouselMode(section);
   const layout = carouselMode ? "start" : section.dataset.layout || "start";
-  const spot = layout === "middle" ? "top" : layout === "end" ? "right" : "left";
+  // HP (layar sempit): tulisan SELALU di atas agar tidak menabrak kartu yang sedang digeser.
+  const narrow = section.clientWidth < 700;
+  const spot = narrow ? "top" : layout === "middle" ? "top" : layout === "end" ? "right" : "left";
   section.dataset.textSpot = spot;
 
   const pad = parseFloat(getComputedStyle(section).getPropertyValue("--page-pad")) || 16;
@@ -4780,7 +4772,7 @@ async function initKantoongEngine() {
 
     // Halaman koleksi tiap bagian homepage (#koleksi/<kunci>).
     initCollections({
-      makeCard: (product, index) => createProductCard(product, index),
+      makeCard: (product, index) => createProductCard(product, index, { direct: true }),
       onAllProducts: () => openDashboardFeature("product-catalog"),
     });
 

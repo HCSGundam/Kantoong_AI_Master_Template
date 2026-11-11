@@ -209,7 +209,7 @@
 
 /* ---------- 06. CHAT: BAR KETIK ---------- */
 
-/* Placeholder "Tulis Context": tidak tebal, satu baris, tidak terpotong. */
+/* Placeholder "Ketik pesan…": tidak tebal, satu baris, tidak terpotong. */
 .kc-composer textarea::placeholder {
   font-size: 14px;
   font-weight: 400;
@@ -2696,5 +2696,35 @@
   #appRoot .featured-reset svg {
     width: 14px;
     height: 14px;
+  }
+}
+
+/* Hero: geser manual berhenti tepat satu slide (tanpa sisa slide tetangga di tepi). */
+#appRoot .hero-track.scroll-x {
+  scroll-padding-inline: 0;
+  scroll-snap-type: x mandatory;
+}
+#appRoot .hero-track.scroll-x > .hero-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* HP: judul etalase (Pilihan Toko, Best Seller, ...) SELALU di atas kartu, tidak menabrak.
+   Mode 3D di HP: kartu memakai lebar penuh, ruang judul 46px di atas (sama seperti 2D). */
+@media (max-width: 699px) {
+  #appRoot .featured[data-view="3d"] {
+    display: block;
+    padding-left: 0;
+  }
+  #appRoot .featured[data-view="3d"] .featured-panel--side {
+    display: none;
+  }
+  #appRoot .featured[data-view="3d"] .featured-head {
+    display: block;
+    height: 46px;
+    max-height: none;
+    opacity: 1;
   }
 }

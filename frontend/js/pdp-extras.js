@@ -10,6 +10,7 @@
  * engine.js memberi "ctx" berisi pembantu (nama, foto, harga, buka produk).
  */
 
+import { rememberSeen } from "./ai-greeting.js";
 import CFG from "../client-config.js";
 import { supabase } from "./supabase-client.js";
 import { chartPath, groupHistory, honestPrice } from "./honest-price.js";
@@ -275,6 +276,7 @@ export function openComparePicker(ctx, product, candidates) {
 export function createDoubtBanner(ctx, product) {
     const id = String(product?.id ?? "");
     const trail = recordView(id);
+    rememberSeen(id); // ingatan 30 hari untuk sapaan AI berikutnya
     const otherId = detectDoubt(trail, id, { dismissed: dismissedPairs() });
     const other = otherId ? ctx.find(otherId) : null;
     if (!other) return null;

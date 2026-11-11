@@ -5,12 +5,15 @@
  * Tombol "Jelajahi sekarang" di Pilihan Terbaik / Best Seller / rel lain
  * membuka halaman SENDIRI berisi produk bagian itu saja (bukan katalog utama),
  * tersusun ke bawah ala marketplace, dengan cari + filter yang mengatur
- * lalu lintas kartu di bagian itu. Di bawah ada pintu ke katalog utama.
+ * lalu lintas kartu di bagian itu. Ikon etalase di kanan atas = pintu ke
+ * katalog utama; saat mencari, ikon berganti jadi "n dari n produk".
+ * Riwayat pencarian (perangkat ini saja) sama dengan Dashboard › Katalog.
  *
  * Alamat: #koleksi/<kunci>  → tombol kembali HP & berbagi link berfungsi.
  */
 
 import { PRICE_BANDS, SORTS, searchCatalog } from "../dashboard-user/home/catalog-search.js";
+import { addHistory, readHistory, writeHistory } from "./catalog-url.js";
 
 export const COLLECTION_ROUTE = "#koleksi/";
 
@@ -140,11 +143,16 @@ let gridEl = null;
 let countEl = null;
 let filterBtn = null;
 
+let shopBtn = null;
+
 function drawGrid() {
     if (!current || !gridEl) return;
     const all = current.getProducts() ?? [];
     const { items } = searchCatalog(all, { ...state, category: "all" });
-    countEl.textContent = state.query || activeCount() ? `${items.length} dari ${all.length} produk` : `${all.length} produk`;
+    const filtering = Boolean(state.query.trim() || activeCount());
+    countEl.textContent = filtering ? `${items.length} dari ${all.length} produk` : "";
+    countEl.hidden = !filtering;
+    shopBtn.hidden = filtering;
     const badge = filterBtn.querySelector(".kc-col-badge");
     badge.textContent = activeCount() ? String(activeCount()) : "";
     badge.hidden = !activeCount();
@@ -165,22 +173,64 @@ function render(key) {
     const input = el("input", "kc-col-search__input");
     input.type = "search";
     input.placeholder = `Cari di ${current.title}…`;
+    // Riwayat pencarian: muncul saat kotak cari diketuk, tersaring sesuai huruf yang diketik.
+    const histBox = el("div", "kc-col-hist");
+    histBox.hidden = true;
+    const drawHistory = () => {
+        const q = input.value.trim().toLowerCase();
+        const list = readHistory().filter((h) => !q || (h.toLowerCase().includes(q) && h.toLowerCase() !== q));
+        histBox.replaceChildren(
+            el("div", "kc-col-hist__head", el("span", "", "Pernah kamu cari"),
+                list.length ? button("kc-col-hist__clear", "Hapus semua", () => {
+                    writeHistory([]);
+                    drawHistory();
+                }) : null),
+            ...list.map((h) => el("div", "kc-col-hist__row",
+                button("kc-col-hist__item", [svgClock(), el("span", "", h)], () => {
+                    input.value = h;
+                    state.query = h;
+                    histBox.hidden = true;
+                    drawGrid();
+                }),
+                button("kc-col-hist__x", "×", () => {
+                    writeHistory(readHistory().filter((x) => x !== h));
+                    drawHistory();
+                }, `Hapus ${h} dari riwayat`))));
+        histBox.hidden = !list.length && !readHistory().length ? true : !list.length;
+    };
+    let saveTimer = 0;
+    const saveQuery = () => {
+        const q = input.value.trim();
+        if (q.length >= 2) writeHistory(addHistory(readHistory(), q));
+    };
+    input.addEventListener("focus", drawHistory);
     input.addEventListener("input", () => {
         state.query = input.value;
         drawGrid();
+        drawHistory();
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveQuery, 1500);
     });
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            saveQuery();
+            histBox.hidden = true;
+            input.blur();
+        }
+    });
+    input.addEventListener("blur", () => setTimeout(() => { histBox.hidden = true; }, 180));
     filterBtn = button("kc-col-filter", [svgFilter(), el("span", "kc-col-badge")], openFilter, "Atur & saring");
     countEl = el("span", "kc-col-count");
+    shopBtn = button("kc-col-shop", [svgShop(), el("span", "kc-col-shop__label", "Semua")], () => {
+        close();
+        setTimeout(() => ctx.onAllProducts?.(), 120);
+    }, "Lihat semua produk di katalog utama");
     gridEl = el("div", "kc-col-grid");
     root.replaceChildren(
-        el("header", "kc-col-top", back, el("div", "kc-col-titles", current.eyebrow ? el("p", "kc-col-eyebrow", current.eyebrow) : null, el("h1", "kc-col-title", current.title)), countEl),
+        el("header", "kc-col-top", back, el("div", "kc-col-titles", current.eyebrow ? el("p", "kc-col-eyebrow", current.eyebrow) : null, el("h1", "kc-col-title", current.title)), el("div", "kc-col-side", shopBtn, countEl)),
         current.description ? el("p", "kc-col-desc", current.description) : null,
-        el("div", "kc-col-tools", el("label", "kc-col-search", svgSearch(), input), filterBtn),
-        gridEl,
-        button("kc-col-all", [el("span", "", "Klik di sini buat lihat semua produk hits kita"), el("span", "kc-col-all__arrow", "→")], () => {
-            close();
-            setTimeout(() => ctx.onAllProducts?.(), 120);
-        }));
+        el("div", "kc-col-tools", el("div", "kc-col-searchwrap", el("label", "kc-col-search", svgSearch(), input), histBox), filterBtn),
+        gridEl);
     root.hidden = false;
     root.scrollTop = 0;
     window.dispatchEvent(new CustomEvent("kantoong:overlay", { detail: { name: "collection", open: true } }));
@@ -201,4 +251,7 @@ function svg(paths) {
     return s;
 }
 const svgSearch = () => svg(["M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z", "M20 20l-4.3-4.3"]);
+const svgClock = () => svg(["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 7v5l3 2"]);
+// Ikon etalase toko (atap bergelombang + pintu)
+const svgShop = () => svg(["M4 9l1.5-5h13L20 9", "M4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0", "M5 11v9h14v-9", "M10 20v-5h4v5"]);
 const svgFilter = () => svg(["M4 7h10", "M18 7h2", "M4 17h4", "M12 17h8", "M16 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4z", "M10 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"]);

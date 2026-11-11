@@ -128,26 +128,35 @@
 #appRoot .kc-col-empty { grid-column: 1 / -1; display: grid; justify-items: center; gap: 4px; padding: 40px 16px; color: var(--text-muted); text-align: center; }
 #appRoot .kc-col-empty strong { color: var(--text-primary); font-size: 16px; }
 
-#appRoot .kc-col-all {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    margin-top: 10px;
-    padding: 18px 22px;
-    color: #f1ead9;
-    text-align: left;
-    background: radial-gradient(120% 160% at 100% 0%, rgb(184 145 63 / 35%), transparent 60%), #16130e;
-    border: 0;
-    border-radius: 22px;
-    font: inherit;
-    font-size: 15px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: transform .2s ease;
+/* Ikon etalase (kanan atas) = pintu ke katalog utama; saat mencari berganti jadi "n dari n produk" */
+#appRoot .kc-col-side { display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
+#appRoot .kc-col-count[hidden], #appRoot .kc-col-shop[hidden] { display: none; }
+#appRoot .kc-col-shop {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 42px; padding: 0 14px 0 12px;
+    color: var(--text-primary); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 14px;
+    font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
 }
-#appRoot .kc-col-all:hover { transform: translateY(-2px); }
-#appRoot .kc-col-all__arrow { display: grid; place-items: center; width: 38px; height: 38px; color: #16130e; background: var(--lux-gold-soft, #e8d6a6); border-radius: 50%; font-size: 18px; }
+#appRoot .kc-col-shop svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 420px) { #appRoot .kc-col-shop__label { display: none; } #appRoot .kc-col-shop { padding: 0; width: 42px; justify-content: center; } }
+
+/* Riwayat pencarian (perangkat ini saja) */
+#appRoot .kc-col-searchwrap { position: relative; min-width: 0; }
+#appRoot .kc-col-hist {
+    position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5;
+    padding: 8px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 18px; box-shadow: var(--lux-shadow, 0 18px 40px -18px rgb(0 0 0 / 35%));
+}
+#appRoot .kc-col-hist[hidden] { display: none; }
+#appRoot .kc-col-hist__head { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 6px; color: var(--text-muted); font-size: 11.5px; font-weight: 600; letter-spacing: .04em; }
+#appRoot .kc-col-hist__clear { padding: 0; color: var(--text-muted); background: none; border: 0; font: inherit; font-size: 11.5px; text-decoration: underline; cursor: pointer; }
+#appRoot .kc-col-hist__row { display: flex; align-items: center; }
+#appRoot .kc-col-hist__item { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 8px; color: var(--text-primary); text-align: left; background: none; border: 0; border-radius: 12px; font: inherit; font-size: 14px; cursor: pointer; }
+#appRoot .kc-col-hist__item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#appRoot .kc-col-hist__item svg { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--text-muted); stroke-width: 1.8; stroke-linecap: round; }
+#appRoot .kc-col-hist__item:hover { background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+#appRoot .kc-col-hist__x { width: 34px; height: 34px; color: var(--text-muted); background: none; border: 0; border-radius: 50%; font-size: 18px; cursor: pointer; }
 
 /* Lembar filter */
 #appRoot .kc-col-sheet { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; background: rgb(10 9 7 / 0%); transition: background .24s ease; }

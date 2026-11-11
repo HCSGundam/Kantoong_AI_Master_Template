@@ -1034,7 +1034,7 @@
 }
 
 .kc-composer textarea::placeholder {
-    font-weight: 700;
+    font-weight: 400;
 }
 
 .kc-composer__tools {
@@ -2118,3 +2118,16 @@ html[data-chat-skin="light"] .kc-sheet {
 .kc-cam__bar [hidden] { display: none; }
 .kc-cam.is-flash::after { content: ""; position: absolute; inset: 0; z-index: 3; background: #fff; animation: kc-flash 180ms ease-out forwards; pointer-events: none; }
 @keyframes kc-flash { to { opacity: 0; } }
+
+/* Sapaan AI diketik per huruf (js/ai-greeting.js) */
+.is-typing::after {
+    content: "";
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    margin-left: 2px;
+    vertical-align: -0.15em;
+    background: currentColor;
+    animation: kcCaret 1s steps(1) infinite;
+}
+@keyframes kcCaret { 50% { opacity: 0; } }
