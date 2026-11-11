@@ -2532,9 +2532,7 @@ function createPdpSummary(product) {
   const box = makeElement("div", "pdp-summary");
   const plan = getPlan();
 
-  box.appendChild(makeElement("h1", "pdp-name", getProductName(product)));
-
-  // Harga besar TANPA kotak (gaya marketplace).
+  // Harga paling atas (gaya Tokopedia), nama + ♡ di bawahnya.
   const priceRow = makeElement("div", "pdp-price");
   priceRow.appendChild(makeElement("p", "pdp-price__now", plan.industry === "properti" ? bigPrice(getProductPrice(product)) : formatCurrency(getProductPrice(product))));
   if (plan.industry === "properti" && product?.attributes?.listing === "Disewakan") {
@@ -2557,6 +2555,16 @@ function createPdpSummary(product) {
     );
     box.appendChild(was);
   }
+
+  const nameRow = makeElement("div", "pdp-namerow");
+  const like = pdpButton("pdp-namerow__like product-like", "Simpan ke wishlist", ICONS.heart);
+  setLikeState(like, isWishlisted(product));
+  like.addEventListener("click", () => {
+    toggleWishlist(product);
+    setLikeState(like, isWishlisted(product));
+  });
+  nameRow.append(makeElement("h1", "pdp-name", getProductName(product)), like);
+  box.appendChild(nameRow);
 
   // ★ rating | terjual | Stok: n  (stok = tulisan saja; detail stok di ERP)
   const meta = createProductMeta(product);
@@ -2671,13 +2679,6 @@ function createPdpDetailSections(product) {
 /** Bar bawah (menempel): kiri Chat <brand> AI (garis bercahaya bergerak), kanan + Keranjang (hitam solid). */
 function createPdpBottomBar(product, getQty) {
   const bar = makeElement("div", "pdp-cta");
-  // Wishlist di BAWAH (hati), bukan di atas.
-  const like = pdpButton("pdp-cta__like product-like", "Simpan ke wishlist", ICONS.heart);
-  setLikeState(like, isWishlisted(product));
-  like.addEventListener("click", () => {
-    toggleWishlist(product);
-    setLikeState(like, isWishlisted(product));
-  });
   const chat = makeElement("button", "pdp-cta__chat");
   chat.type = "button";
   const orb = makeElement("span", "product-ask pdp-cta__orb");
@@ -2708,7 +2709,7 @@ function createPdpBottomBar(product, getQty) {
     main.dataset.action = "add-to-cart";
     main.addEventListener("click", () => addToCart(product, getQty()));
   }
-  bar.append(like, chat, main);
+  bar.append(chat, main);
   return bar;
 }
 
