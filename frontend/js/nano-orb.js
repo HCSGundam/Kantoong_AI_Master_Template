@@ -45,9 +45,11 @@ function spherePoints(n) {
 
 /** Bentuk BOLA bergelombang (riak seperti kain). */
 function orbShape(p, t, out) {
+    // Lipatan organik (beberapa gelombang bertumpuk) → tepi tidak pernah bulat kaku.
     const r = 1
-        + 0.1 * Math.sin(3 * p.lat + t * 1.6) * Math.cos(2 * p.lon - t * 1.1)
-        + 0.05 * Math.sin(5 * p.lon + t * 2.1)
+        + 0.16 * Math.sin(2 * p.lat + t * 0.9) * Math.cos(3 * p.lon - t * 0.7)
+        + 0.09 * Math.sin(4 * p.lon + 2 * p.lat + t * 1.4)
+        + 0.06 * Math.cos(6 * p.lat - t * 1.8)
         + 0.03 * Math.sin(t * 1.2); // napas
     out[0] = p.x * r;
     out[1] = p.y * r;
@@ -85,7 +87,7 @@ export function attachNano(host) {
         host,
         canvas,
         ctx: canvas.getContext("2d"),
-        pts: spherePoints(380),
+        pts: spherePoints(760),
         morph: 0, // 0 = bola, 1 = bintang
         morphTo: 0,
         blink: 0,
@@ -112,8 +114,9 @@ function drawOrb(o, t, dt) {
         orbs.delete(o);
         return;
     }
-    const size = host.clientWidth;
-    if (!size || host.offsetParent === null) return;
+    const base = host.clientWidth;
+    if (!base || host.offsetParent === null) return;
+    const size = base * 1.9; // kanvas melebihi tombol agar tepi bergelombang tidak terpotong
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const px = Math.round(size * dpr);
     if (canvas.width !== px) {
@@ -123,7 +126,7 @@ function drawOrb(o, t, dt) {
     // morf berjalan pelan per partikel (efek "mengalir")
     o.morph += (o.morphTo - o.morph) * Math.min(1, dt * 1.6);
 
-    const R = px * 0.36;
+    const R = px * 0.25;
     const cx = px / 2;
     const cy = px / 2;
     // Saat jadi bintang, putaran mereda agar bintang menghadap depan (bukan terlihat dari samping).
@@ -132,8 +135,8 @@ function drawOrb(o, t, dt) {
     const tilt = 0.35;
     const cY = Math.cos(rotY), sY = Math.sin(rotY), cX = Math.cos(tilt), sX = Math.sin(tilt);
     ctx.clearRect(0, 0, px, px);
-    ctx.globalCompositeOperation = "lighter";
-    const dot = Math.max(1.1, px / 62);
+    ctx.globalCompositeOperation = "source-over";
+    const dot = Math.max(1, px / 120);
 
     // cincin biru yang mengorbit (seperti pita di video)
     ctx.lineWidth = Math.max(1, px / 70);
@@ -163,7 +166,7 @@ function drawOrb(o, t, dt) {
         const sx = cx + x1 * R * persp;
         const sy = cy + y1 * R * persp;
         const depth = (1 - z2) / 2; // depan = terang
-        const a = 0.25 + 0.75 * Math.min(1, Math.max(0, depth));
+        const a = 0.18 + 0.82 * Math.min(1, Math.max(0, depth));
         ctx.fillStyle = `rgba(${p.col[0] | 0},${p.col[1] | 0},${p.col[2] | 0},${a.toFixed(2)})`;
         ctx.fillRect(sx - dot / 2, sy - dot / 2, dot * persp, dot * persp);
     }
@@ -174,12 +177,12 @@ function drawOrb(o, t, dt) {
     if (eyeA > 0.02) {
         o.blink = (o.blink + dt) % 4.6;
         const open = o.blink > 4.45 ? 0.15 : 1;
-        const ew = px * 0.07;
-        const eh = px * 0.17 * open;
-        ctx.fillStyle = `rgba(255,255,255,${eyeA.toFixed(2)})`;
-        ctx.shadowColor = "rgba(120,80,255,0.9)";
-        ctx.shadowBlur = px * 0.06;
-        for (const ex of [cx - px * 0.1, cx + px * 0.1]) {
+        const ew = px * 0.038;
+        const eh = px * 0.09 * open;
+        ctx.fillStyle = `rgba(24,16,64,${eyeA.toFixed(2)})`;
+        ctx.shadowColor = "rgba(150,110,255,0.8)";
+        ctx.shadowBlur = px * 0.03;
+        for (const ex of [cx - px * 0.055, cx + px * 0.055]) {
             ctx.beginPath();
             ctx.ellipse(ex, cy, ew / 2, eh / 2, 0, 0, TAU);
             ctx.fill();
