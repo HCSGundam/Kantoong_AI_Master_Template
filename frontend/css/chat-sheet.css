@@ -2261,3 +2261,14 @@ html[data-chat-skin="light"] .kc-sheet {
     z-index: 100002;
     pointer-events: none;
 }
+/* Orb WebGL (three.js) menggantikan kanvas 2D setelah dimuat */
+.kc-orb .kc-nano-gl {
+    position: absolute;
+    inset: -45%;
+    z-index: 1;
+    width: 190% !important;
+    height: 190% !important;
+    pointer-events: none;
+}
+.kc-orb.gl-on .kc-nano { display: none; }
+.kc-orb.has-nano.is-away .kc-nano-gl { opacity: .12; transition: opacity .25s; }

@@ -99,10 +99,13 @@ export function attachNano(host) {
 }
 
 /** Ubah semua orb: "star" atau "orb". */
+let glMorph = null; // diisi saat versi WebGL selesai dimuat
+
 export function morph(shape) {
     orbs.forEach((o) => {
         o.morphTo = shape === "star" ? 1 : 0;
     });
+    glMorph?.(shape);
 }
 
 const tmpA = [0, 0, 0];
@@ -115,7 +118,7 @@ function drawOrb(o, t, dt) {
         return;
     }
     const base = host.clientWidth;
-    if (!base || host.offsetParent === null) return;
+    if (!base || host.offsetParent === null || host.classList.contains("gl-on")) return;
     const size = base * 1.9; // kanvas melebihi tombol agar tepi bergelombang tidak terpotong
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const px = Math.round(size * dpr);
@@ -373,3 +376,17 @@ window.addEventListener("kantoong:cart-add", () => {
 });
 
 window.KantoongNano = Object.freeze({ attach: attachNano, morph, flyTo });
+
+// Versi WebGL (three.js) dimuat SETELAH halaman tampil, agar toko tetap cepat.
+// Gagal/tidak didukung = tetap orb kanvas 2D di atas.
+function loadGL() {
+    if (reduceMotion()) return;
+    import("./nano-orb-gl.js")
+        .then((m) => {
+            glMorph = m.morphGL;
+            m.startGL();
+        })
+        .catch(() => {});
+}
+if (document.readyState === "complete") setTimeout(loadGL, 800);
+else window.addEventListener("load", () => setTimeout(loadGL, 800), { once: true });
