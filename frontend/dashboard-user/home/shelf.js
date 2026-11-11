@@ -1,17 +1,22 @@
 /**
- * KANTOONG — LEMARI FITUR "TAMBAH FITUR" (Feature Hub, sistem D)
+ * KANTOONG — FEATURE HUB "TAMBAH FITUR"
  * File: frontend/dashboard-user/home/shelf.js
  *
- * Kartu fitur ditumpuk seperti dompet digital. Ketuk kartu = terbuka
- * (kartu lain bergeser), lalu "Tambahkan ke menu". Fitur yang belum
- * selesai tampil "Segera hadir" dan tidak bisa ditambahkan.
- * Fitur yang diarsipkan dari menu kembali muncul di sini.
+ * Daftar fitur dikelompokkan per kategori (dari feature-hub-catalog.js).
+ * Setiap baris: ikon · nama · deskripsi singkat · status · tindakan.
+ * Status berasal dari registry, bukan ditulis di UI:
+ *   - Siap ditambahkan  : published + diizinkan paket  → tombol "Tambah"
+ *   - Termasuk paket / Add-on : dari `tier` (jenis paket, BUKAN status aktif)
+ *   - Paket Pro         : fitur ada tapi tidak termasuk paket toko ini → terkunci
+ *   - Segera hadir      : belum dibuat (folder fitur belum ada) → tidak bisa ditambahkan
+ * Fitur yang sudah ada di menu tidak ditampilkan (dihitung di atas).
+ * Tata letak menyesuaikan lebar panel (container query di home.css).
  */
 
 import { HUB_CATEGORIES } from "../feature-hub/feature-hub-catalog.js";
 import { el, icon } from "./home-icons.js";
 
-const TIER_LABEL = { package: "Termasuk paket", addon: "Add-on" };
+const TIER = { package: "Termasuk paket", addon: "Add-on" };
 
 export function createShelf({ host, getFeatures, isActive, canAdd, isLocked = () => false, onAdd }) {
     let root = null;
@@ -20,71 +25,84 @@ export function createShelf({ host, getFeatures, isActive, canAdd, isLocked = ()
     let openId = null;
     let lastFocus = null;
 
-    function list() {
+    const statusOf = (f) => (canAdd(f) ? "ready" : isLocked(f) ? "locked" : "soon");
+
+    function matches(f) {
         const q = query.trim().toLowerCase();
-        return getFeatures()
-            .filter((f) => !isActive(f.id))
-            .filter((f) => category === "all" || f.category === category)
-            .filter((f) => {
-                if (!q) return true;
-                return [f.title, f.description, ...(f.keywords ?? [])].join(" ").toLowerCase().includes(q);
-            })
-            .sort((a, b) => (canAdd(b) ? 1 : 0) - (canAdd(a) ? 1 : 0) || (a.order ?? 999) - (b.order ?? 999));
+        if (!q) return true;
+        return [f.title, f.description, ...(f.keywords ?? [])].join(" ").toLowerCase().includes(q);
     }
 
-    function card(feature, index) {
-        const ready = canAdd(feature);
-        const item = el("li", `bx-wallet__card${ready ? "" : " is-soon"}${openId === feature.id ? " is-open" : ""}`);
-        item.style.setProperty("--i", String(index));
-        item.dataset.category = feature.category;
+    function row(feature) {
+        const status = statusOf(feature);
+        const open = openId === feature.id;
+        const li = el("li", `bx-hub__item is-${status}${open ? " is-open" : ""}`);
+        li.dataset.category = feature.category;
 
-        const head = el("button", "bx-wallet__head",
-            el("span", "bx-wallet__icon", icon(feature.id)),
-            el("span", "bx-wallet__name", feature.title),
-            el("span", "bx-wallet__tag", ready ? TIER_LABEL[feature.tier] ?? "Tersedia" : isLocked(feature) ? "Paket Pro" : "Segera hadir"));
-        head.type = "button";
-        head.setAttribute("aria-expanded", String(openId === feature.id));
-        head.addEventListener("click", () => {
-            openId = openId === feature.id ? null : feature.id;
+        const badges = el("span", "bx-hub__badges",
+            el("span", `bx-hub__tier bx-hub__tier--${feature.tier || "package"}`, TIER[feature.tier] ?? TIER.package),
+            status === "soon" ? el("span", "bx-hub__state bx-hub__state--soon", "Segera hadir") : null,
+            status === "locked" ? el("span", "bx-hub__state bx-hub__state--locked", icon("lock"), "Paket Pro") : null);
+
+        const main = el("button", "bx-hub__row",
+            el("span", "bx-hub__icon", icon(feature.id)),
+            el("span", "bx-hub__text",
+                el("strong", "bx-hub__name", feature.title),
+                el("span", "bx-hub__desc", feature.description || "")),
+            badges,
+            el("span", "bx-hub__chev", icon("chevron")));
+        main.type = "button";
+        main.setAttribute("aria-expanded", String(open));
+        main.addEventListener("click", () => {
+            openId = open ? null : feature.id;
             draw();
         });
 
-        const art = el("div", "bx-wallet__art", icon(feature.id, "bx-icon bx-wallet__glyph"));
-        const body = el("div", "bx-wallet__body",
-            el("p", "bx-wallet__desc", feature.description || ""),
-        );
-        if (ready) {
-            const add = el("button", "bx-wallet__add", icon("plus"), el("span", "", "Tambahkan ke menu"));
+        const detail = el("div", "bx-hub__detail", el("p", "", feature.description || ""));
+        if (status === "ready") {
+            const add = el("button", "bx-hub__add", icon("plus"), el("span", "", "Tambahkan ke menu"));
             add.type = "button";
             add.addEventListener("click", () => {
-                item.classList.add("is-taken");
+                li.classList.add("is-taken");
                 setTimeout(() => {
                     onAdd(feature.id);
                     openId = null;
                     draw();
-                }, 260);
+                }, 220);
             });
-            body.append(add);
+            detail.append(add);
         } else {
-            body.append(el("p", "bx-wallet__soon", icon("lock"), isLocked(feature)
-                ? "Fitur ini tersedia di paket Kantoong Pro."
-                : "Sedang kami siapkan. Kamu akan melihatnya di sini begitu siap."));
+            detail.append(el("p", "bx-hub__note", icon("lock"), status === "locked"
+                ? "Fitur ini ada di paket Kantoong Pro. Hubungi toko untuk mengaktifkannya."
+                : "Fitur ini sedang kami siapkan — belum bisa dipakai. Kamu akan melihatnya di sini begitu siap."));
         }
-
-        item.append(head, art, body);
-        return item;
+        li.append(main, detail);
+        return li;
     }
 
     function draw() {
         if (!root) return;
-        const items = list();
-        const ul = root.querySelector(".bx-wallet__list");
-        ul.replaceChildren(...items.map(card));
-        ul.dataset.hasOpen = openId ? "true" : "false";
-        root.querySelector(".bx-wallet__empty").hidden = items.length > 0;
-        const readyCount = getFeatures().filter((f) => !isActive(f.id) && canAdd(f)).length;
-        root.querySelector(".bx-wallet__count").textContent = readyCount
-            ? `${readyCount} fitur siap ditambahkan`
+        const all = getFeatures().filter((f) => !isActive(f.id));
+        const items = all.filter((f) => (category === "all" || f.category === category) && matches(f));
+        const order = { ready: 0, locked: 1, soon: 2 };
+        const sections = HUB_CATEGORIES
+            .map((cat) => ({
+                cat,
+                list: items.filter((f) => f.category === cat.id)
+                    .sort((a, b) => order[statusOf(a)] - order[statusOf(b)] || (a.order ?? 999) - (b.order ?? 999)),
+            }))
+            .filter((s) => s.list.length);
+
+        const host = root.querySelector(".bx-hub__list");
+        host.replaceChildren(...sections.map(({ cat, list }) => el("section", "bx-hub__group",
+            el("header", "bx-hub__group-head",
+                el("h3", "", cat.label),
+                el("span", "", `${list.filter((f) => statusOf(f) === "ready").length}/${list.length} siap`)),
+            el("ul", "bx-hub__items", list.map(row)))));
+        root.querySelector(".bx-hub__empty").hidden = items.length > 0;
+        const ready = all.filter((f) => statusOf(f) === "ready").length;
+        root.querySelector(".bx-hub__count").textContent = ready
+            ? `${ready} fitur siap ditambahkan · ${all.length - ready} lainnya menyusul/terkunci`
             : "Semua fitur yang tersedia sudah ada di menumu";
     }
 
@@ -103,6 +121,7 @@ export function createShelf({ host, getFeatures, isActive, canAdd, isLocked = ()
         const input = document.createElement("input");
         input.type = "search";
         input.placeholder = "Cari fitur…";
+        input.setAttribute("aria-label", "Cari fitur");
         input.addEventListener("input", () => {
             query = input.value;
             openId = null;
@@ -126,12 +145,12 @@ export function createShelf({ host, getFeatures, isActive, canAdd, isLocked = ()
         const panel = el("div", "bx-shelf__panel",
             el("div", "bx-shelf__grab"),
             el("header", "bx-shelf__head",
-                el("div", "", el("p", "bx-shelf__eyebrow", "Feature Hub"), el("h2", "bx-shelf__title", "Tambah fitur"), el("p", "bx-wallet__count")),
+                el("div", "", el("p", "bx-shelf__eyebrow", "Feature Hub"), el("h2", "bx-shelf__title", "Tambah fitur"), el("p", "bx-hub__count")),
                 close),
             search,
             chips,
-            el("ul", "bx-wallet__list"),
-            el("p", "bx-wallet__empty", "Tidak ada fitur yang cocok."));
+            el("div", "bx-hub__list"),
+            el("p", "bx-hub__empty", "Tidak ada fitur yang cocok."));
 
         root.append(panel);
         root.addEventListener("click", (event) => {
@@ -150,7 +169,6 @@ export function createShelf({ host, getFeatures, isActive, canAdd, isLocked = ()
         draw();
         root.hidden = false;
         requestAnimationFrame(() => root.classList.add("is-open"));
-        root.querySelector("input")?.focus({ preventScroll: true });
     }
 
     function hide() {

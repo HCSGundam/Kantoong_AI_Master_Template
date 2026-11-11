@@ -47,6 +47,7 @@ const P = {
     sparkle: ["M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"],
     filter: ["M4 6h16", "M7 12h10", "M10 18h4"],
     back: ["M15 5l-7 7 7 7"],
+    chevron: ["M9 5l7 7-7 7"],
 };
 
 export function icon(name, className = "bx-icon") {
