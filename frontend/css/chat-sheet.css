@@ -2252,15 +2252,6 @@ html[data-chat-skin="light"] .kc-sheet {
     pointer-events: none;
     transition: opacity .4s;
 }
-.kc-orb.has-nano.is-away .kc-nano { opacity: .12; transition: opacity .25s; }
-.kc-nano-overlay {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 100002;
-    pointer-events: none;
-}
 /* Orb WebGL (three.js) menggantikan kanvas 2D setelah dimuat */
 .kc-orb .kc-nano-gl {
     position: absolute;
@@ -2275,7 +2266,6 @@ html[data-chat-skin="light"] .kc-sheet {
 .kc-orb .kc-nano-gl { animation: kcNanoIn .6s ease both; }
 @keyframes kcNanoIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
 html:not(.kc-nano-2d) .kc-orb .kc-nano { visibility: hidden; }
-.kc-orb.has-nano.is-away .kc-nano-gl { opacity: .12; transition: opacity .25s; }
 
 /* ===== ORB MINI (salinan orb 3D): kartu produk, tombol Chat AI, avatar chat ===== */
 #appRoot .product-ask.has-mini-orb {

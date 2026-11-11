@@ -4,9 +4,7 @@
  * Diam      : bola titik-titik 3D yang bergelombang seperti kain (biru → ungu → merah muda),
  *             bernapas, dengan cincin biru yang mengorbit, mata berkedip.
  * Berubah   : sesekali (dan saat AI berpikir) partikel mengalir membentuk BINTANG ✦, lalu kembali bola.
- * Terbang   : KantoongNano.flyTo(target) — partikel terurai jadi kawanan nano, terbang ke elemen
- *             mana pun di halaman, berkumpul jadi cincin di sana, lalu pulang jadi orb.
- *             Ini wadah untuk AI Agent nanti (AI "berjalan" ke tombol yang ia pencet).
+ * (Efek "kawanan nano terbang ke tombol" DIHAPUS — konsep nano tech menyusul dari Koko.)
  *
  * Tanpa pustaka luar: kanvas 2D + proyeksi 3D sederhana. Hemat: satu loop untuk semua orb,
  * orb yang tidak terlihat tidak digambar, menghormati prefers-reduced-motion.
@@ -192,137 +190,6 @@ function drawOrb(o, t, dt) {
 }
 
 /* ============================================================
-   KAWANAN NANO (terbang di atas halaman)
-   ============================================================ */
-
-let overlay = null;
-let octx = null;
-let flight = null;
-
-function ensureOverlay() {
-    if (overlay) return;
-    overlay = document.createElement("canvas");
-    overlay.className = "kc-nano-overlay";
-    overlay.setAttribute("aria-hidden", "true");
-    document.body.appendChild(overlay);
-    octx = overlay.getContext("2d");
-}
-
-function centerOf(el) {
-    const r = el.getBoundingClientRect();
-    return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
-}
-
-function visibleOrb() {
-    for (const o of orbs) if (o.host.isConnected && o.host.offsetParent !== null && o.host.clientWidth) return o.host;
-    return null;
-}
-
-/**
- * Terbang dari `from` (elemen atau {x,y}) ke `to` (elemen atau {x,y}).
- * Mengembalikan Promise yang selesai saat kawanan sudah pulang.
- */
-export function flyTo(to, { from = null, hold = 520 } = {}) {
-    if (reduceMotion()) return Promise.resolve();
-    const src = from || visibleOrb();
-    if (!src || !to) return Promise.resolve();
-    ensureOverlay();
-    const a = src.getBoundingClientRect ? centerOf(src) : { x: src.x, y: src.y, w: 50, h: 50 };
-    const b = to.getBoundingClientRect ? centerOf(to) : { x: to.x, y: to.y, w: 40, h: 40 };
-    const home = src.getBoundingClientRect ? src : null;
-    if (home?.classList.contains("has-nano")) home.classList.add("is-away");
-
-    const n = 260;
-    const pts = spherePoints(n).map((p) => {
-        const nx = -(b.y - a.y);
-        const ny = b.x - a.x;
-        const len = Math.hypot(nx, ny) || 1;
-        const bend = (Math.random() - 0.5) * 220;
-        return {
-            ...p,
-            sx: a.x + p.x * Math.max(18, a.w * 0.36),
-            sy: a.y + p.y * Math.max(18, a.h * 0.36),
-            ring: Math.random() * TAU,
-            cx: (a.x + b.x) / 2 + (nx / len) * bend,
-            cy: (a.y + b.y) / 2 + (ny / len) * bend - 60,
-            px: null,
-            py: null,
-            d: Math.random() * 0.35,
-        };
-    });
-    return new Promise((resolve) => {
-        flight = { pts, a, b, t0: performance.now(), out: 1050, hold, back: 950, resolve, home };
-        start();
-    });
-}
-
-function bez(p0, p1, p2, t) {
-    const u = 1 - t;
-    return u * u * p0 + 2 * u * t * p1 + t * t * p2;
-}
-
-function drawFlight(now) {
-    const f = flight;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    if (overlay.width !== Math.round(innerWidth * dpr) || overlay.height !== Math.round(innerHeight * dpr)) {
-        overlay.width = Math.round(innerWidth * dpr);
-        overlay.height = Math.round(innerHeight * dpr);
-    }
-    octx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    octx.clearRect(0, 0, innerWidth, innerHeight);
-    octx.globalCompositeOperation = "source-over";
-    const el = now - f.t0;
-    const total = f.out + f.hold + f.back;
-    if (el >= total) {
-        octx.clearRect(0, 0, innerWidth, innerHeight);
-        f.home?.classList.remove("is-away");
-        flight = null;
-        f.resolve();
-        return;
-    }
-    const ringR = Math.max(16, Math.min(f.b.w, f.b.h) * 0.7);
-    for (const p of f.pts) {
-        let x;
-        let y;
-        const rx = f.b.x + Math.cos(p.ring + el / 260) * ringR;
-        const ry = f.b.y + Math.sin(p.ring + el / 260) * ringR * 0.9;
-        if (el < f.out) {
-            const k = ease(Math.min(1, Math.max(0, (el / f.out - p.d) / (1 - p.d))));
-            x = bez(p.sx, p.cx, rx, k);
-            y = bez(p.sy, p.cy, ry, k);
-        } else if (el < f.out + f.hold) {
-            x = rx;
-            y = ry;
-        } else {
-            const k = ease(Math.min(1, Math.max(0, ((el - f.out - f.hold) / f.back - p.d) / (1 - p.d))));
-            x = bez(rx, p.cx, p.sx, k);
-            y = bez(ry, p.cy - 40, p.sy, k);
-        }
-        if (p.px !== null) {
-            octx.strokeStyle = `rgba(${p.col[0] | 0},${p.col[1] | 0},${p.col[2] | 0},0.35)`;
-            octx.lineWidth = 1.2;
-            octx.beginPath();
-            octx.moveTo(p.px, p.py);
-            octx.lineTo(x, y);
-            octx.stroke();
-        }
-        octx.fillStyle = `rgb(${p.col[0] | 0},${p.col[1] | 0},${p.col[2] | 0})`;
-        octx.fillRect(x - 1.3, y - 1.3, 2.6, 2.6);
-        p.px = x;
-        p.py = y;
-    }
-    // denyut "klik" di target
-    if (el > f.out * 0.85 && el < f.out + f.hold + 200) {
-        const k = (el - f.out * 0.85) / (f.hold + 360);
-        octx.strokeStyle = `rgba(127,212,255,${(1 - k).toFixed(2)})`;
-        octx.lineWidth = 2;
-        octx.beginPath();
-        octx.arc(f.b.x, f.b.y, ringR * (1 + k * 1.4), 0, TAU);
-        octx.stroke();
-    }
-}
-
-/* ============================================================
    LOOP
    ============================================================ */
 
@@ -340,9 +207,8 @@ function loop(now) {
     const t = reduceMotion() ? 0 : now / 1000;
     if (!document.hidden) {
         orbs.forEach((o) => drawOrb(o, t, dt));
-        if (flight) drawFlight(now);
     }
-    if (orbs.size || flight) raf = requestAnimationFrame(loop);
+    if (orbs.size) raf = requestAnimationFrame(loop);
 }
 
 /* ============================================================
@@ -359,20 +225,7 @@ setInterval(() => {
 // Saat AI sedang menyiapkan jawaban: jadi bintang.
 document.addEventListener("kantoong:ai-thinking", (e) => morph(e.detail?.busy ? "star" : "orb"));
 
-// Barang masuk keranjang: kawanan nano terbang dari tombol yang dipencet ke ikon keranjang.
-let lastPointer = null;
-document.addEventListener("pointerdown", (e) => {
-    lastPointer = { x: e.clientX, y: e.clientY, at: performance.now() };
-}, { capture: true, passive: true });
-window.addEventListener("kantoong:cart-add", () => {
-    const visible = (el) => el && el.offsetParent !== null && el.getBoundingClientRect().width > 0;
-    const target = [document.querySelector(".pdp-bar__cart"), document.getElementById("btnCart")].find(visible);
-    if (!target) return;
-    const from = lastPointer && performance.now() - lastPointer.at < 1500 ? { x: lastPointer.x, y: lastPointer.y } : null;
-    flyTo(target, { from: from || undefined });
-});
-
-window.KantoongNano = Object.freeze({ attach: attachNano, morph, flyTo });
+window.KantoongNano = Object.freeze({ attach: attachNano, morph });
 
 // Versi WebGL (three.js) dimuat SETELAH halaman tampil, agar toko tetap cepat.
 // Gagal/tidak didukung = tetap orb kanvas 2D di atas.

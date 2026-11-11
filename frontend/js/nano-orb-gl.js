@@ -166,7 +166,7 @@ function loop(now) {
             return;
         }
         const base = v.host.clientWidth;
-        if (!base || (v.host !== masterHost && v.host.offsetParent === null) || v.host.classList.contains("is-away")) return;
+        if (!base || (v.host !== masterHost && v.host.offsetParent === null)) return;
         if (v.host === masterHost && !visibleMinis.size) return;
         const size = Math.round(base * 1.9);
         if (v.size !== size) {
