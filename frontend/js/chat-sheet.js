@@ -146,8 +146,9 @@ function initChatSheet() {
 
     function getBounds() {
         const hostHeight = host.clientHeight || window.innerHeight;
-        const headerHeight =
-            document.querySelector(".app-header")?.offsetHeight ?? 58;
+        // Orb tidak boleh berada di bawah header (toko, dashboard user, ERP).
+        const header = document.querySelector(".app-header, .dashboard-header, .erp-topbar");
+        const headerHeight = header ? header.getBoundingClientRect().bottom : 58;
 
         const full = Math.max(
             PEEK_HEIGHT + 120,
@@ -1179,8 +1180,9 @@ function initChatSheet() {
     }
 
     function orbLimits() {
-        const headerHeight =
-            document.querySelector(".app-header")?.offsetHeight ?? 58;
+        // Orb tidak boleh berada di bawah header (toko, dashboard user, ERP).
+        const header = document.querySelector(".app-header, .dashboard-header, .erp-topbar");
+        const headerHeight = header ? header.getBoundingClientRect().bottom : 58;
 
         return {
             minY: headerHeight + ORB_MARGIN,

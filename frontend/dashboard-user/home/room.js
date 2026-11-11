@@ -64,13 +64,34 @@ export function roomApi(extra = {}) {
 }
 
 /** Pasang ruang ke root. Mengembalikan { openTool(id) }. */
+/**
+ * Jenis tata letak per fitur (komposisi berbeda sesuai fungsi):
+ *   list      : isi daftar langsung tampil + tab sub-fitur (tanpa harus mengetuk menu dulu)
+ *   analytics : angka besar + sub-fitur sebagai kotak statistik
+ *   form      : satu kartu pengaturan berisi baris bergaris pemisah
+ *   media     : area unggah / mikrofon besar sebagai pusat halaman
+ *   live      : status besar dengan penanda "live" + sub-fitur bergaya garis waktu
+ *   default   : kepala + kisi sub-fitur
+ */
+const LAYOUTS = {
+    "my-orders": "list", "transaction-history": "list", "shipping-address": "list", "product-reviews": "list",
+    "vouchers-promos": "list", "banner-carousel": "list", "cooperation-documents": "list", "ai-chat-history": "list",
+    calendar: "list", wishlist: "list",
+    "total-spending": "analytics", "spending-analytics": "analytics", membership: "analytics",
+    settings: "form", localization: "form", "data-export": "form", "my-card": "form",
+    "media-upload": "media", "voice-interaction": "media",
+    "queue-management": "live", "takeaway-ordering": "live", "package-tracking": "live", clock: "live",
+};
+
 export async function mountRoom(root, def, context = null) {
     registerRoom(def);
     root.replaceChildren(el("div", "bx-room is-loading", el("div", "bx-shimmer bx-shimmer--block")));
 
     let data = null;
     let current = null; // sub-fitur yang terbuka
-    const view = el("div", `bx-room bx-room--${def.tone ?? "light"}`);
+    const kind = def.layout ?? LAYOUTS[def.id] ?? "default";
+    const view = el("div", `bx-room bx-room--${def.tone ?? "light"} bx-room--${kind}`);
+    view.dataset.layout = kind;
 
     const api = roomApi({
         context,
@@ -94,7 +115,24 @@ export async function mountRoom(root, def, context = null) {
     function heroBlock() {
         const h = def.hero?.(data) ?? {};
         const ask = btn([icon("ai-chat-history"), "Tanya asisten tentang ini"], api.openAssistant, "bx-room__ask");
+        // Media: kepala menjadi area aksi besar (ketuk = buka sub-fitur pertama).
+        if (kind === "media") {
+            const first = def.tools[0];
+            const zone = btn([
+                el("span", "bx-room__zone-icon", icon(def.id, "bx-icon bx-icon--xl")),
+                el("strong", "", first?.title ?? def.title),
+                el("span", "", first?.desc ?? h.note ?? ""),
+            ], () => first && openTool(first.id), "bx-room__zone");
+            return el("header", "bx-room__hero bx-room__hero--media",
+                el("div", "bx-room__head",
+                    el("p", "bx-room__eyebrow", def.title),
+                    el("h2", "bx-room__value", h.value ?? def.title),
+                    h.note ? el("p", "bx-room__note", h.note) : null),
+                zone,
+                ask);
+        }
         return el("header", "bx-room__hero",
+            kind === "live" ? el("span", "bx-room__live", el("i"), "LIVE") : null,
             el("span", "bx-room__orb", icon(def.id, "bx-icon bx-icon--xl")),
             el("div", "bx-room__head",
                 el("p", "bx-room__eyebrow", def.title),
@@ -120,6 +158,15 @@ export async function mountRoom(root, def, context = null) {
         }));
     }
 
+    function tabs() {
+        return el("div", "bx-room__tabs", def.tools.map((t) => {
+            const badge = safe(() => t.badge?.(data));
+            const b = btn([el("span", "", t.title), badge ? el("span", "bx-room__tab-badge", badge) : null], () => openTool(t.id), `bx-room__tab${t.id === current ? " is-on" : ""}`);
+            b.setAttribute("aria-pressed", String(t.id === current));
+            return b;
+        }));
+    }
+
     function panel(tool) {
         const body = el("div", "bx-room__body");
         // Bagian opsional (cond ? x : null) jangan pernah tertulis "null" di layar.
@@ -132,11 +179,19 @@ export async function mountRoom(root, def, context = null) {
             console.warn(`[KANTOONG ${def.title} › ${tool.title}]`, error);
             body.replaceChildren(el("p", "bx-muted", "Bagian ini belum bisa ditampilkan. Coba muat ulang."));
         }
+        if (kind === "list") return el("section", "bx-room__panel bx-room__panel--inline", tool.desc ? el("p", "bx-room__panel-desc", tool.desc) : null, body);
         return el("section", "bx-room__panel", el("div", "bx-room__panel-head", back, el("h3", "", tool.title)), tool.desc ? el("p", "bx-room__panel-desc", tool.desc) : null, body);
     }
 
     function draw() {
+        // Daftar: sub-fitur pertama langsung terbuka, sub-fitur lain lewat tab.
+        if (kind === "list" && !def.tools.some((t) => t.id === current)) current = def.tools[0]?.id ?? null;
         const tool = def.tools.find((t) => t.id === current);
+        if (kind === "list" && tool) {
+            view.replaceChildren(heroBlock(), tabs(), panel(tool));
+            view.dataset.open = "list";
+            return;
+        }
         view.replaceChildren(heroBlock(), tool ? panel(tool) : toolGrid());
         view.dataset.open = tool ? "tool" : "grid";
     }
@@ -144,7 +199,7 @@ export async function mountRoom(root, def, context = null) {
     function openTool(id) {
         current = def.tools.some((t) => t.id === id) ? id : null;
         draw();
-        view.scrollIntoView?.({ block: "start", behavior: "smooth" });
+        if (kind !== "list") view.scrollIntoView?.({ block: "start", behavior: "smooth" });
     }
 
     // AI / Sinyal meminta sub-fitur tertentu.
