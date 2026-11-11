@@ -1596,6 +1596,8 @@ async function requestRemoteAI(message, requestId) {
 
 function setBusy(busy) {
     AIState.busy = Boolean(busy);
+    // Orb nano berubah jadi bintang selama AI berpikir (js/nano-orb.js).
+    emit("ai-thinking", { busy: AIState.busy });
 
     const { sendButton, input } = getElements();
 

@@ -30,6 +30,7 @@
  */
 
 import { typewrite } from "./ai-greeting.js";
+import { attachNano } from "./nano-orb.js";
 import { cameraSupported, openWebCamera } from "./web-camera.js";
 import CFG from "../client-config.js";
 import { AgentMode, AGENT_MODES } from "./agent-state.js";
@@ -1160,6 +1161,9 @@ function initChatSheet() {
     floatOrb.hidden = true;
     floatOrb.setAttribute("aria-label", "Buka konsultasi AI");
     host.appendChild(floatOrb);
+
+    // Orb nano (partikel 3D) untuk semua orb asisten.
+    document.querySelectorAll(".kc-orb").forEach((orb) => attachNano(orb));
 
     /** Posisi orb: sisi layar (kiri/kanan) + tinggi relatif 0..1.
         Mode bebas (ERP & kasir): bawaan kiri bawah, supaya tidak menutupi panel pesanan/tombol Bayar di kanan. */
