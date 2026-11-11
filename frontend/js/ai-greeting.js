@@ -136,7 +136,7 @@ export function localGreeting(a, rand = Math.random) {
 }
 
 /** Efek mengetik per huruf (seperti di video pameran). Mengembalikan fungsi batal. */
-export function typewrite(el, text, { speed = 22, onDone } = {}) {
+export function typewrite(el, text, { speed = 22, onDone, onStep } = {}) {
     if (!el) return () => {};
     const chars = [...String(text ?? "")];
     let i = 0;
@@ -156,6 +156,7 @@ export function typewrite(el, text, { speed = 22, onDone } = {}) {
     const step = () => {
         i += 1;
         el.textContent = chars.slice(0, i).join("");
+        if (i % 6 === 0) onStep?.();
         if (i >= chars.length) {
             finish();
             return;

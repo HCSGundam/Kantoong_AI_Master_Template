@@ -1064,12 +1064,8 @@ function initChatSheet() {
             if (!text) return;
             stopTyping?.();
             peekGreeting.classList.remove("is-waiting");
-            if (instant) {
-                peekGreeting.classList.remove("is-typing");
-                peekGreeting.textContent = text;
-            } else {
-                stopTyping = typewrite(peekGreeting, text, { speed: 26 });
-            }
+            // Selalu diketik huruf per huruf (juga saat halaman dibuka ulang).
+            stopTyping = typewrite(peekGreeting, text, { speed: instant ? 22 : 26 });
         };
         // Selama AI menyiapkan sapaan: titik-titik "sedang mengetik" (bukan kosong).
         peekGreeting.textContent = "";

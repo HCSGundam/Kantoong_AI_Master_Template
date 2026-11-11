@@ -2146,3 +2146,90 @@ html[data-chat-skin="light"] .kc-sheet {
     animation: kcDots 1s ease-in-out infinite;
 }
 @keyframes kcDots { 50% { opacity: .2; } }
+
+/* =====================================================================
+   ORB AI BARU — bola kaca merah muda-ungu berkilau, aura pelangi yang
+   bernapas + gelombang memancar, mata tetap ada (berkedip).
+   ===================================================================== */
+.kc-orb,
+#appRoot .product-ask {
+    --orb-glow: 236 72 153;
+    background:
+        radial-gradient(circle at 32% 26%, rgb(255 255 255 / 95%) 0 9%, rgb(255 255 255 / 0) 24%),
+        radial-gradient(circle at 70% 78%, rgb(130 220 255 / 55%) 0, rgb(130 220 255 / 0) 42%),
+        radial-gradient(circle at 50% 50%, #ff8fd1 0%, #e64bb3 46%, #9b3fd8 78%, #6a2bb0 100%) !important;
+    border: 0 !important;
+    box-shadow:
+        inset 0 -6px 12px rgb(80 20 140 / 45%),
+        inset 0 4px 10px rgb(255 255 255 / 45%),
+        0 0 0 1px rgb(255 255 255 / 55%),
+        0 0 18px rgb(var(--orb-glow) / 55%),
+        0 0 0 0 rgb(186 104 255 / 45%);
+    animation: kcOrbBreath 3.2s ease-in-out infinite, kcOrbWave 2.6s ease-out infinite;
+}
+.kc-orb:not(.kc-float-orb) { position: relative; }
+.kc-orb { isolation: isolate; }
+
+/* Aura pelangi lembut yang berputar di luar bola */
+.kc-orb::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+    z-index: -1;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #7fd4ff, #c48bff, #ff8fd1, #ffd27f, #7fd4ff);
+    filter: blur(7px);
+    opacity: .75;
+    animation: kcAuraSpin 6s linear infinite, kcAuraPulse 3.2s ease-in-out infinite;
+    pointer-events: none;
+}
+/* Mata (putih, berkedip) */
+.kc-orb::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+        radial-gradient(ellipse 8% 16% at 37% 50%, #fff 96%, transparent 100%),
+        radial-gradient(ellipse 8% 16% at 63% 50%, #fff 96%, transparent 100%);
+    filter: drop-shadow(0 1px 1.5px rgb(70 10 110 / 55%));
+    animation: kcOrbBlink 5s infinite;
+    pointer-events: none;
+}
+#appRoot .product-ask__eye { background: #fff !important; box-shadow: 0 1px 1.5px rgb(70 10 110 / 55%); animation: kcOrbBlink 5s infinite; }
+
+@keyframes kcOrbBreath {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.045); }
+}
+@keyframes kcOrbWave {
+    0% { box-shadow: inset 0 -6px 12px rgb(80 20 140 / 45%), inset 0 4px 10px rgb(255 255 255 / 45%), 0 0 0 1px rgb(255 255 255 / 55%), 0 0 18px rgb(var(--orb-glow) / 55%), 0 0 0 0 rgb(186 104 255 / 45%); }
+    100% { box-shadow: inset 0 -6px 12px rgb(80 20 140 / 45%), inset 0 4px 10px rgb(255 255 255 / 45%), 0 0 0 1px rgb(255 255 255 / 55%), 0 0 18px rgb(var(--orb-glow) / 55%), 0 0 0 14px rgb(186 104 255 / 0); }
+}
+@keyframes kcAuraSpin { to { transform: rotate(360deg); } }
+@keyframes kcAuraPulse { 0%, 100% { opacity: .45; } 50% { opacity: .9; } }
+@keyframes kcOrbBlink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(.1); }
+}
+/* Orb melayang yang sedang diseret: jangan berdenyut */
+.kc-float-orb.is-dragging { animation: none; }
+/* Avatar kecil di gelembung chat ikut warna baru */
+.ai-message--ai::before {
+    background:
+        radial-gradient(ellipse 8% 16% at 37% 50%, #fff 96%, transparent 100%),
+        radial-gradient(ellipse 8% 16% at 63% 50%, #fff 96%, transparent 100%),
+        radial-gradient(circle at 32% 26%, rgb(255 255 255 / 90%) 0 9%, rgb(255 255 255 / 0) 24%),
+        radial-gradient(circle at 50% 50%, #ff8fd1 0%, #e64bb3 46%, #9b3fd8 78%, #6a2bb0 100%);
+}
+
+/* Titik "sedang mengetik" di chat */
+.ai-typing { display: inline-flex; align-items: center; gap: 5px; min-height: 20px; }
+.ai-typing span { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .35; animation: kcTypeDot 1.1s ease-in-out infinite; }
+.ai-typing span:nth-child(2) { animation-delay: .15s; }
+.ai-typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes kcTypeDot { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-5px); opacity: .9; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .kc-orb, #appRoot .product-ask, .kc-orb::before, .kc-orb::after, #appRoot .product-ask__eye, .ai-typing span { animation: none; }
+}

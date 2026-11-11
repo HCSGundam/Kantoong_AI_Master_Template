@@ -677,7 +677,10 @@ function renderMessage(message, options = {}) {
     bubble.textContent = String(message.text ?? "");
 
     if (options.typewriter) {
-        typewrite(bubble, String(message.text ?? ""), { speed: 24, onDone: () => scrollChatToBottom() });
+        const full = String(message.text ?? "");
+        // Kecepatan menyesuaikan panjang jawaban: maks ±4 detik.
+        const speed = Math.max(8, Math.min(24, Math.round(4000 / Math.max(1, full.length))));
+        typewrite(bubble, full, { speed, onDone: () => scrollChatToBottom(), onStep: () => scrollChatToBottom() });
     }
 
     wrapper.appendChild(bubble);
@@ -898,11 +901,10 @@ function renderTypingIndicator() {
 
     indicator.dataset.aiTyping = "true";
 
-    const bubble = createElement(
-        "div",
-        "ai-message__bubble",
-        `${AI_CONFIG.title} sedang berpikir…`
-    );
+    // Tiga titik "sedang mengetik" (seperti WhatsApp/ChatGPT).
+    const bubble = createElement("div", "ai-message__bubble ai-typing");
+    bubble.setAttribute("aria-label", `${AI_CONFIG.title} sedang mengetik`);
+    bubble.append(createElement("span"), createElement("span"), createElement("span"));
 
     indicator.appendChild(bubble);
     chatBox.appendChild(indicator);
@@ -1841,7 +1843,8 @@ export async function sendMessage(rawText) {
 
         removeTypingIndicator(typingIndicator);
 
-        renderMessage(aiMessage);
+        // Jawaban AI muncul huruf per huruf (seperti ChatGPT).
+        renderMessage(aiMessage, { typewriter: true });
 
         if (result.products.length) {
             publishMatchedProducts(
