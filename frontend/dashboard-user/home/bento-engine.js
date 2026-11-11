@@ -2,8 +2,9 @@
  * KANTOONG — MESIN GRID BENTO (murni, tanpa DOM, dites)
  * File: frontend/dashboard-user/home/bento-engine.js
  *
- * Konsep: kartu disusun MENURUT URUTAN (seperti layar HP), bukan
- * koordinat bebas. Setiap kartu punya ukuran (kolom x baris). Mesin
+ * Konsep lama: kartu disusun MENURUT URUTAN (packLayout).
+ * Konsep sekarang (freeLayout): setiap kartu punya KOORDINAT BEBAS per jumlah kolom;
+ * packLayout tetap dipakai untuk menaruh kartu yang belum punya posisi. Setiap kartu punya ukuran (kolom x baris). Mesin
  * mengisi grid dari kiri-atas dan otomatis menambal lubang kosong.
  *
  * Karena posisi selalu dihitung ulang dari urutan + ukuran:
@@ -133,6 +134,71 @@ export function fillGaps(placed, columns) {
     });
 }
 
+/**
+ * TATA LETAK BEBAS: setiap kartu punya koordinat sendiri { x, y } (per jumlah kolom).
+ * - Kartu ditaruh PERSIS di posisinya; ruang kosong boleh ada (tidak dirapatkan ke atas).
+ * - Bila bertabrakan, kartu yang kalah prioritas turun ke baris kosong terdekat di bawahnya.
+ * - Prioritas: kartu yang sedang digeser/diubah ukurannya → kartu lain menurut posisi (atas-kiri dulu).
+ * - Kartu tanpa posisi (baru ditambahkan) mengisi tempat kosong pertama.
+ * items: [{ id, size }], pos: { id: { x, y } }  ->  [{ id, x, y, w, h }] (urutan items)
+ */
+export function freeLayout(items, columns, pos = {}, priorityId = null) {
+    const cols = Math.max(1, Math.floor(columns));
+    const filled = [];
+    const isFree = (x, y, w, h) => {
+        for (let yy = y; yy < y + h; yy++) {
+            const row = filled[yy];
+            if (!row) continue;
+            for (let xx = x; xx < x + w; xx++) if (row[xx]) return false;
+        }
+        return true;
+    };
+    const mark = (x, y, w, h) => {
+        for (let yy = y; yy < y + h; yy++) {
+            filled[yy] = filled[yy] || [];
+            for (let xx = x; xx < x + w; xx++) filled[yy][xx] = true;
+        }
+    };
+    const valid = (p) => p && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x >= 0 && p.y >= 0;
+    const placed = new Map();
+    const withPos = items.filter((it) => valid(pos[it.id]));
+    withPos.sort((a, b) => {
+        if (a.id === priorityId) return -1;
+        if (b.id === priorityId) return 1;
+        const pa = pos[a.id];
+        const pb = pos[b.id];
+        return pa.y - pb.y || pa.x - pb.x;
+    });
+    withPos.forEach((it) => {
+        const { w, h } = fitSize(it.size, cols);
+        const x = Math.min(pos[it.id].x, cols - w);
+        let y = pos[it.id].y;
+        while (!isFree(x, y, w, h)) y++;
+        mark(x, y, w, h);
+        placed.set(it.id, { id: it.id, x, y, w, h });
+    });
+    items.filter((it) => !placed.has(it.id)).forEach((it) => {
+        const { w, h } = fitSize(it.size, cols);
+        for (let y = 0; !placed.has(it.id); y++) {
+            for (let x = 0; x + w <= cols; x++) {
+                if (isFree(x, y, w, h)) {
+                    mark(x, y, w, h);
+                    placed.set(it.id, { id: it.id, x, y, w, h });
+                    break;
+                }
+            }
+        }
+    });
+    return items.map((it) => placed.get(it.id));
+}
+
+/** Sel tujuan dari posisi pojok kiri-atas kartu yang digeser (dalam px). */
+export function cellAt(left, top, step, columns, w) {
+    const x = Math.round(left / step);
+    const y = Math.round(top / step);
+    return { x: Math.max(0, Math.min(Math.max(0, columns - w), x)), y: Math.max(0, y) };
+}
+
 /** Jumlah baris yang terpakai. */
 export function rowsUsed(placed) {
     return placed.reduce((max, p) => Math.max(max, p.y + p.h), 0);
@@ -189,7 +255,17 @@ export function sanitizeState(raw, activeIds, defaults = {}) {
         const wanted = raw?.sizes?.[id] ?? defaults[id] ?? DEFAULT_SIZE;
         sizes[id] = isValidSize(wanted) ? wanted : DEFAULT_SIZE;
     });
-    return { order, sizes };
+    const pos = {};
+    const rawPos = raw?.pos && typeof raw.pos === "object" ? raw.pos : {};
+    Object.keys(rawPos).forEach((cols) => {
+        if (!/^\d+$/.test(cols)) return;
+        const map = {};
+        Object.entries(rawPos[cols] ?? {}).forEach(([id, p]) => {
+            if (known.has(id) && p && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x >= 0 && p.y >= 0 && p.x < 16 && p.y < 400) map[id] = { x: p.x, y: p.y };
+        });
+        pos[cols] = map;
+    });
+    return { order, sizes, pos };
 }
 
 export function toItems(state) {

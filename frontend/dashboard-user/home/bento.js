@@ -8,18 +8,18 @@
  * - Ubah ukuran: tarik busur di sudut kanan bawah. Bingkai mengikuti
  *   jari, kartu melompat ke ukuran sah terdekat secara langsung.
  * - Tombol "−" = arsipkan kartu (bisa dimunculkan lagi lewat Tambah fitur).
- * Posisi dihitung oleh bento-engine.js (urutan + ukuran), jadi tidak
- * pernah ada kartu bertumpuk.
+ * Posisi BEBAS: tiap kartu menyimpan kolom & barisnya sendiri (per jumlah kolom
+ * layar), jadi kartu tetap di tempat ia dilepas — boleh ada ruang kosong.
+ * Bila menabrak, kartu lain bergeser ke bawah (freeLayout di bento-engine.js),
+ * jadi tidak pernah ada kartu bertumpuk.
  */
 
 import {
     columnsFor,
     modeFor,
-    indexAtCell,
-    moveItem,
+    cellAt,
+    freeLayout,
     nearestSize,
-    packLayout,
-    fillGaps,
     rowsUsed,
     sanitizeState,
     toItems,
@@ -91,7 +91,7 @@ export function createBento({
      * jadi tampilan sementara tidak boleh menimpa simpanan: urutan & ukuran
      * kartu yang belum tampil dipertahankan di posisinya.
      */
-    let stored = load() ?? { order: [], sizes: {} };
+    let stored = load() ?? { order: [], sizes: {}, pos: {} };
 
     function mergeIntoStored() {
         const shown = new Set(s.state.order);
@@ -110,7 +110,11 @@ export function createBento({
             }
             order.splice(at, 0, id);
         });
-        stored = { order, sizes: { ...(stored.sizes ?? {}), ...s.state.sizes } };
+        const pos = { ...(stored.pos ?? {}) };
+        Object.entries(s.state.pos ?? {}).forEach(([cols, map]) => {
+            pos[cols] = { ...(pos[cols] ?? {}), ...map };
+        });
+        stored = { order, sizes: { ...(stored.sizes ?? {}), ...s.state.sizes }, pos };
     }
 
     function save() {
@@ -143,10 +147,25 @@ export function createBento({
         node.style.transform = `translate3d(${p.x * step()}px, ${p.y * step()}px, 0)`;
     }
 
+    const posMap = () => {
+        s.state.pos = s.state.pos ?? {};
+        return (s.state.pos[s.cols] = s.state.pos[s.cols] ?? {});
+    };
+
+    /** Kunci posisi hasil tata letak sebagai posisi tetap kartu (dipanggil setelah selesai menggeser). */
+    function commitPositions() {
+        const map = posMap();
+        s.placed.forEach((p) => {
+            map[p.id] = { x: p.x, y: p.y };
+        });
+    }
+
     function layout() {
-        const packed = packLayout(toItems(s.state), s.cols);
-        // Di luar mode atur: tutup lubang kosong di samping kartu (rapi di HP).
-        s.placed = s.editing ? packed : fillGaps(packed, s.cols);
+        // Saat menggeser: posisi sementara (kartu lain kembali ke tempat asal bila jari menjauh).
+        const pos = s.drag?.pos ?? posMap();
+        const priority = s.drag?.id ?? s.resize?.id ?? null;
+        s.placed = freeLayout(toItems(s.state), s.cols, pos, priority);
+        if (!s.drag && !s.resize) commitPositions();
         let rows = rowsUsed(s.placed);
 
         s.placed.forEach((p) => {
@@ -166,11 +185,8 @@ export function createBento({
             place(card, p);
         });
 
-        // Kotak "Tambah fitur" mengisi ruang kosong pertama setelah kartu terakhir.
-        // Di luar mode atur lubang sudah terisi → "Tambah fitur" di baris baru agar tidak menimpa kartu.
-        const tile = s.editing
-            ? packLayout([...toItems(s.state), { id: "__add", size: "2x1" }], s.cols).pop()
-            : { id: "__add", x: 0, y: rows, w: Math.min(2, s.cols), h: 1 };
+        // Kotak "Tambah fitur" selalu di baris baru di bawah kartu terakhir (tidak mengambil ruang kosong milik user).
+        const tile = { id: "__add", x: 0, y: rows, w: Math.min(2, s.cols), h: 1 };
         place(addTile, tile);
         rows = Math.max(rows, tile.y + tile.h);
 
@@ -268,7 +284,7 @@ export function createBento({
     }
 
     function reset() {
-        stored = { order: [], sizes: {} };
+        stored = { order: [], sizes: {}, pos: {} };
         s.state = sanitizeState(null, s.features.map((f) => f.id), defaults);
         layout();
         save();
@@ -291,6 +307,9 @@ export function createBento({
             dx: point.x - p.x * step(),
             dy: point.y - p.y * step(),
             pointerId: event.pointerId,
+            base: { ...posMap() },
+            pos: { ...posMap() },
+            cell: `${p.x},${p.y}`,
         };
         select(null);
         card.classList.add("is-dragging");
@@ -315,17 +334,14 @@ export function createBento({
         const top = point.y - d.dy;
         d.card.style.transform = `translate3d(${left}px, ${top}px, 0) scale(1.04)`;
 
-        // Sel di bawah pusat kartu menentukan urutan baru.
-        const w = d.card.offsetWidth;
-        const h = d.card.offsetHeight;
-        const cellX = Math.floor((left + w / 2) / step());
-        const cellY = Math.floor((top + Math.min(h, s.cell) / 2) / step());
-        const others = s.placed.filter((p) => p.id !== d.id);
-        const index = indexAtCell(s.placed, d.id, Math.max(0, cellX), Math.max(0, cellY));
-        const currentIndex = s.state.order.indexOf(d.id);
-        const targetIndex = Math.min(index, others.length);
-        if (targetIndex !== currentIndex) {
-            s.state.order = moveItem(toItems(s.state), d.id, targetIndex).map((it) => it.id);
+        // Sel terdekat dengan pojok kiri-atas kartu = tempat kartu akan diletakkan (bebas, tidak dirapatkan ke atas).
+        const me = s.placed.find((p) => p.id === d.id);
+        const cell = cellAt(left, top, step(), s.cols, me?.w ?? 1);
+        const key = `${cell.x},${cell.y}`;
+        if (key !== d.cell) {
+            d.cell = key;
+            // Kartu lain selalu dihitung dari posisi asalnya, hanya yang tertabrak yang turun.
+            d.pos = { ...d.base, [d.id]: cell };
             layout();
         }
     }
@@ -338,6 +354,10 @@ export function createBento({
         d.card.classList.remove("is-dragging");
         grid.classList.remove("is-dragging");
         placeholder.remove();
+        // Posisi yang terakhir terlihat (termasuk kartu yang tertabrak turun) menjadi posisi tetap.
+        const map = posMap();
+        Object.keys(map).forEach((id) => delete map[id]);
+        Object.assign(map, d.pos);
         layout();
         save();
     }

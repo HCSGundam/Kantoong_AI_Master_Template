@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+    cellAt,
     columnsFor,
+    freeLayout,
     indexAtCell,
     moveItem,
     nearestSize,
@@ -138,5 +140,43 @@ describe("bento: lubang kosong di HP terisi", () => {
         const filled = kcFillGaps(placed, 4);
         expect(filled.find((p) => p.id === "b").w).toBe(3);
         expect(kcFillGaps(kcPack([{ id: "a", size: "2x1" }, { id: "b", size: "2x1" }], 4), 4).map((p) => p.w)).toEqual([2, 2]);
+    });
+});
+
+describe("bento posisi bebas (freeLayout)", () => {
+    const items = [{ id: "a", size: "2x2" }, { id: "b", size: "2x2" }, { id: "c", size: "2x1" }];
+    const overlap = (p, q) => p.x < q.x + q.w && q.x < p.x + p.w && p.y < q.y + q.h && q.y < p.y + p.h;
+    const noOverlap = (placed) => placed.every((p, i) => placed.every((q, j) => i === j || !overlap(p, q)));
+
+    it("kartu tetap di posisi yang disimpan, ruang kosong di atas dibiarkan", () => {
+        const placed = freeLayout(items, 4, { a: { x: 0, y: 5 }, b: { x: 2, y: 0 }, c: { x: 0, y: 2 } });
+        expect(placed.find((p) => p.id === "a")).toMatchObject({ x: 0, y: 5 });
+        expect(placed.find((p) => p.id === "c")).toMatchObject({ x: 0, y: 2 });
+        expect(noOverlap(placed)).toBe(true);
+    });
+
+    it("tabrakan: kartu prioritas menang, kartu lain turun", () => {
+        const pos = { a: { x: 0, y: 0 }, b: { x: 1, y: 0 } };
+        const placed = freeLayout(items.slice(0, 2), 4, pos, "b");
+        expect(placed.find((p) => p.id === "b")).toMatchObject({ x: 1, y: 0 });
+        expect(placed.find((p) => p.id === "a").y).toBe(2);
+        expect(noOverlap(placed)).toBe(true);
+    });
+
+    it("kartu tanpa posisi mengisi tempat kosong pertama, x dijepit ke lebar grid", () => {
+        const placed = freeLayout(items, 4, { a: { x: 3, y: 0 } });
+        expect(placed.find((p) => p.id === "a")).toMatchObject({ x: 2, y: 0 });
+        expect(placed.find((p) => p.id === "b")).toMatchObject({ x: 0, y: 0 });
+        expect(noOverlap(placed)).toBe(true);
+    });
+
+    it("cellAt membulatkan & menjepit sel tujuan", () => {
+        expect(cellAt(-40, -10, 100, 4, 2)).toEqual({ x: 0, y: 0 });
+        expect(cellAt(380, 260, 100, 4, 2)).toEqual({ x: 2, y: 3 });
+    });
+
+    it("sanitizeState menyimpan posisi per jumlah kolom & membuang yang tidak sah", () => {
+        const s = sanitizeState({ order: ["a"], pos: { 4: { a: { x: 1, y: 2 }, zz: { x: 0, y: 0 }, b: { x: -1, y: 0 } }, bad: {} } }, ["a", "b"]);
+        expect(s.pos).toEqual({ 4: { a: { x: 1, y: 2 } } });
     });
 });
