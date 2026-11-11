@@ -172,7 +172,7 @@ addEventListener("pointermove", (e) => {
 const toStar = () => {
     morphTo = 1;
     capMode.textContent = "AI ORB · BERPIKIR ✦";
-    setTimeout(() => { morphTo = 0; capMode.textContent = "AI ORB · SIAGA"; }, 4200);
+    setTimeout(() => { morphTo = 0; capMode.textContent = "AI ORB · SIAGA"; }, 2000);
 };
 addEventListener("pointerdown", toStar);
 addEventListener("keydown", (e) => {
@@ -180,7 +180,7 @@ addEventListener("keydown", (e) => {
     if (e.key === "h" || e.key === "H") document.body.classList.toggle("hide");
     if (e.key === " ") toStar();
 });
-setInterval(toStar, 10000);
+setInterval(toStar, 30000);
 
 /* ---------- loop ---------- */
 const clock = new THREE.Clock();
