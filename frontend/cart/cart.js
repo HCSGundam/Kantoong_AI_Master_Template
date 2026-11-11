@@ -15,6 +15,7 @@
 import * as Cart from './cart-store.js';
 import * as Views from './views.js';
 import { shouldNudge, upcomingReminder } from './cart-reason.js';
+import { dropNotice } from '../js/drop-notify.js';
 
 const host = document.querySelector('.mobile-container') || document.body;
 
@@ -178,11 +179,15 @@ window.addEventListener('kantoong:cart-add', (e) => {
     const item = Cart.addItem(e.detail?.product, qty);
     if (!item) return;
     // Barang baru tanpa alasan: tawarkan "Ingat alasannya" (opsional, tidak memaksa).
-    if (item.qty === qty && !item.reason) {
-        actionToast(`${item.name} udah di keranjang ✓`, 'Ingat alasannya', () => { ctx.reasonFor = item.id; open('cart'); });
-    } else {
-        toast(`${item.name} udah di keranjang ✓`);
-    }
+    // Notifikasi bola dari ATAS (sketsa Koko). Barang baru tanpa alasan: tawarkan "Ingat alasannya".
+    const isNew = item.qty === qty && !item.reason;
+    dropNotice({
+        from: 'top',
+        icon: 'cart',
+        title: item.name,
+        text: 'sudah dimasukkan ke keranjang',
+        action: isNew ? { label: 'Ingat alasannya', onClick: () => { ctx.reasonFor = item.id; open('cart'); } } : null,
+    });
 });
 
 // ------------------------------------------------------------

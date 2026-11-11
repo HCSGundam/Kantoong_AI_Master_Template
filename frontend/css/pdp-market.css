@@ -291,3 +291,112 @@ html.kc-pdp-open #kcFloatOrb {
 @media (prefers-reduced-motion: reduce) {
     #appRoot .pdp-cta__chat::before, #chatPanel[data-state="peek"]::before { animation: none; }
 }
+
+/* ---------- Notifikasi bola (keranjang dari atas, wishlist dari bawah) ---------- */
+.kc-drop {
+    position: fixed;
+    left: 50%;
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    overflow: hidden;
+    color: #fff;
+    background: #15120d;
+    border-radius: 999px;
+    box-shadow: 0 14px 34px -10px rgb(0 0 0 / 55%), 0 0 0 1px rgb(255 255 255 / 8%);
+    font-family: "Poppins", system-ui, sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    transition:
+        transform .46s cubic-bezier(.34, 1.45, .55, 1),
+        opacity .2s ease,
+        width .38s cubic-bezier(.4, 0, .2, 1);
+}
+.kc-drop--top { top: calc(env(safe-area-inset-top, 0px) + 14px); transform: translate(-50%, -160%); }
+.kc-drop--bottom { bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); transform: translate(-50%, 220%); }
+.kc-drop.is-in { opacity: 1; transform: translate(-50%, 0); }
+.kc-drop.is-open { width: var(--w, 280px); }
+.kc-drop__ball {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2a241a, #15120d);
+}
+.kc-drop__ball svg { width: 22px; height: 22px; fill: none; stroke: #f3dfa8; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.kc-drop--bottom .kc-drop__ball svg { stroke: #ff8fa6; fill: #ff8fa6; }
+.kc-drop__text, .kc-drop__act { opacity: 0; transition: opacity .18s ease; }
+.kc-drop.is-open .kc-drop__text, .kc-drop.is-open .kc-drop__act { opacity: 1; transition-delay: .22s; }
+.kc-drop__text { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.kc-drop__act {
+    flex: none;
+    margin: 0 8px 0 auto;
+    padding: 7px 12px;
+    color: #f3dfa8;
+    background: none;
+    border: 1px solid rgb(243 223 168 / 60%);
+    border-radius: 999px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* ---------- Mode 2D: kartu tengah menyala, kiri-kanan redup (ikut menyala saat jadi pusat) ---------- */
+#appRoot .featured:not([data-view="3d"]) .rail--focus > .product-card,
+#appRoot .rail--focus:not(.featured-rail) > .product-card {
+    filter: brightness(calc(0.5 + 0.5 * var(--focus, 1))) saturate(calc(0.55 + 0.45 * var(--focus, 1)));
+    transition: transform 90ms linear, box-shadow 200ms ease, filter 160ms linear;
+}
+
+/* ---------- Produk serupa / terakhir dilihat: kartu yang dilihat membesar & menyala ---------- */
+#appRoot .pdp-rail__track {
+    align-items: center;
+    padding: 10px 2px 14px;
+}
+#appRoot .pdp-mini {
+    transform: scale(calc(0.88 + 0.12 * var(--focus, 1)));
+    transform-origin: center;
+    filter: brightness(calc(0.55 + 0.45 * var(--focus, 1))) saturate(calc(0.6 + 0.4 * var(--focus, 1)));
+    transition: transform 90ms linear, filter 160ms linear;
+}
+#appRoot .pdp-mini.is-focus .pdp-mini__img {
+    box-shadow: 0 14px 30px -12px rgb(0 0 0 / 35%);
+}
+
+/* Kotak permanen "Cek selengkapnya" di kiri rel Terakhir kamu lihat */
+#appRoot .pdp-seeall {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 8px;
+    align-self: stretch;
+    padding: 14px 10px;
+    color: #fff;
+    text-align: center;
+    background: radial-gradient(120% 120% at 100% 0%, rgb(184 145 63 / 40%), transparent 60%), #15120d;
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 10px 0 18px -10px rgb(0 0 0 / 35%);
+    font: inherit;
+    cursor: pointer;
+    scroll-snap-align: start;
+}
+#appRoot .pdp-seeall .pdp-icon { width: 30px; height: 30px; color: #f3dfa8; }
+#appRoot .pdp-seeall span { font-size: 14px; font-weight: 600; }
+#appRoot .pdp-seeall small { color: #d9c9a0; font-size: 11.5px; }
+/* Isi pil: nama (tebal) + keterangan, masing-masing 1 baris */
+.kc-drop__text { display: grid; line-height: 1.25; }
+.kc-drop__text b, .kc-drop__text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kc-drop__text b { font-weight: 600; font-size: 13.5px; }
+.kc-drop__text small { color: #d9c9a0; font-size: 12px; }

@@ -39,6 +39,7 @@ import {
 } from "./pdp-extras.js";
 import { POLICY_PAGES, whatsappLink } from "./storefront-settings.js";
 import { CATALOG_PARAM, mergeCatalogParams, stripCatalogParams } from "./catalog-url.js";
+import { dropNotice } from "./drop-notify.js";
 import { initCollections, openCollection, registerCollection } from "./collection-page.js";
 import {
   clampQty,
@@ -1350,11 +1351,13 @@ function toggleWishlist(product) {
   });
 
   emit("wishlist-changed", { product, added, ids: [...wishlist] });
-  showToast(
-    added
-      ? `${getProductName(product)} disimpan ke wishlist.`
-      : `${getProductName(product)} dihapus dari wishlist.`
-  );
+  // Notifikasi bola dari BAWAH (beda dengan keranjang yang dari atas).
+  dropNotice({
+    from: "bottom",
+    icon: added ? "heart" : "heartOff",
+    title: getProductName(product),
+    text: added ? "disimpan ke wishlist" : "dihapus dari wishlist",
+  });
 }
 
 /** Ikon garis kecil (SVG) untuk kartu produk. */
@@ -2868,14 +2871,61 @@ function createMiniCard(product) {
   return card;
 }
 
-function createPdpRail(title, products) {
+function createPdpRail(title, products, { lead = null } = {}) {
   if (!products.length) return null;
   const section = makeElement("section", "pdp-rail");
   section.appendChild(makeElement("h2", "pdp-rail__title", title));
   const track = makeElement("div", "pdp-rail__track");
+  // Kotak tetap di kiri (mis. "Cek selengkapnya") — tidak ikut tergeser.
+  if (lead) track.appendChild(lead);
   products.forEach((p) => track.appendChild(createMiniCard(p)));
   section.appendChild(track);
+  focusMiniRail(track);
   return section;
+}
+
+/** Seperti mode 2D homepage: kartu yang sedang dilihat membesar & menyala, sisanya mengecil & redup. */
+function focusMiniRail(track) {
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    const cards = [...track.querySelectorAll(".pdp-mini")];
+    if (!cards.length) return;
+    const max = track.scrollWidth - track.clientWidth;
+    const progress = max > 1 ? Math.min(1, Math.max(0, track.scrollLeft / max)) : 0;
+    const centerOf = (card) => card.offsetLeft + card.offsetWidth / 2;
+    const first = centerOf(cards[0]);
+    const last = centerOf(cards[cards.length - 1]);
+    const focusX = first + (last - first) * progress;
+    const step = cards[0].offsetWidth || 1;
+    cards.forEach((card) => {
+      const focus = 1 - Math.min(1, Math.abs(centerOf(card) - focusX) / step);
+      card.style.setProperty("--focus", focus.toFixed(3));
+      card.classList.toggle("is-focus", focus > 0.5);
+    });
+  };
+  const schedule = () => {
+    if (!frame) frame = requestAnimationFrame(update);
+  };
+  track.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("resize", schedule, { passive: true });
+  requestAnimationFrame(() => requestAnimationFrame(update));
+}
+
+/** Kotak "Cek selengkapnya" (kiri, permanen) → katalog lengkap. */
+function createSeeAllTile() {
+  const tile = makeElement("button", "pdp-seeall");
+  tile.type = "button";
+  tile.append(
+    makeIcon("pdp-icon", ["M4 9l1.5-5h13L20 9", "M4 9a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0", "M5 11v9h14v-9", "M10 20v-5h4v5"]),
+    makeElement("span", "", "Cek selengkapnya"),
+    makeElement("small", "", "Semua produk →")
+  );
+  tile.addEventListener("click", () => {
+    closeProductPage();
+    setTimeout(() => openDashboardFeature("product-catalog"), 160);
+  });
+  return tile;
 }
 
 /** Pembantu untuk tampilan Bandingkan / Ruang Ragu (js/pdp-extras.js). */
@@ -2984,7 +3034,7 @@ function renderProductPage(product) {
     .map(findProductById)
     .filter(Boolean)
     .slice(0, 10);
-  const recentRail = createPdpRail("Terakhir kamu lihat", recent);
+  const recentRail = createPdpRail("Terakhir kamu lihat", recent, { lead: createSeeAllTile() });
   if (recentRail) below.appendChild(recentRail);
 
   page.append(bar, main, below, createPdpBottomBar(product, info.getQty));
