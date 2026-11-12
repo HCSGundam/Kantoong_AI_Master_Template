@@ -303,15 +303,21 @@ html.kc-pdp-open #kcFloatOrb {
     animation: kcAurora 7s linear infinite, kcAuroraBreath 4.5s ease-in-out infinite;
     pointer-events: none;
 }
-/* Tombol Chat AI: aura tipis & dekat tombol (dulu melebar 14 px + blur besar = terlalu heboh di HP) */
-#appRoot .pdp-cta__chat::after {
-    inset: -5px;
-    padding: 5px;
-    border-radius: 19px;
-    filter: blur(4px);
-    animation: kcAurora 7s linear infinite, kcAuroraSoft 4.5s ease-in-out infinite;
+/* Tombol Chat AI: aura = pendar BUYAR di luar tombol (bayangan berwarna yang sangat lembut),
+   bukan cincin/garis yang membingkai. Isi tombol tetap bersih. Warna bergeser pelan biru → ungu → merah muda. */
+#appRoot .pdp-cta__chat::after { display: none; }
+#appRoot .pdp-cta__chat {
+    box-shadow:
+        -8px 0 22px -10px rgb(47 168 255 / 55%),
+        0 0 22px -8px rgb(140 90 255 / 45%),
+        8px 0 22px -10px rgb(255 63 180 / 55%);
+    animation: kcChatGlow 6s ease-in-out infinite;
 }
-@keyframes kcAuroraSoft { 0%, 100% { opacity: .28; } 50% { opacity: .5; } }
+@keyframes kcChatGlow {
+    0%, 100% { box-shadow: -8px 0 22px -10px rgb(47 168 255 / 55%), 0 0 22px -8px rgb(140 90 255 / 40%), 8px 0 22px -10px rgb(255 63 180 / 55%); }
+    50% { box-shadow: -8px 0 24px -9px rgb(255 63 180 / 50%), 0 0 26px -8px rgb(140 90 255 / 55%), 8px 0 24px -9px rgb(47 168 255 / 50%); }
+}
+@media (prefers-reduced-motion: reduce) { #appRoot .pdp-cta__chat { animation: none; } }
 @keyframes kcAurora { to { --kc-aurora: 360deg; } }
 @keyframes kcAuroraBreath { 0%, 100% { opacity: .45; } 50% { opacity: .85; } }
 
