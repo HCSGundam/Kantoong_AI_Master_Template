@@ -303,7 +303,15 @@ html.kc-pdp-open #kcFloatOrb {
     animation: kcAurora 7s linear infinite, kcAuroraBreath 4.5s ease-in-out infinite;
     pointer-events: none;
 }
-#appRoot .pdp-cta__chat::after { --kc-r: 14px; filter: blur(7px); }
+/* Tombol Chat AI: aura tipis & dekat tombol (dulu melebar 14 px + blur besar = terlalu heboh di HP) */
+#appRoot .pdp-cta__chat::after {
+    inset: -5px;
+    padding: 5px;
+    border-radius: 19px;
+    filter: blur(4px);
+    animation: kcAurora 7s linear infinite, kcAuroraSoft 4.5s ease-in-out infinite;
+}
+@keyframes kcAuroraSoft { 0%, 100% { opacity: .28; } 50% { opacity: .5; } }
 @keyframes kcAurora { to { --kc-aurora: 360deg; } }
 @keyframes kcAuroraBreath { 0%, 100% { opacity: .45; } 50% { opacity: .85; } }
 

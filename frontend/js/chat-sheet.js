@@ -1225,6 +1225,18 @@ function initChatSheet() {
 
     const orbDrag = { id: null, dx: 0, dy: 0, startX: 0, startY: 0, moved: false };
 
+    /** Klik yang menyusul ketukan/geser orb tidak boleh menembus ke kartu/tombol di belakangnya. */
+    function swallowNextClick() {
+        const stop = (e) => {
+            if (e.target === floatOrb || floatOrb.contains(e.target)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+        };
+        document.addEventListener("click", stop, { capture: true, once: true });
+        setTimeout(() => document.removeEventListener("click", stop, { capture: true }), 450);
+    }
+
     floatOrb.addEventListener("pointerdown", (event) => {
         const rect = floatOrb.getBoundingClientRect();
 
@@ -1267,11 +1279,16 @@ function initChatSheet() {
         floatOrb.classList.remove("is-dragging");
 
         if (!orbDrag.moved) {
-            // Ketuk orb: kembali jadi kotak sambutan.
-            if (!cancelled) snapTo("peek");
+            // Ketuk orb: kembali jadi kotak sambutan. Orb langsung hilang, jadi "klik" susulan dari
+            // browser akan jatuh ke elemen di belakangnya (mis. kartu produk) — telan klik itu.
+            if (!cancelled) {
+                swallowNextClick();
+                snapTo("peek");
+            }
             return;
         }
 
+        swallowNextClick();
         // Lepas: menempel ke tepi terdekat, seperti panel edge HP.
         const { minY, maxY, maxX } = orbLimits();
         const x = floatOrb.offsetLeft;

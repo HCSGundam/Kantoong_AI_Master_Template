@@ -101,14 +101,16 @@ function makeMaterial(px) {
 
 const views = new Set();
 
-function attachGL(host) {
+function attachGL(host, { keep = false } = {}) {
     if (host.dataset.nanoGl === "1") return;
     const canvas = document.createElement("canvas");
     canvas.className = "kc-nano-gl";
     canvas.setAttribute("aria-hidden", "true");
     let renderer;
     try {
-        renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        // keep: gambar orb induk harus tetap ada sampai disalin ke orb mini (di HP Android
+        // buffer WebGL langsung dikosongkan → salinan kosong / orb di tombol Chat AI hilang).
+        renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: keep });
     } catch {
         return; // tanpa WebGL: tetap orb 2D
     }
@@ -214,7 +216,7 @@ function ensureMaster() {
     masterHost.setAttribute("aria-hidden", "true");
     Object.assign(masterHost.style, { position: "absolute", left: "-9999px", top: "0", width: "56px", height: "56px", pointerEvents: "none" });
     document.body.appendChild(masterHost);
-    attachGL(masterHost);
+    attachGL(masterHost, { keep: true });
 }
 
 function attachMini(host) {

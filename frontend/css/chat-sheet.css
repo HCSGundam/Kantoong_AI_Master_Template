@@ -2312,3 +2312,11 @@ html:not(.kc-nano-2d) .kc-orb:not(.gl-on) {
 }
 html:not(.kc-nano-2d) .kc-orb:not(.gl-on)::before,
 html:not(.kc-nano-2d) .kc-orb:not(.gl-on)::after { display: none !important; }
+
+/* Orb melayang: SELURUH awan partikel yang terlihat bisa diketuk (dulu hanya 56 px di tengah,
+   ketukan di tepi awan tembus ke kartu produk di belakangnya). Kanvas = anak tombol → ketukan milik orb. */
+.kc-float-orb.gl-on .kc-nano-gl,
+html.kc-nano-2d .kc-float-orb .kc-nano {
+    pointer-events: auto;
+    border-radius: 50%;
+}
